@@ -1,0 +1,49 @@
+{
+    "UserName": "",
+    "Password": "",
+    "InstanceId": "",
+    "LDAPConf": {
+        "Server": "",
+        "UserName": "",
+        "Password": "",
+        "Port": 389,
+        "Filter": "(objectClass=user)",
+        "DSN": ""
+    },
+    "LDAPMapping":{
+        "UserId":"[sAMAccountName]",
+        "UserType":"basic",
+        "Name":"[cn]",
+        "Password":"",
+        "FirstName":"[cn]",
+        "LastName":"[sn]",
+        "JobTitle":"",
+        "Site":"",
+        "Phone":"[telephoneNumber]",
+        "Email":"[userPrincipalName]",
+        "Mobile":"[mobile]",
+        "AbsenceMessage":"",
+        "TimeZone":"",
+        "Language":"",
+        "DateTimeFormat":"",
+        "DateFormat":"",
+        "TimeFormat":"",
+        "CurrencySymbol":"",
+        "CountryCode":""
+    },
+    "LDAPAttirubutes":[
+        "cn",
+        "sn",
+        "sAMAccountName",
+        "userPrincipalName",
+        "givenName",
+        "description"
+    ],
+    "Roles":[
+        "Basic User Role"
+    ],
+    "SiteLookup":{
+        "Enabled": false,
+        "Attribute":""
+    }
+}
