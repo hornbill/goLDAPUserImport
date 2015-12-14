@@ -1,9 +1,9 @@
-## 1.4.1 (December 08, 2015)
+## 1.4.1 (December 14, 2015)
 
 Features:
 
   - Released to GitHub
-  
+
 ## 1.4.0 (December 08, 2015)
 
 Features:
