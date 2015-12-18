@@ -2,6 +2,7 @@
     "UserName": "",
     "Password": "",
     "InstanceId": "",
+    "UpdateUserType": false,
     "LDAPConf": {
         "Server": "",
         "UserName": "",

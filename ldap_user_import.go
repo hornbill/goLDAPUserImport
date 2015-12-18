@@ -23,7 +23,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.3.1"
+const version = "1.5.0"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -457,7 +457,7 @@ func updateUser(u *ldap.Entry) bool {
 	}
 
 	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	espXmlmc.SetParam("userId", getFeildValue(u, "UserId"))
+	espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
 
 	if getFeildValue(u, "UserType") != "" && ldapImportConf.UpdateUserType {
 		espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
@@ -557,13 +557,13 @@ func createUser(u *ldap.Entry) bool {
 	}
 
 	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	espXmlmc.SetParam("userId", getFeildValue(u, "UserId"))
+	espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
 	espXmlmc.SetParam("name", getFeildValue(u, "Name"))
 	var password = getFeildValue(u, "Password")
 	//-- If Password is Blank Generate Password
 	if password == "" {
 		password = generatePasswordString(10)
-		logger(1, "Auto Generated Password for: "+getFeildValue(u, "UserId")+" - "+password, false)
+		logger(1, "Auto Generated Password for: "+getFeildValue(u, "UserID")+" - "+password, false)
 	}
 	espXmlmc.SetParam("password", base64.StdEncoding.EncodeToString([]byte(password)))
 	espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
@@ -627,7 +627,7 @@ func createUser(u *ldap.Entry) bool {
 			logger(3, "Unable to Update User: "+xmlRespon.State.ErrorRet, true)
 		} else {
 			if len(ldapImportConf.Roles) > 0 {
-				userAddRoles(getFeildValue(u, "UserId"))
+				userAddRoles(getFeildValue(u, "UserID"))
 			}
 			counters.created++
 			return true
