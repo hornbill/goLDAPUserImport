@@ -8,6 +8,11 @@
         "UserName": "",
         "Password": "",
         "Port": 389,
+        "Scope": 1,
+		"DerefAliases": 1,
+        "SizeLimit": 0,
+		"TimeLimit": 0,
+		"TypesOnly": false,
         "Filter": "(objectClass=user)",
         "DSN": ""
     },

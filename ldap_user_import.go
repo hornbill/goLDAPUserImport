@@ -23,7 +23,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.5.0"
+const version = "1.5.1"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -39,6 +39,7 @@ var timeNow string
 var startTime time.Time
 var endTime time.Duration
 var espXmlmc *apiLib.XmlmcInstStruct
+var errorCount uint64
 
 //----- Structures -----
 type siteListStruct struct {
@@ -91,12 +92,17 @@ type ldapMappingStruct struct {
 	CountryCode    string
 }
 type ldapConfStruct struct {
-	Server   string
-	UserName string
-	Password string
-	Port     uint16
-	Filter   string
-	DSN      string
+	Server       string
+	UserName     string
+	Password     string
+	Port         uint16
+	Scope        int
+	DerefAliases int
+	SizeLimit    int
+	TimeLimit    int
+	TypesOnly    bool
+	Filter       string
+	DSN          string
 }
 type siteLookupStruct struct {
 	Enabled   bool
@@ -163,7 +169,7 @@ func main() {
 	flag.StringVar(&configFileName, "file", "conf.json", "Name of Configuration File To Load")
 	flag.StringVar(&configZone, "zone", "eur", "Override the default Zone the instance sits in")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
-
+	errorCount = 0
 	//-- Parse Flags
 	flag.Parse()
 
@@ -197,6 +203,10 @@ func main() {
 	logout()
 
 	//-- End output
+	if errorCount > 0 {
+		logger(4, "Error Count: "+fmt.Sprintf("%d", errorCount), true)
+		logger(4, "Check Log File for Details", true)
+	}
 	logger(1, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
 	logger(1, "Updated Skipped: "+fmt.Sprintf("%d", counters.updatedSkipped), true)
 	logger(1, "Created: "+fmt.Sprintf("%d", counters.created), true)
@@ -228,6 +238,7 @@ func loadConfig() ldapImportConfStruct {
 	decoder := json.NewDecoder(file)
 	//-- New Var based on ldapImportConf
 	eldapConf := ldapImportConfStruct{}
+
 	//-- Decode JSON
 	err := decoder.Decode(&eldapConf)
 	//-- Error Checking
@@ -281,11 +292,15 @@ func queryLdap() bool {
 		logger(3, "Bind Error: "+fmt.Sprintf("%v", bindErr), true)
 		return false
 	}
-
+	logger(1, "LDAP Search Query \n"+fmt.Sprintf("%+v", ldapImportConf.LDAPConf)+" ----", false)
 	//-- Build Search Request
 	searchRequest := ldap.NewSearchRequest(
 		ldapImportConf.LDAPConf.DSN,
-		1, 1, 0, 0, false,
+		ldapImportConf.LDAPConf.Scope,
+		ldapImportConf.LDAPConf.DerefAliases,
+		ldapImportConf.LDAPConf.SizeLimit,
+		ldapImportConf.LDAPConf.TimeLimit,
+		ldapImportConf.LDAPConf.TypesOnly,
 		ldapImportConf.LDAPConf.Filter,
 		ldapImportConf.LDAPAttirubutes,
 		nil)
@@ -300,7 +315,7 @@ func queryLdap() bool {
 	logger(1, "LDAP Results: "+fmt.Sprintf("%d", len(results.Entries)), true)
 	//-- Catch zero results
 	if len(results.Entries) == 0 {
-		logger(4, " [LDAP] [SEARCH] No Users Found ", true)
+		logger(4, "[LDAP] [SEARCH] No Users Found ", true)
 		return false
 	}
 	ldapUsers = results.Entries
@@ -457,7 +472,9 @@ func updateUser(u *ldap.Entry) bool {
 	}
 
 	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
+	if getFeildValue(u, "UserID") != "" {
+		espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
+	}
 
 	if getFeildValue(u, "UserType") != "" && ldapImportConf.UpdateUserType {
 		espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
@@ -522,7 +539,9 @@ func updateUser(u *ldap.Entry) bool {
 			return false
 		}
 		if xmlRespon.MethodResult != "ok" && xmlRespon.State.ErrorRet != "There are no values to update" {
-			logger(3, "Unable to Update User: "+xmlRespon.State.ErrorRet, true)
+			logger(3, "Unable to Update User: "+xmlRespon.State.ErrorRet, false)
+			espLogger("Unable to Update User: "+xmlRespon.State.ErrorRet, "error")
+			errorCount++
 
 		} else {
 			if xmlRespon.State.ErrorRet != "There are no values to update" {
@@ -557,8 +576,12 @@ func createUser(u *ldap.Entry) bool {
 	}
 
 	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
-	espXmlmc.SetParam("name", getFeildValue(u, "Name"))
+	if getFeildValue(u, "UserID") != "" {
+		espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
+	}
+	if getFeildValue(u, "Name") != "" {
+		espXmlmc.SetParam("name", getFeildValue(u, "Name"))
+	}
 	var password = getFeildValue(u, "Password")
 	//-- If Password is Blank Generate Password
 	if password == "" {
@@ -566,7 +589,9 @@ func createUser(u *ldap.Entry) bool {
 		logger(1, "Auto Generated Password for: "+getFeildValue(u, "UserID")+" - "+password, false)
 	}
 	espXmlmc.SetParam("password", base64.StdEncoding.EncodeToString([]byte(password)))
-	espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
+	if getFeildValue(u, "UserType") != "" {
+		espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
+	}
 	if getFeildValue(u, "FirstName") != "" {
 		espXmlmc.SetParam("firstName", getFeildValue(u, "FirstName"))
 	}
@@ -624,7 +649,9 @@ func createUser(u *ldap.Entry) bool {
 			return false
 		}
 		if xmlRespon.MethodResult != "ok" {
-			logger(3, "Unable to Update User: "+xmlRespon.State.ErrorRet, true)
+			logger(3, "Unable to Create User: "+xmlRespon.State.ErrorRet, false)
+			espLogger("Unable to Create User: "+xmlRespon.State.ErrorRet, "error")
+			errorCount++
 		} else {
 			if len(ldapImportConf.Roles) > 0 {
 				userAddRoles(getFeildValue(u, "UserID"))
@@ -661,6 +688,7 @@ func userAddRoles(userID string) bool {
 	}
 	if xmlRespon.MethodResult != "ok" {
 		logger(3, "Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, true)
+		espLogger("Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, "error")
 		return false
 	}
 	logger(1, "Roles Added Successfully", false)
@@ -685,7 +713,14 @@ func getFeildValue(u *ldap.Entry, s string) string {
 
 	//-- Loop Matches
 	for _, v := range result {
-		LDAPMapping = strings.Replace(LDAPMapping, v, u.GetAttributeValue(v[1:len(v)-1]), 1)
+		//-- Grab LDAP Mapping value from result set
+		var LDAPAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
+		//-- Check for Invalid Value
+		if LDAPAttributeValue == "" {
+			logger(3, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
+			return LDAPAttributeValue
+		}
+		LDAPMapping = strings.Replace(LDAPMapping, v, LDAPAttributeValue, 1)
 	}
 
 	//-- Return Value
@@ -737,6 +772,8 @@ func logger(t int, s string, outputtoCLI bool) {
 		errorLogPrefix = "[DEBUG] "
 	case 2:
 		errorLogPrefix = "[MESSAGE] "
+	case 3:
+		errorLogPrefix = "[ERROR] "
 	case 4:
 		errorLogPrefix = "[ERROR] "
 	}
@@ -749,6 +786,7 @@ func logger(t int, s string, outputtoCLI bool) {
 //-- XMLMC LogOut
 func logout() {
 	//-- End output
+	espLogger("Errors: "+fmt.Sprintf("%d", errorCount), "error")
 	espLogger("Updated: "+fmt.Sprintf("%d", counters.updated), "debug")
 	espLogger("Updated Skipped: "+fmt.Sprintf("%d", counters.updatedSkipped), "debug")
 	espLogger("Created: "+fmt.Sprintf("%d", counters.created), "debug")

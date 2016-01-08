@@ -1,3 +1,30 @@
+## 1.5.1 (January X, 2016)
+
+Features:
+
+- CH00138411 - Expose further LDAP Search Configuration options to the Configuration File
+- LDAP Search Query is now saved to the Log file
+- Errors Creating / Updating Users as well as Assigning Roles are returned to the Hornbill Log File for easier Diagnostics
+
+Bugfixes:
+
+- Prevent "<invalid Value>" from being used as a value when an LDAP Attribute cannot be found and instead a Error in the log is written.
+- Errors while create / Updating users are no loner output to the console breaking the progress bar and instead an error count is output at
+the end of the process and will refer the user to the Log File.
+Notes:
+
+- The following should be added to the "LDAPConf" section of the configuration file for searching to operate as previous.
+
+"Scope": 1,
+"DerefAliases": 1,
+
+## 1.5.0 (December 18, 2015)
+
+Bugfixes:
+
+- UserID was incorrectly referenced as UserId after some code refactoring
+- UpdateUserType was missing from the default configuration
+
 ## 1.4.1 (December 14, 2015)
 
 Features:

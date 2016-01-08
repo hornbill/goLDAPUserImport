@@ -90,6 +90,11 @@ Example JSON File:
 * "UserName" LDAP User Name
 * "Password" Password for Above User Name
 * "Port" LDAP Port
+* "Scope" Search Scope (ScopeBaseObject = 0, ScopeSingleLevel  = 1, ScopeWholeSubtree = 2) Default is 1
+* "DerefAliases" dereference Aliases (NeverDerefAliases = 0, DerefInSearching = 1, DerefFindingBaseObj = 2, DerefAlways = 3) Default is 1
+* "SizeLimit"  Size Limit for query 0 will disable
+* "TimeLimit" Time Limit for query 0 will disable
+* "TypesOnly" Return Attribute Descriptions
 * "Filter" Search Filter I.e `(objectClass=user)`
 * "DSN"  Search DSN I.e `DC=test,DC=hornbill,DC=com`
 
