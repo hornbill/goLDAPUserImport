@@ -1,4 +1,4 @@
-## 1.5.1 (January X, 2016)
+## 1.5.1 (January 8, 2016)
 
 Features:
 
