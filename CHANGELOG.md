@@ -1,3 +1,9 @@
+## 1.5.2 (Feburary 8, 2016)
+
+Bugfixes:
+
+- Add additional logging to the login script.
+
 ## 1.5.1 (January 8, 2016)
 
 Features:

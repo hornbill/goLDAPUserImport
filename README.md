@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [https://github.com/hornbill/goLDAPUserImport/releases/download/v1.5.1/ldap_user_import_win_v1_5_1.zip  ldap_user_import_win_v1_5_1.zip]
+* Download the [https://github.com/hornbill/goLDAPUserImport/releases/download/v1.5.2/ldap_user_import_win_v1_5_2.zip  ldap_user_import_win_v1_5_2.zip]
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator

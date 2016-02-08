@@ -23,7 +23,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.5.1"
+const version = "1.5.2"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -259,7 +259,8 @@ func login() bool {
 	XMLLogin, xmlmcErr := espXmlmc.Invoke("session", "userLogon")
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
-		log.Fatal("here")
+		logger(4, "Unable to Login - Server Error: "+fmt.Sprintf("%v", xmlmcErr), true)
+		return false
 	}
 	err := xml.Unmarshal([]byte(XMLLogin), &xmlRespon)
 	if err != nil {
@@ -270,6 +271,7 @@ func login() bool {
 		logger(4, "Unable to Login: "+xmlRespon.State.ErrorRet, true)
 		return false
 	}
+	logger(1, "Successfully Logged into Hornbill", true)
 	espLogger("---- XMLMC LDAP User Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
 	espLogger("Logged In As: "+ldapImportConf.UserName, "debug")
 	return true
