@@ -762,7 +762,7 @@ func logger(t int, s string, outputtoCLI bool) {
 	//-- Log File
 	logFileName := logPath + "/LDAP_User_Import_" + timeNow + ".log"
 	red := color.New(color.FgRed).PrintfFunc()
-	info := color.New().SprintFunc()
+
 	//-- If Folder Does Not Exist then create it
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		err := os.Mkdir(logPath, 0777)
@@ -798,7 +798,7 @@ func logger(t int, s string, outputtoCLI bool) {
 		if t == 3 || t == 4{
 			red(errorLogPrefix+s+"\n")
 		}else{
-			info(errorLogPrefix+s+"\n")
+			fmt.Printf(errorLogPrefix+s+"\n")
 		}
 
 	}
