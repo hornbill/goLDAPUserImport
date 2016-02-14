@@ -19,6 +19,8 @@ import (
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap" //-- Hornbill Clone of "github.com/mavricknz/ldap"
 	"github.com/hornbill/pb"   //--Hornbil Clone of "github.com/cheggaaa/pb"
+	"github.com/tcnksm/go-latest" //-- For Version checking
+	"github.com/fatih/color" //-- CLI Colour
 )
 
 //----- Constants -----
@@ -179,6 +181,9 @@ func main() {
 	logger(1, "Flag - Zone "+fmt.Sprintf("%s", configZone), true)
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	//--
+	//-- Check for latest
+	checkVersion()
+	//--
 	//-- Load Configuration File Into Struct
 	ldapImportConf = loadConfig()
 
@@ -217,7 +222,18 @@ func main() {
 	logger(1, "Time Taken: "+fmt.Sprintf("%v", endTime), true)
 	logger(1, "---- XMLMC LDAP Import Complete ---- ", true)
 }
+//-- Check Latest
+func checkVersion(){
+	githubTag := &latest.GithubTag{
+	    Owner: "hornbill",
+	    Repository: "goLDAPUserImport",
+	}
 
+	res, _ := latest.Check(githubTag, version)
+	if res.Outdated {
+	    logger(4,fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current),true)
+	}
+}
 //-- Function to Load Configruation File
 func loadConfig() ldapImportConfStruct {
 	//-- Check Config File File Exists
@@ -745,7 +761,8 @@ func logger(t int, s string, outputtoCLI bool) {
 	logPath := cwd + "/log"
 	//-- Log File
 	logFileName := logPath + "/LDAP_User_Import_" + timeNow + ".log"
-
+	red := color.New(color.FgRed).PrintfFunc()
+	info := color.New().SprintFunc()
 	//-- If Folder Does Not Exist then create it
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		err := os.Mkdir(logPath, 0777)
@@ -768,17 +785,22 @@ func logger(t int, s string, outputtoCLI bool) {
 	var errorLogPrefix = ""
 	//-- Create Log Entry
 	switch t {
-	case 1:
-		errorLogPrefix = "[DEBUG] "
-	case 2:
-		errorLogPrefix = "[MESSAGE] "
-	case 3:
-		errorLogPrefix = "[ERROR] "
-	case 4:
-		errorLogPrefix = "[ERROR] "
+		case 1:
+			errorLogPrefix = "[DEBUG] "
+		case 2:
+			errorLogPrefix = "[MESSAGE] "
+		case 3:
+			errorLogPrefix = "[ERROR] "
+		case 4:
+			errorLogPrefix = "[ERROR] "
 	}
 	if outputtoCLI {
-		fmt.Printf("%v \n", errorLogPrefix+s)
+		if t == 3 || t == 4{
+			red(errorLogPrefix+s+"\n")
+		}else{
+			info(errorLogPrefix+s+"\n")
+		}
+
 	}
 	log.Println(errorLogPrefix + s)
 }
