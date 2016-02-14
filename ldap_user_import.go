@@ -188,7 +188,11 @@ func main() {
 	ldapImportConf = loadConfig()
 
 	//-- Set Instance ID
-	setInstance(configZone, ldapImportConf.InstanceID)
+	var boolSetInstance = setInstance(configZone, ldapImportConf.InstanceID)
+	if boolSetInstance != true {
+		return
+	}
+
 	//-- Generate Instance XMLMC Endpoint
 	ldapImportConf.URL = getInstanceURL()
 
@@ -267,6 +271,15 @@ func loadConfig() ldapImportConfStruct {
 
 //-- XMLMC Login
 func login() bool {
+	//-- Check for username and password
+	if ldapImportConf.UserName == ""{
+		logger(4, "UserName Must be Specified in the Configuration File",true);
+		return false;
+	}
+	if ldapImportConf.Password == ""{
+		logger(4, "Password Must be Specified in the Configuration File",true);
+		return false;
+	}
 	logger(1, "Logging Into: "+ldapImportConf.URL, true)
 	logger(1, "UserName: "+ldapImportConf.UserName, true)
 	espXmlmc = apiLib.NewXmlmcInstance(ldapImportConf.URL)
@@ -821,12 +834,17 @@ func logout() {
 }
 
 // Set Instance Id
-func setInstance(strZone string, instanceID string) {
+func setInstance(strZone string, instanceID string) bool{
 	//-- Set Zone
 	setZone(strZone)
+	//-- Check for blank instance
+	if instanceID == ""{
+		logger(4, "InstanceId Must be Specified in the Configuration File", true)
+		return false
+	}
 	//-- Set Instance
 	xmlmcInstanceConfig.instance = instanceID
-	return
+	return true
 }
 
 // Set Instance Zone to Overide Live
