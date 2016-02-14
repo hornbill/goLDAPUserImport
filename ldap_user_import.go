@@ -235,7 +235,7 @@ func checkVersion(){
 
 	res, _ := latest.Check(githubTag, version)
 	if res.Outdated {
-	    logger(4,fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current),true)
+	    logger(3,fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current),true)
 	}
 }
 //-- Function to Load Configruation File
@@ -310,7 +310,7 @@ func queryLdap() bool {
 	l := ldap.NewLDAPConnection(ldapImportConf.LDAPConf.Server, ldapImportConf.LDAPConf.Port)
 	conErr := l.Connect()
 	if conErr != nil {
-		logger(3, "Connecting Error: "+fmt.Sprintf("%v", conErr), true)
+		logger(4, "Connecting Error: "+fmt.Sprintf("%v", conErr), true)
 		return false
 	}
 	defer l.Close()
@@ -318,7 +318,7 @@ func queryLdap() bool {
 	//-- Bind
 	bindErr := l.Bind(ldapImportConf.LDAPConf.UserName, ldapImportConf.LDAPConf.Password)
 	if bindErr != nil {
-		logger(3, "Bind Error: "+fmt.Sprintf("%v", bindErr), true)
+		logger(4, "Bind Error: "+fmt.Sprintf("%v", bindErr), true)
 		return false
 	}
 	logger(1, "LDAP Search Query \n"+fmt.Sprintf("%+v", ldapImportConf.LDAPConf)+" ----", false)
@@ -337,7 +337,7 @@ func queryLdap() bool {
 	//-- Search Request with 1000 limit pagaing
 	results, searchErr := l.SearchWithPaging(searchRequest, 1000)
 	if searchErr != nil {
-		logger(3, "Search Error: "+fmt.Sprintf("%v", searchErr), true)
+		logger(4, "Search Error: "+fmt.Sprintf("%v", searchErr), true)
 		return false
 	}
 
@@ -395,7 +395,7 @@ func checkUserOnInstance(userID string) bool {
 		return false
 	}
 	if xmlRespon.MethodResult != "ok" {
-		logger(3, "Unable to Search User: "+xmlRespon.State.ErrorRet, true)
+		logger(4, "Unable to Search User: "+xmlRespon.State.ErrorRet, true)
 		return false
 	}
 	return xmlRespon.Params.RecordExist
@@ -466,10 +466,10 @@ func searchSite(siteName string) (bool, int) {
 	}
 	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
 	if err != nil {
-		logger(3, "Unable to Search for Site: "+fmt.Sprintf("%v", err), true)
+		logger(4, "Unable to Search for Site: "+fmt.Sprintf("%v", err), true)
 	} else {
 		if xmlRespon.MethodResult != "ok" {
-			logger(3, "Unable to Search for Site: "+xmlRespon.State.ErrorRet, true)
+			logger(4, "Unable to Search for Site: "+xmlRespon.State.ErrorRet, true)
 		} else {
 			//-- Check Response
 			if xmlRespon.Params.RowData.Row.SiteName != "" {
@@ -568,7 +568,7 @@ func updateUser(u *ldap.Entry) bool {
 			return false
 		}
 		if xmlRespon.MethodResult != "ok" && xmlRespon.State.ErrorRet != "There are no values to update" {
-			logger(3, "Unable to Update User: "+xmlRespon.State.ErrorRet, false)
+			logger(4, "Unable to Update User: "+xmlRespon.State.ErrorRet, false)
 			espLogger("Unable to Update User: "+xmlRespon.State.ErrorRet, "error")
 			errorCount++
 
@@ -678,7 +678,7 @@ func createUser(u *ldap.Entry) bool {
 			return false
 		}
 		if xmlRespon.MethodResult != "ok" {
-			logger(3, "Unable to Create User: "+xmlRespon.State.ErrorRet, false)
+			logger(4, "Unable to Create User: "+xmlRespon.State.ErrorRet, false)
 			espLogger("Unable to Create User: "+xmlRespon.State.ErrorRet, "error")
 			errorCount++
 		} else {
@@ -716,7 +716,7 @@ func userAddRoles(userID string) bool {
 		return false
 	}
 	if xmlRespon.MethodResult != "ok" {
-		logger(3, "Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, true)
+		logger(4, "Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, true)
 		espLogger("Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, "error")
 		return false
 	}
@@ -746,7 +746,7 @@ func getFeildValue(u *ldap.Entry, s string) string {
 		var LDAPAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
 		//-- Check for Invalid Value
 		if LDAPAttributeValue == "" {
-			logger(3, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
+			logger(4, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
 			return LDAPAttributeValue
 		}
 		LDAPMapping = strings.Replace(LDAPMapping, v, LDAPAttributeValue, 1)
@@ -775,7 +775,7 @@ func logger(t int, s string, outputtoCLI bool) {
 	//-- Log File
 	logFileName := logPath + "/LDAP_User_Import_" + timeNow + ".log"
 	red := color.New(color.FgRed).PrintfFunc()
-
+	orange := color.New(color.FgCyan).PrintfFunc()
 	//-- If Folder Does Not Exist then create it
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		err := os.Mkdir(logPath, 0777)
@@ -803,12 +803,14 @@ func logger(t int, s string, outputtoCLI bool) {
 		case 2:
 			errorLogPrefix = "[MESSAGE] "
 		case 3:
-			errorLogPrefix = "[ERROR] "
+			errorLogPrefix = "[WARN] "
 		case 4:
 			errorLogPrefix = "[ERROR] "
 	}
 	if outputtoCLI {
-		if t == 3 || t == 4{
+		if t == 3{
+			orange(errorLogPrefix+s+"\n")
+		}else if t == 4{
 			red(errorLogPrefix+s+"\n")
 		}else{
 			fmt.Printf(errorLogPrefix+s+"\n")
