@@ -1,4 +1,4 @@
-## 1.5.3 (Feburary X , 2016)
+## 1.5.3 (Feburary 16 , 2016)
 
 Features:
 
@@ -6,6 +6,10 @@ Features:
 - Checks for mandatory values from the configuration file are now done before processing begins.
 - Check for latest version will now display in the console and log on startup of the process
 
+Bugfixes:
+
+- HTTP Client ignores environmental http proxy and https proxy settings
+- Better Error handling and XMLMC lib cannot connect to the API Endpoint
 
 ## 1.5.2 (Feburary 8, 2016)
 

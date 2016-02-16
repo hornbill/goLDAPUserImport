@@ -16,16 +16,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hornbill/goApiLib"
-	"github.com/hornbill/ldap" //-- Hornbill Clone of "github.com/mavricknz/ldap"
-	"github.com/hornbill/pb"   //--Hornbil Clone of "github.com/cheggaaa/pb"
-	"github.com/tcnksm/go-latest" //-- For Version checking
 	"github.com/fatih/color" //-- CLI Colour
+	"github.com/hornbill/goApiLib"
+	"github.com/hornbill/ldap"    //-- Hornbill Clone of "github.com/mavricknz/ldap"
+	"github.com/hornbill/pb"      //--Hornbil Clone of "github.com/cheggaaa/pb"
+	"github.com/tcnksm/go-latest" //-- For Version checking
 )
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.5.2"
+const version = "1.5.3"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -226,18 +226,24 @@ func main() {
 	logger(1, "Time Taken: "+fmt.Sprintf("%v", endTime), true)
 	logger(1, "---- XMLMC LDAP Import Complete ---- ", true)
 }
+
 //-- Check Latest
-func checkVersion(){
+func checkVersion() {
 	githubTag := &latest.GithubTag{
-	    Owner: "hornbill",
-	    Repository: "goLDAPUserImport",
+		Owner:      "hornbill",
+		Repository: "goLDAPUserImport",
 	}
 
-	res, _ := latest.Check(githubTag, version)
+	res, err := latest.Check(githubTag, version)
+	if err != nil {
+		logger(4, fmt.Sprintf("%s", err), true)
+		return
+	}
 	if res.Outdated {
-	    logger(3,fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current),true)
+		logger(3, fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current), true)
 	}
 }
+
 //-- Function to Load Configruation File
 func loadConfig() ldapImportConfStruct {
 	//-- Check Config File File Exists
@@ -272,13 +278,13 @@ func loadConfig() ldapImportConfStruct {
 //-- XMLMC Login
 func login() bool {
 	//-- Check for username and password
-	if ldapImportConf.UserName == ""{
-		logger(4, "UserName Must be Specified in the Configuration File",true);
-		return false;
+	if ldapImportConf.UserName == "" {
+		logger(4, "UserName Must be Specified in the Configuration File", true)
+		return false
 	}
-	if ldapImportConf.Password == ""{
-		logger(4, "Password Must be Specified in the Configuration File",true);
-		return false;
+	if ldapImportConf.Password == "" {
+		logger(4, "Password Must be Specified in the Configuration File", true)
+		return false
 	}
 	logger(1, "Logging Into: "+ldapImportConf.URL, true)
 	logger(1, "UserName: "+ldapImportConf.UserName, true)
@@ -800,22 +806,22 @@ func logger(t int, s string, outputtoCLI bool) {
 	var errorLogPrefix = ""
 	//-- Create Log Entry
 	switch t {
-		case 1:
-			errorLogPrefix = "[DEBUG] "
-		case 2:
-			errorLogPrefix = "[MESSAGE] "
-		case 3:
-			errorLogPrefix = "[WARN] "
-		case 4:
-			errorLogPrefix = "[ERROR] "
+	case 1:
+		errorLogPrefix = "[DEBUG] "
+	case 2:
+		errorLogPrefix = "[MESSAGE] "
+	case 3:
+		errorLogPrefix = "[WARN] "
+	case 4:
+		errorLogPrefix = "[ERROR] "
 	}
 	if outputtoCLI {
-		if t == 3{
-			orange(errorLogPrefix+s+"\n")
-		}else if t == 4{
-			red(errorLogPrefix+s+"\n")
-		}else{
-			fmt.Printf(errorLogPrefix+s+"\n")
+		if t == 3 {
+			orange(errorLogPrefix + s + "\n")
+		} else if t == 4 {
+			red(errorLogPrefix + s + "\n")
+		} else {
+			fmt.Printf(errorLogPrefix + s + "\n")
 		}
 
 	}
@@ -838,11 +844,11 @@ func logout() {
 }
 
 // Set Instance Id
-func setInstance(strZone string, instanceID string) bool{
+func setInstance(strZone string, instanceID string) bool {
 	//-- Set Zone
 	setZone(strZone)
 	//-- Check for blank instance
-	if instanceID == ""{
+	if instanceID == "" {
 		logger(4, "InstanceId Must be Specified in the Configuration File", true)
 		return false
 	}
