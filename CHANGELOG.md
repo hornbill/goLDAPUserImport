@@ -1,3 +1,12 @@
+## 1.5.3 (Feburary X , 2016)
+
+Features:
+
+- Errors are now displayed in red in the console.
+- Checks for mandatory values from the configuration file are now done before processing begins.
+- Check for latest version will now display in the console and log on startup of the process
+
+
 ## 1.5.2 (Feburary 8, 2016)
 
 Bugfixes:
