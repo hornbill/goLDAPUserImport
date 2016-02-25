@@ -1,3 +1,10 @@
+## 1.6.0 (Feburary 25 , 2016)
+
+Features:
+
+- GoLang upgraded to 1.6
+- Added support for SSL/TLS connections to LDAP server
+
 ## 1.5.3 (Feburary 16 , 2016)
 
 Features:

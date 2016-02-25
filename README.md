@@ -38,6 +38,8 @@ Example JSON File:
         "UserName": "",
         "Password": "",
         "Port": 389,
+        "ConnectionType": "",
+        "InsecureSkipVerify": false,
         "Scope": 1,
 		"DerefAliases": 1,
         "SizeLimit": 0,
@@ -94,7 +96,9 @@ Example JSON File:
 * "Server" LDAP Server Address
 * "UserName" LDAP User Name
 * "Password" Password for Above User Name
-* "Port" LDAP Port
+* "Port" LDAP Port (389 for normal connections is default, 636 for SSL / TLS connection)
+* "ConnectionType" Type of HTTP connection to use when communicating with the LDAP Server ("" = Normal HTTP, "SSL" = SSL Connection, "TLS" = TLS Connection)
+* "InsecureSkipVerify" Used with SSL or TLS connection types will allow the verification of SSL Certifications to be disabled
 * "Scope" Search Scope (ScopeBaseObject = 0, ScopeSingleLevel  = 1, ScopeWholeSubtree = 2) Default is 1
 * "DerefAliases" dereference Aliases (NeverDerefAliases = 0, DerefInSearching = 1, DerefFindingBaseObj = 2, DerefAlways = 3) Default is 1
 * "SizeLimit"  Size Limit for query 0 will disable
