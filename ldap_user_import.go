@@ -26,7 +26,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.6.0"
+const version = "1.6.1"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -400,16 +400,16 @@ func processUsers() {
 		logger(1, "LDAP User Record \n"+fmt.Sprintf("%+v", ldapUser)+" ----", false)
 		bar.Increment()
 		var boolUpdate = false
-		logger(1, "LDAP User: "+ldapUser.GetAttributeValue("sAMAccountName"), false)
+		logger(1, "LDAP User: "+getFeildValue(ldapUser, "UserID"), false)
 		//-- For Each LDAP Users Check if they already Exist
-		var userID = strings.ToLower(ldapUser.GetAttributeValue("sAMAccountName"))
+		var userID = strings.ToLower(getFeildValue(ldapUser, "UserID"))
 		boolUpdate = checkUserOnInstance(userID)
 		//-- Update or Create User
 		if boolUpdate {
-			logger(1, "Update User: "+ldapUser.GetAttributeValue("sAMAccountName"), false)
+			logger(1, "Update User: "+getFeildValue(ldapUser, "UserID"), false)
 			updateUser(ldapUser)
 		} else {
-			logger(1, "Create User: "+ldapUser.GetAttributeValue("sAMAccountName"), false)
+			logger(1, "Create User: "+getFeildValue(ldapUser, "UserID"), false)
 			if ldapUser != nil {
 				createUser(ldapUser)
 			}

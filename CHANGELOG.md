@@ -1,3 +1,9 @@
+## 1.6.1 (March 2 , 2016)
+
+Bugfixes:
+
+- Fix SAMAccountName was hardcoded as the userId when checking if a user existed in hornbill
+
 ## 1.6.0 (Feburary 25 , 2016)
 
 Features:
