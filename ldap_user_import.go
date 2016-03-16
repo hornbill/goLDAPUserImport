@@ -26,7 +26,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.6.1"
+const version = "1.6.2"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -108,6 +108,7 @@ type ldapConfStruct struct {
 	TypesOnly          bool
 	Filter             string
 	DSN                string
+	Debug              bool
 }
 type siteLookupStruct struct {
 	Enabled   bool
@@ -321,23 +322,26 @@ func connectLDAP() *ldap.LDAPConnection {
 		InsecureSkipVerify: ldapImportConf.LDAPConf.InsecureSkipVerify,
 	}
 	//-- Based on Connection Type Normal | TLS | SSL
-	logger(1, "Connecting Server: "+ldapImportConf.LDAPConf.Server+" Port: "+fmt.Sprintf("%d", ldapImportConf.LDAPConf.Port)+" Type: "+ldapImportConf.LDAPConf.ConnectionType+" Skip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAPConf.InsecureSkipVerify), true)
+	logger(1, "Connecting... \nServer: "+ldapImportConf.LDAPConf.Server+"\nPort: "+fmt.Sprintf("%d", ldapImportConf.LDAPConf.Port)+"\nType: "+ldapImportConf.LDAPConf.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAPConf.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAPConf.Debug), true)
 	t := ldapImportConf.LDAPConf.ConnectionType
 	switch t {
 	case "":
 		//-- Normal
 		logger(1, "Creating LDAP Connection", false)
 		l := ldap.NewLDAPConnection(ldapImportConf.LDAPConf.Server, ldapImportConf.LDAPConf.Port)
+		l.Debug = ldapImportConf.LDAPConf.Debug
 		return l
 	case "TLS":
 		//-- TLS
 		logger(1, "Creating LDAP Connection (TLS)", false)
 		l := ldap.NewLDAPTLSConnection(ldapImportConf.LDAPConf.Server, ldapImportConf.LDAPConf.Port, TLSconfig)
+		l.Debug = ldapImportConf.LDAPConf.Debug
 		return l
 	case "SSL":
 		//-- SSL
 		logger(1, "Creating LDAP Connection (SSL)", false)
 		l := ldap.NewLDAPSSLConnection(ldapImportConf.LDAPConf.Server, ldapImportConf.LDAPConf.Port, TLSconfig)
+		l.Debug = ldapImportConf.LDAPConf.Debug
 		return l
 	}
 

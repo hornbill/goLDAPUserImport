@@ -16,7 +16,8 @@
 		"TimeLimit": 0,
 		"TypesOnly": false,
         "Filter": "(objectClass=user)",
-        "DSN": ""
+        "DSN": "",
+        "Debug":false
     },
     "LDAPMapping":{
         "UserId":"[sAMAccountName]",
