@@ -1,3 +1,9 @@
+## 1.6.2 (March 16 , 2016)
+
+Features:
+
+- ADD Debug LDAP Connection to aid with troubleshooting. 
+
 ## 1.6.1 (March 2 , 2016)
 
 Bugfixes:
