@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [https://github.com/hornbill/goLDAPUserImport/releases/download/v1.5.2/ldap_user_import_win_v1_6_1.zip  ldap_user_import_win_v1_56_1.zip]
+* Download the [https://github.com/hornbill/goLDAPUserImport/releases/download/v1.6.2/ldap_user_import_win_v1_6_2.zip  ldap_user_import_win_v1_6_2.zip]
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -46,7 +46,8 @@ Example JSON File:
 		"TimeLimit": 0,
 		"TypesOnly": false,
         "Filter": "(objectClass=user)",
-        "DSN": ""
+        "DSN": "",
+        "Debug": false
     },
     "LDAPMapping":{
         "UserId":"[sAMAccountName]",
@@ -106,6 +107,7 @@ Example JSON File:
 * "TypesOnly" Return Attribute Descriptions
 * "Filter" Search Filter I.e `(objectClass=user)`
 * "DSN"  Search DSN I.e `DC=test,DC=hornbill,DC=com`
+* "Debug"  Enable LDAP Connection Debugging, should only ever be enabled to troubleshoot connection issues.
 
 #### LDAPMapping
 * Any value wrapped with [] will be treaded ad an LDAP field
