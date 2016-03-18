@@ -1,5 +1,5 @@
 #!/bin/bash
-#
+# Orignal https://gist.github.com/jmervine/7d3f455e923cf2ac3c9e
 # usage: ./golang-crosscompile-build.bash
 
 target=ldap_user_import.go
