@@ -1,8 +1,8 @@
-## 1.7.0 (March 16 , 2016)
+## 1.7.0 (March 18 , 2016)
 
 Features:
 
-- ADD Organisation Lookup when Creating / Updating Users. 
+- ADD Organisation Lookup when Creating / Updating Users.
 
 ## 1.6.2 (March 16 , 2016)
 
