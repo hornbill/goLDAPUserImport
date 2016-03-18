@@ -26,7 +26,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.6.2"
+const version = "1.7.0"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -34,10 +34,13 @@ var xmlmcInstanceConfig xmlmcConfig
 var ldapUsers []*ldap.Entry
 var xmlmcUsers []userListItemStruct
 var sites []siteListStruct
+var groups []groupListStruct
+
 var counters counterTypeStruct
 var configFileName string
 var configZone string
 var configDryRun bool
+var configVersion bool
 var timeNow string
 var startTime time.Time
 var endTime time.Duration
@@ -49,6 +52,11 @@ type siteListStruct struct {
 	SiteName string
 	SiteID   int
 }
+type groupListStruct struct {
+	GroupName string
+	GroupID   string
+}
+
 type xmlmcConfig struct {
 	instance string
 	zone     string
@@ -72,6 +80,7 @@ type ldapImportConfStruct struct {
 	LDAPAttirubutes []string
 	Roles           []string
 	SiteLookup      siteLookupStruct
+	OrgLookup       orgLookupStruct
 }
 type ldapMappingStruct struct {
 	UserID         string
@@ -114,6 +123,14 @@ type siteLookupStruct struct {
 	Enabled   bool
 	Attribute string
 }
+type orgLookupStruct struct {
+	Enabled     bool
+	Attribute   string
+	Type        int
+	Membership  string
+	TasksView   bool
+	TasksAction bool
+}
 type xmlmcResponse struct {
 	MethodResult string       `xml:"status,attr"`
 	Params       paramsStruct `xml:"params"`
@@ -128,6 +145,10 @@ type xmlmcUserListResponse struct {
 	MethodResult string               `xml:"status,attr"`
 	Params       paramsUserListStruct `xml:"params"`
 	State        stateStruct          `xml:"state"`
+}
+type xmlmcuserSetGroupOptionsResponse struct {
+	MethodResult string      `xml:"status,attr"`
+	State        stateStruct `xml:"state"`
 }
 type xmlmcSiteListResponse struct {
 	MethodResult string               `xml:"status,attr"`
@@ -144,6 +165,25 @@ type siteObjectStruct struct {
 	SiteID      int    `xml:"h_id"`
 	SiteName    string `xml:"h_site_name"`
 	SiteCountry string `xml:"h_country"`
+}
+
+type xmlmcGroupListResponse struct {
+	MethodResult string                `xml:"status,attr"`
+	Params       paramsGroupListStruct `xml:"params"`
+	State        stateStruct           `xml:"state"`
+}
+
+type paramsGroupListStruct struct {
+	RowData paramsGroupRowDataListStruct `xml:"rowData"`
+}
+
+type paramsGroupRowDataListStruct struct {
+	Row groupObjectStruct `xml:"row"`
+}
+
+type groupObjectStruct struct {
+	GroupID   string `xml:"h_id"`
+	GroupName string `xml:"h_name"`
 }
 type stateStruct struct {
 	Code     string `xml:"code"`
@@ -175,10 +215,15 @@ func main() {
 	flag.StringVar(&configFileName, "file", "conf.json", "Name of Configuration File To Load")
 	flag.StringVar(&configZone, "zone", "eur", "Override the default Zone the instance sits in")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
+	flag.BoolVar(&configVersion, "version", false, "Output Version")
+
 	errorCount = 0
 	//-- Parse Flags
 	flag.Parse()
-
+	if configVersion {
+		fmt.Printf("%v \n", version)
+		return
+	}
 	//-- Output
 	logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
 	logger(1, "Flag - Config File "+fmt.Sprintf("%s", configFileName), true)
@@ -617,6 +662,11 @@ func updateUser(u *ldap.Entry) bool {
 			errorCount++
 
 		} else {
+
+			if ldapImportConf.OrgLookup.Enabled {
+				userAddGroup(u)
+			}
+
 			if xmlRespon.State.ErrorRet != "There are no values to update" {
 				logger(1, "No Changes", false)
 				counters.updated++
@@ -726,6 +776,9 @@ func createUser(u *ldap.Entry) bool {
 			espLogger("Unable to Create User: "+xmlRespon.State.ErrorRet, "error")
 			errorCount++
 		} else {
+			if ldapImportConf.OrgLookup.Enabled {
+				userAddGroup(u)
+			}
 			if len(ldapImportConf.Roles) > 0 {
 				userAddRoles(getFeildValue(u, "UserID"))
 			}
@@ -741,6 +794,131 @@ func createUser(u *ldap.Entry) bool {
 	}
 
 	return true
+}
+
+//-- Deal with adding a user to a group
+func userAddGroup(u *ldap.Entry) bool {
+
+	//-- Check if Site Attribute is set
+	if ldapImportConf.OrgLookup.Attribute == "" {
+		logger(4, "Org Lookup is Enabled but Attribute is not Defined", true)
+		return false
+	}
+	//-- Get Value of Attribute
+	logger(1, "LDAP Attribute "+ldapImportConf.OrgLookup.Attribute, false)
+	orgAttributeName := processComplexFeild(u, ldapImportConf.OrgLookup.Attribute)
+	logger(1, "Looking Up Org "+orgAttributeName, false)
+	orgIsInCache, orgId := groupInCache(orgAttributeName)
+	//-- Check if we have Chached the site already
+	if orgIsInCache {
+		logger(1, "Found Org in Cache "+orgId, false)
+		userAddGroupAsoc(u, orgId)
+		return true
+	} else {
+		orgIsOnInstance, orgId := searchOrg(orgAttributeName)
+
+		if orgIsOnInstance {
+			logger(1, "Org Lookup found Id "+orgId, false)
+			userAddGroupAsoc(u, orgId)
+			return true
+		}
+	}
+	logger(1, "Unable to Find Organsiation "+orgAttributeName, false)
+	return false
+}
+
+func userAddGroupAsoc(u *ldap.Entry, orgId string) {
+	userId := getFeildValue(u, "UserID")
+	espXmlmc.SetParam("userId", userId)
+	espXmlmc.SetParam("groupId", orgId)
+	espXmlmc.SetParam("memberRole", ldapImportConf.OrgLookup.Membership)
+	espXmlmc.OpenElement("options")
+	espXmlmc.SetParam("tasksView", strconv.FormatBool(ldapImportConf.OrgLookup.TasksView))
+	espXmlmc.SetParam("tasksAction", strconv.FormatBool(ldapImportConf.OrgLookup.TasksAction))
+	espXmlmc.CloseElement("options")
+
+	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("admin", "userAddGroup")
+	var xmlRespon xmlmcuserSetGroupOptionsResponse
+	if xmlmcErr != nil {
+		log.Fatal(xmlmcErr)
+	}
+	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
+	if err != nil {
+		logger(4, "Unable to Associate User To Group: "+fmt.Sprintf("%v", err), true)
+	} else {
+		if xmlRespon.MethodResult != "ok" {
+			if xmlRespon.State.ErrorRet != "The specified user ["+userId+"] already belongs to ["+orgId+"] group" {
+				logger(4, "Unable to Associate User To Organsiation: "+xmlRespon.State.ErrorRet, true)
+			} else {
+				logger(1, "User: "+userId+" Already Added to Organsiation: "+orgId, false)
+			}
+
+		} else {
+			logger(1, "User: "+userId+" Added to Organsiation: "+orgId, false)
+		}
+	}
+
+}
+
+//-- Function to Check if in Cache
+func groupInCache(groupName string) (bool, string) {
+	boolReturn := false
+	stringReturn := ""
+	//-- Check if in Cache
+	for _, group := range groups {
+		if group.GroupName == groupName {
+			boolReturn = true
+			stringReturn = group.GroupID
+		}
+	}
+
+	return boolReturn, stringReturn
+}
+
+//-- Function to Check if site is on the instance
+func searchOrg(orgName string) (bool, string) {
+	boolReturn := false
+	strReturn := ""
+	//-- ESP Query for site
+	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
+	if orgName == "" {
+		return boolReturn, strReturn
+	}
+	espXmlmc.SetParam("application", "com.hornbill.core")
+	espXmlmc.SetParam("queryName", "GetGroupByName")
+	espXmlmc.OpenElement("queryParams")
+	espXmlmc.SetParam("h_name", orgName)
+	espXmlmc.SetParam("h_type", strconv.Itoa(ldapImportConf.OrgLookup.Type))
+	espXmlmc.CloseElement("queryParams")
+
+	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "queryExec")
+	var xmlRespon xmlmcGroupListResponse
+	if xmlmcErr != nil {
+		log.Fatal(xmlmcErr)
+	}
+	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
+	if err != nil {
+		logger(4, "Unable to Search for Group: "+fmt.Sprintf("%v", err), true)
+	} else {
+		if xmlRespon.MethodResult != "ok" {
+			logger(4, "Unable to Search for Group: "+xmlRespon.State.ErrorRet, true)
+		} else {
+			//-- Check Response
+			if xmlRespon.Params.RowData.Row.GroupID != "" {
+				strReturn = xmlRespon.Params.RowData.Row.GroupID
+				boolReturn = true
+				//-- Add Group to Cache
+				var newgroupForCache groupListStruct
+				newgroupForCache.GroupID = strReturn
+				newgroupForCache.GroupName = orgName
+				name := []groupListStruct{newgroupForCache}
+				groups = append(groups, name...)
+
+			}
+		}
+	}
+
+	return boolReturn, strReturn
 }
 
 func userAddRoles(userID string) bool {
@@ -775,14 +953,16 @@ func getFeildValue(u *ldap.Entry, s string) string {
 	f := reflect.Indirect(r).FieldByName(s)
 	//-- Get Mapped Value
 	var LDAPMapping = f.String()
-
+	return processComplexFeild(u, LDAPMapping)
+}
+func processComplexFeild(u *ldap.Entry, s string) string {
 	//-- Match $variables from String
 	re1, err := regexp.Compile(`\[(.*?)\]`)
 	if err != nil {
 		fmt.Printf("[ERROR] %v", err)
 	}
 	//-- Get Array of all Matched max 100
-	result := re1.FindAllString(LDAPMapping, 100)
+	result := re1.FindAllString(s, 100)
 
 	//-- Loop Matches
 	for _, v := range result {
@@ -793,11 +973,11 @@ func getFeildValue(u *ldap.Entry, s string) string {
 			logger(4, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
 			return LDAPAttributeValue
 		}
-		LDAPMapping = strings.Replace(LDAPMapping, v, LDAPAttributeValue, 1)
+		s = strings.Replace(s, v, LDAPAttributeValue, 1)
 	}
 
 	//-- Return Value
-	return LDAPMapping
+	return s
 }
 
 //-- Generate Password String

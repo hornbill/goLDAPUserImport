@@ -46,7 +46,8 @@
         "sAMAccountName",
         "userPrincipalName",
         "givenName",
-        "description"
+        "description",
+        "department"
     ],
     "Roles":[
         "Basic User Role"
@@ -54,5 +55,13 @@
     "SiteLookup":{
         "Enabled": false,
         "Attribute":""
+    },
+    "OrgLookup":{
+        "Enabled":false,
+        "Attribute":"[department]",
+        "Type":2,
+        "Membership":"member",
+        "TasksView":false,
+        "TasksAction":false
     }
 }

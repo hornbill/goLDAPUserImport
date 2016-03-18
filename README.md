@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [ldap_user_import_win_v1_6_2.zip](https://github.com/hornbill/goLDAPUserImport/releases/download/v1.6.2/ldap_user_import_win_v1_6_2.zip)
+* Download the [ldap_user_import_win_v1_7_0.zip](https://github.com/hornbill/goLDAPUserImport/releases/download/v1.7.0/ldap_user_import_win_v1_7_0.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -84,6 +84,14 @@ Example JSON File:
     "SiteLookup":{
         "Enabled": false,
         "Attribute":""
+    },
+    "OrgLookup":{
+        "Enabled":false,
+        "Attribute":"[sAMAccountName]",
+        "Type":2,
+        "Membership":"member",
+        "TasksView":false,
+        "TasksAction":false
     }
 }
 ```
@@ -129,6 +137,16 @@ In Hornbill the Site field against a user is the numeric Id of the site, as the 
 The name of the Site in Hornbill must match the value of the Attribute in LDAP.
 * Enabled - Turns on or off the Lookup of Sites
 * Attribute - The LDAP Attribute to use for the name of the Site
+
+#### OrgLookup
+The name of the Organization in Hornbill must match the value of the Attribute in LDAP.
+
+* Enabled - Turns on or off the Lookup of Orgnisations
+* Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded ad an LDAP field
+* Type - The Organisation Type (0=general ,1=team ,2=department ,3=costcenter ,4=division ,5=company)
+* Membership - The Organisation Membership the users will be added with (member,teamLeader,manager)
+* TasksView - If set true, then the user can view tasks assigned to this group
+* TasksAction - If set true, then the user can action tasks assigned to this group.
 
 # execute
 Command Line Parameters

@@ -1,8 +1,14 @@
+## 1.7.0 (March 16 , 2016)
+
+Features:
+
+- ADD Organisation Lookup when Creating / Updating Users. 
+
 ## 1.6.2 (March 16 , 2016)
 
 Features:
 
-- ADD Debug LDAP Connection to aid with troubleshooting. 
+- ADD Debug LDAP Connection to aid with troubleshooting.
 
 ## 1.6.1 (March 2 , 2016)
 
