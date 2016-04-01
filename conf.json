@@ -1,6 +1,5 @@
 {
-    "UserName": "",
-    "Password": "",
+    "APIKey": "",
     "InstanceId": "",
     "UpdateUserType": false,
     "LDAPConf": {

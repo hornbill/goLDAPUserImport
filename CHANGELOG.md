@@ -1,3 +1,10 @@
+## 1.8.0 (March 18 , 2016)
+
+Features:
+
+- ADD Support for APIKeys instead of username and password for Authentication to Hornbill
+- ADD Concurrent workers, this should improve performance on large imports -workers input flag allows you to override the default of 10
+
 ## 1.7.0 (March 18 , 2016)
 
 Features:

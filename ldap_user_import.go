@@ -2,11 +2,13 @@ package main
 
 //----- Packages -----
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -26,7 +28,8 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "1.7.0"
+const version = "1.8.0"
+const constOK = "ok"
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -35,16 +38,15 @@ var ldapUsers []*ldap.Entry
 var xmlmcUsers []userListItemStruct
 var sites []siteListStruct
 var groups []groupListStruct
-
 var counters counterTypeStruct
 var configFileName string
 var configZone string
 var configDryRun bool
 var configVersion bool
+var configWorkers int
 var timeNow string
 var startTime time.Time
 var endTime time.Duration
-var espXmlmc *apiLib.XmlmcInstStruct
 var errorCount uint64
 
 //----- Structures -----
@@ -70,8 +72,7 @@ type counterTypeStruct struct {
 	createskipped  uint16
 }
 type ldapImportConfStruct struct {
-	UserName        string
-	Password        string
+	APIKey          string
 	InstanceID      string
 	UpdateUserType  bool
 	URL             string
@@ -216,6 +217,7 @@ func main() {
 	flag.StringVar(&configZone, "zone", "eur", "Override the default Zone the instance sits in")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
 	flag.BoolVar(&configVersion, "version", false, "Output Version")
+	flag.IntVar(&configWorkers, "workers", 10, "Number of Worker threads to use")
 
 	errorCount = 0
 	//-- Parse Flags
@@ -245,20 +247,15 @@ func main() {
 	//-- Generate Instance XMLMC Endpoint
 	ldapImportConf.URL = getInstanceURL()
 
-	//-- Login
-	var boolLogin = login()
-	if boolLogin != true {
-		logger(4, "Unable to Login ", true)
-		return
-	}
 	//-- Query LDAP
 	var boolLDAPUsers = queryLdap()
 
 	if boolLDAPUsers {
-		processUsers()
+		processUsersFromWorkers()
 	}
-	//-- Logout
-	logout()
+
+	//-- complete
+	complete()
 
 	//-- End output
 	if errorCount > 0 {
@@ -322,43 +319,6 @@ func loadConfig() ldapImportConfStruct {
 	}
 	//-- Return New Congfig
 	return eldapConf
-}
-
-//-- XMLMC Login
-func login() bool {
-	//-- Check for username and password
-	if ldapImportConf.UserName == "" {
-		logger(4, "UserName Must be Specified in the Configuration File", true)
-		return false
-	}
-	if ldapImportConf.Password == "" {
-		logger(4, "Password Must be Specified in the Configuration File", true)
-		return false
-	}
-	logger(1, "Logging Into: "+ldapImportConf.URL, true)
-	logger(1, "UserName: "+ldapImportConf.UserName, true)
-	espXmlmc = apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetParam("userId", ldapImportConf.UserName)
-	espXmlmc.SetParam("password", base64.StdEncoding.EncodeToString([]byte(ldapImportConf.Password)))
-	XMLLogin, xmlmcErr := espXmlmc.Invoke("session", "userLogon")
-	var xmlRespon xmlmcResponse
-	if xmlmcErr != nil {
-		logger(4, "Unable to Login - Server Error: "+fmt.Sprintf("%v", xmlmcErr), true)
-		return false
-	}
-	err := xml.Unmarshal([]byte(XMLLogin), &xmlRespon)
-	if err != nil {
-		logger(4, "Unable to Login: "+fmt.Sprintf("%v", err), true)
-		return false
-	}
-	if xmlRespon.MethodResult != "ok" {
-		logger(4, "Unable to Login: "+xmlRespon.State.ErrorRet, true)
-		return false
-	}
-	logger(1, "Successfully Logged into Hornbill", true)
-	espLogger("---- XMLMC LDAP User Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
-	espLogger("Logged In As: "+ldapImportConf.UserName, "debug")
-	return true
 }
 
 func connectLDAP() *ldap.LDAPConnection {
@@ -440,82 +400,127 @@ func queryLdap() bool {
 	return true
 }
 
-//-- Process Users
-func processUsers() {
+//-- Worker Pool Function
+func processUsersFromWorkers() {
 	bar := pb.StartNew(len(ldapUsers))
 	logger(1, "Processing Users", false)
-	//-- Loop Each LDAP USER
-	for _, ldapUser := range ldapUsers {
-		logger(1, "LDAP User Record \n"+fmt.Sprintf("%+v", ldapUser)+" ----", false)
-		bar.Increment()
-		var boolUpdate = false
-		logger(1, "LDAP User: "+getFeildValue(ldapUser, "UserID"), false)
-		//-- For Each LDAP Users Check if they already Exist
-		var userID = strings.ToLower(getFeildValue(ldapUser, "UserID"))
-		boolUpdate = checkUserOnInstance(userID)
-		//-- Update or Create User
-		if boolUpdate {
-			logger(1, "Update User: "+getFeildValue(ldapUser, "UserID"), false)
-			updateUser(ldapUser)
-		} else {
-			logger(1, "Create User: "+getFeildValue(ldapUser, "UserID"), false)
-			if ldapUser != nil {
-				createUser(ldapUser)
-			}
+	jobs := make(chan int, 100)
+	results := make(chan int, 100)
 
-		}
+	total := len(ldapUsers)
+	workers := configWorkers
+
+	if total < workers {
+		workers = total
+	}
+	//This starts up 3 workers, initially blocked because there are no jobs yet.
+	for w := 1; w <= workers; w++ {
+		go processUsers(w, jobs, results, bar)
+	}
+	//-- Here we send a job for each user we have to process
+	for j := 1; j <= total; j++ {
+		jobs <- j
+	}
+	close(jobs)
+	//-- Finally we collect all the results of the work.
+	for a := 1; a <= total; a++ {
+		<-results
 	}
 	bar.FinishPrint("Processing Complete!")
 }
 
+//-- Process Users
+func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
+	//-- Start Processing
+
+	//-- Range On Jobs for worker
+	for j := range jobs {
+		//-- Get User Record from Array
+		ldapUser := ldapUsers[j-1]
+		var buffer bytes.Buffer
+		//-- Get User Id based on the mapping
+		var userID = strings.ToLower(getFeildValue(ldapUser, "UserID", &buffer))
+		buffer.WriteString("[DEBUG] Buffer For Job: " + fmt.Sprintf("%d", j) + " - Worker: " + fmt.Sprintf("%d", id) + " - User: " + userID + "\n")
+
+		//-- For Each LDAP Users Check if they already Exist
+		boolUpdate, err := checkUserOnInstance(userID)
+		if err != nil {
+			buffer.WriteString(loggerGen(4, "Unable to Search For User: "+fmt.Sprintf("%+v", err)))
+		}
+		//-- User Exists so Update
+		if boolUpdate {
+			buffer.WriteString(loggerGen(1, "Update User: "+userID))
+			_, errUpdate := updateUser(ldapUser, &buffer)
+			if errUpdate != nil {
+				buffer.WriteString(loggerGen(4, "Unable to Update User: "+fmt.Sprintf("%+v", err)))
+			}
+		} else {
+			buffer.WriteString(loggerGen(1, "Create User: "+userID))
+			//-- User Does not Exist so Create
+			if ldapUser != nil {
+				_, errorCreate := createUser(ldapUser, &buffer)
+				if errorCreate != nil {
+					buffer.WriteString(loggerGen(4, "Unable to Create User: "+fmt.Sprintf("%+v", err)))
+				}
+			}
+
+		}
+		//-- Increment
+		bar.Increment()
+		loggerWriteBuffer(buffer.String())
+		buffer.Reset()
+		//-- Results
+		results <- j * 2
+	}
+
+}
+
 //-- Does User Exist on Instance
-func checkUserOnInstance(userID string) bool {
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
+func checkUserOnInstance(userID string) (bool, error) {
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetParam("entity", "UserAccount")
 	espXmlmc.SetParam("keyValue", userID)
 	XMLCheckUser, xmlmcErr := espXmlmc.Invoke("data", "entityDoesRecordExist")
 	var xmlRespon xmlmcCheckUserResponse
 	if xmlmcErr != nil {
-		log.Fatal(xmlmcErr)
-		return false
+		return false, xmlmcErr
 	}
 	err := xml.Unmarshal([]byte(XMLCheckUser), &xmlRespon)
 	if err != nil {
-		return false
+		return false, err
 	}
-	if xmlRespon.MethodResult != "ok" {
-		logger(4, "Unable to Search User: "+xmlRespon.State.ErrorRet, true)
-		return false
+	if xmlRespon.MethodResult != constOK {
+		err := errors.New(xmlRespon.State.ErrorRet)
+		return false, err
 	}
-	return xmlRespon.Params.RecordExist
+	return xmlRespon.Params.RecordExist, nil
 }
 
 //-- Function to search for site
-func getSiteFromLookup(u *ldap.Entry) string {
+func getSiteFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 	siteReturn := ""
 	//-- Check if Site Attribute is set
 	if ldapImportConf.SiteLookup.Attribute == "" {
-		logger(4, "Site Lookup is Enabled but Attribute is not Defined", true)
+		buffer.WriteString(loggerGen(4, "Site Lookup is Enabled but Attribute is not Defined"))
 		return ""
 	}
 	//-- Get Value of Attribute
-	logger(1, "LDAP Attribute "+ldapImportConf.SiteLookup.Attribute, false)
+	buffer.WriteString(loggerGen(1, "LDAP Attribute "+ldapImportConf.SiteLookup.Attribute))
 	siteAttributeName := u.GetAttributeValue(ldapImportConf.SiteLookup.Attribute)
-	logger(1, "Looking Up Site "+siteAttributeName, false)
+	buffer.WriteString(loggerGen(1, "Looking Up Site "+siteAttributeName))
 	siteIsInCache, SiteIDCache := siteInCache(siteAttributeName)
 	//-- Check if we have Chached the site already
 	if siteIsInCache {
 		siteReturn = strconv.Itoa(SiteIDCache)
-		logger(1, "Found Site in Cache"+siteReturn, false)
-
+		buffer.WriteString(loggerGen(1, "Found Site in Cache"+siteReturn))
 	} else {
-		siteIsOnInstance, SiteIDInstance := searchSite(siteAttributeName)
+		siteIsOnInstance, SiteIDInstance := searchSite(siteAttributeName, buffer)
 		//-- If Returned set output
 		if siteIsOnInstance {
 			siteReturn = strconv.Itoa(SiteIDInstance)
 		}
 	}
-	logger(1, "Site Lookup found Id "+siteReturn, false)
+	buffer.WriteString(loggerGen(1, "Site Lookup found Id "+siteReturn))
 	return siteReturn
 }
 
@@ -534,11 +539,11 @@ func siteInCache(siteName string) (bool, int) {
 }
 
 //-- Function to Check if site is on the instance
-func searchSite(siteName string) (bool, int) {
+func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
 	boolReturn := false
 	intReturn := 0
 	//-- ESP Query for site
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	if siteName == "" {
 		return boolReturn, intReturn
 	}
@@ -551,14 +556,14 @@ func searchSite(siteName string) (bool, int) {
 	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords")
 	var xmlRespon xmlmcSiteListResponse
 	if xmlmcErr != nil {
-		log.Fatal(xmlmcErr)
+		buffer.WriteString(loggerGen(4, "Unable to Search for Site: "+fmt.Sprintf("%v", xmlmcErr)))
 	}
 	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
 	if err != nil {
-		logger(4, "Unable to Search for Site: "+fmt.Sprintf("%v", err), true)
+		buffer.WriteString(loggerGen(4, "Unable to Search for Site: "+fmt.Sprintf("%v", err)))
 	} else {
-		if xmlRespon.MethodResult != "ok" {
-			logger(4, "Unable to Search for Site: "+xmlRespon.State.ErrorRet, true)
+		if xmlRespon.MethodResult != constOK {
+			buffer.WriteString(loggerGen(4, "Unable to Search for Site: "+xmlRespon.State.ErrorRet))
 		} else {
 			//-- Check Response
 			if xmlRespon.Params.RowData.Row.SiteName != "" {
@@ -580,257 +585,257 @@ func searchSite(siteName string) (bool, int) {
 }
 
 //-- Update User Record
-func updateUser(u *ldap.Entry) bool {
+func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 	//-- Do we Lookup Site
 	site := ""
 	if ldapImportConf.SiteLookup.Enabled {
-		site = getSiteFromLookup(u)
+		site = getSiteFromLookup(u, buffer)
 	} else {
-		site = getFeildValue(u, "Site")
+		site = getFeildValue(u, "Site", buffer)
 	}
 
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	if getFeildValue(u, "UserID") != "" {
-		espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	if getFeildValue(u, "UserID", buffer) != "" {
+		espXmlmc.SetParam("userId", getFeildValue(u, "UserID", buffer))
 	}
 
-	if getFeildValue(u, "UserType") != "" && ldapImportConf.UpdateUserType {
-		espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
+	if getFeildValue(u, "UserType", buffer) != "" && ldapImportConf.UpdateUserType {
+		espXmlmc.SetParam("userType", getFeildValue(u, "UserType", buffer))
 	}
-	if getFeildValue(u, "Name") != "" {
-		espXmlmc.SetParam("name", getFeildValue(u, "Name"))
+	if getFeildValue(u, "Name", buffer) != "" {
+		espXmlmc.SetParam("name", getFeildValue(u, "Name", buffer))
 	}
-	if getFeildValue(u, "FirstName") != "" {
-		espXmlmc.SetParam("firstName", getFeildValue(u, "FirstName"))
+	if getFeildValue(u, "FirstName", buffer) != "" {
+		espXmlmc.SetParam("firstName", getFeildValue(u, "FirstName", buffer))
 	}
-	if getFeildValue(u, "LastName") != "" {
-		espXmlmc.SetParam("lastName", getFeildValue(u, "LastName"))
+	if getFeildValue(u, "LastName", buffer) != "" {
+		espXmlmc.SetParam("lastName", getFeildValue(u, "LastName", buffer))
 	}
-	if getFeildValue(u, "JobTitle") != "" {
-		espXmlmc.SetParam("jobTitle", getFeildValue(u, "JobTitle"))
+	if getFeildValue(u, "JobTitle", buffer) != "" {
+		espXmlmc.SetParam("jobTitle", getFeildValue(u, "JobTitle", buffer))
 	}
 	if site != "" {
 		espXmlmc.SetParam("site", site)
 	}
-	if getFeildValue(u, "Phone") != "" {
-		espXmlmc.SetParam("phone", getFeildValue(u, "Phone"))
+	if getFeildValue(u, "Phone", buffer) != "" {
+		espXmlmc.SetParam("phone", getFeildValue(u, "Phone", buffer))
 	}
-	if getFeildValue(u, "Email") != "" {
-		espXmlmc.SetParam("email", getFeildValue(u, "Email"))
+	if getFeildValue(u, "Email", buffer) != "" {
+		espXmlmc.SetParam("email", getFeildValue(u, "Email", buffer))
 	}
-	if getFeildValue(u, "Mobile") != "" {
-		espXmlmc.SetParam("mobile", getFeildValue(u, "Mobile"))
+	if getFeildValue(u, "Mobile", buffer) != "" {
+		espXmlmc.SetParam("mobile", getFeildValue(u, "Mobile", buffer))
 	}
-	if getFeildValue(u, "AbsenceMessage") != "" {
-		espXmlmc.SetParam("absenceMessage", getFeildValue(u, "AbsenceMessage"))
+	if getFeildValue(u, "AbsenceMessage", buffer) != "" {
+		espXmlmc.SetParam("absenceMessage", getFeildValue(u, "AbsenceMessage", buffer))
 	}
-	if getFeildValue(u, "TimeZone") != "" {
-		espXmlmc.SetParam("timeZone", getFeildValue(u, "TimeZone"))
+	if getFeildValue(u, "TimeZone", buffer) != "" {
+		espXmlmc.SetParam("timeZone", getFeildValue(u, "TimeZone", buffer))
 	}
-	if getFeildValue(u, "Language") != "" {
-		espXmlmc.SetParam("language", getFeildValue(u, "Language"))
+	if getFeildValue(u, "Language", buffer) != "" {
+		espXmlmc.SetParam("language", getFeildValue(u, "Language", buffer))
 	}
-	if getFeildValue(u, "DateTimeFormat") != "" {
-		espXmlmc.SetParam("dateTimeFormat", getFeildValue(u, "DateTimeFormat"))
+	if getFeildValue(u, "DateTimeFormat", buffer) != "" {
+		espXmlmc.SetParam("dateTimeFormat", getFeildValue(u, "DateTimeFormat", buffer))
 	}
-	if getFeildValue(u, "DateFormat") != "" {
-		espXmlmc.SetParam("dateFormat", getFeildValue(u, "DateFormat"))
+	if getFeildValue(u, "DateFormat", buffer) != "" {
+		espXmlmc.SetParam("dateFormat", getFeildValue(u, "DateFormat", buffer))
 	}
-	if getFeildValue(u, "TimeFormat") != "" {
-		espXmlmc.SetParam("timeFormat", getFeildValue(u, "TimeFormat"))
+	if getFeildValue(u, "TimeFormat", buffer) != "" {
+		espXmlmc.SetParam("timeFormat", getFeildValue(u, "TimeFormat", buffer))
 	}
-	if getFeildValue(u, "CurrencySymbol") != "" {
-		espXmlmc.SetParam("currencySymbol", getFeildValue(u, "CurrencySymbol"))
+	if getFeildValue(u, "CurrencySymbol", buffer) != "" {
+		espXmlmc.SetParam("currencySymbol", getFeildValue(u, "CurrencySymbol", buffer))
 	}
-	if getFeildValue(u, "CountryCode") != "" {
-		espXmlmc.SetParam("countryCode", getFeildValue(u, "CountryCode"))
+	if getFeildValue(u, "CountryCode", buffer) != "" {
+		espXmlmc.SetParam("countryCode", getFeildValue(u, "CountryCode", buffer))
 	}
 	//-- Check for Dry Run
 	if configDryRun != true {
 		XMLUpdate, xmlmcErr := espXmlmc.Invoke("admin", "userUpdate")
 		var xmlRespon xmlmcResponse
 		if xmlmcErr != nil {
-			log.Fatal(xmlmcErr)
+			return false, xmlmcErr
 		}
 		err := xml.Unmarshal([]byte(XMLUpdate), &xmlRespon)
 		if err != nil {
-			return false
+
+			return false, err
 		}
-		if xmlRespon.MethodResult != "ok" && xmlRespon.State.ErrorRet != "There are no values to update" {
-			logger(4, "Unable to Update User: "+xmlRespon.State.ErrorRet, false)
-			espLogger("Unable to Update User: "+xmlRespon.State.ErrorRet, "error")
+		if xmlRespon.MethodResult != constOK && xmlRespon.State.ErrorRet != "There are no values to update" {
+			err := errors.New(xmlRespon.State.ErrorRet)
 			errorCount++
+			return false, err
 
-		} else {
-
-			if ldapImportConf.OrgLookup.Enabled {
-				userAddGroup(u)
-			}
-
-			if xmlRespon.State.ErrorRet != "There are no values to update" {
-				logger(1, "No Changes", false)
-				counters.updated++
-			} else {
-				counters.updatedSkipped++
-			}
-
-			return true
 		}
-	} else {
-		//-- Inc Counter
-		counters.updatedSkipped++
-		//-- DEBUG XML TO LOG FILE
-		var XMLSTRING = espXmlmc.GetParam()
-		logger(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING), false)
-		espXmlmc.ClearParam()
-	}
+		if ldapImportConf.OrgLookup.Enabled {
+			userAddGroup(u, buffer)
+		}
 
-	return true
+		if xmlRespon.State.ErrorRet != "There are no values to update" {
+			counters.updated++
+		} else {
+			counters.updatedSkipped++
+		}
+
+		return true, nil
+	}
+	//-- Inc Counter
+	counters.updatedSkipped++
+	//-- DEBUG XML TO LOG FILE
+	var XMLSTRING = espXmlmc.GetParam()
+	buffer.WriteString(loggerGen(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING)))
+	espXmlmc.ClearParam()
+
+	return true, nil
 }
 
 //-- Create Users
-func createUser(u *ldap.Entry) bool {
+func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 	//-- Do we Lookup Site
 	site := ""
 	if ldapImportConf.SiteLookup.Enabled {
-		site = getSiteFromLookup(u)
+		site = getSiteFromLookup(u, buffer)
 	} else {
-		site = getFeildValue(u, "Site")
+		site = getFeildValue(u, "Site", buffer)
 	}
-
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	if getFeildValue(u, "UserID") != "" {
-		espXmlmc.SetParam("userId", getFeildValue(u, "UserID"))
+	buffer.WriteString(loggerGen(1, "Test Inside Create USer"))
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	userID := getFeildValue(u, "UserID", buffer)
+	if userID != "" {
+		espXmlmc.SetParam("userId", userID)
 	}
-	if getFeildValue(u, "Name") != "" {
-		espXmlmc.SetParam("name", getFeildValue(u, "Name"))
+	if getFeildValue(u, "Name", buffer) != "" {
+		espXmlmc.SetParam("name", getFeildValue(u, "Name", buffer))
 	}
-	var password = getFeildValue(u, "Password")
+	var password = getFeildValue(u, "Password", buffer)
 	//-- If Password is Blank Generate Password
 	if password == "" {
 		password = generatePasswordString(10)
-		logger(1, "Auto Generated Password for: "+getFeildValue(u, "UserID")+" - "+password, false)
+		buffer.WriteString(loggerGen(1, "Auto Generated Password for: "+userID+" - "+password))
 	}
 	espXmlmc.SetParam("password", base64.StdEncoding.EncodeToString([]byte(password)))
-	if getFeildValue(u, "UserType") != "" {
-		espXmlmc.SetParam("userType", getFeildValue(u, "UserType"))
+	if getFeildValue(u, "UserType", buffer) != "" {
+		espXmlmc.SetParam("userType", getFeildValue(u, "UserType", buffer))
 	}
-	if getFeildValue(u, "FirstName") != "" {
-		espXmlmc.SetParam("firstName", getFeildValue(u, "FirstName"))
+	if getFeildValue(u, "FirstName", buffer) != "" {
+		espXmlmc.SetParam("firstName", getFeildValue(u, "FirstName", buffer))
 	}
-	if getFeildValue(u, "LastName") != "" {
-		espXmlmc.SetParam("lastName", getFeildValue(u, "LastName"))
+	if getFeildValue(u, "LastName", buffer) != "" {
+		espXmlmc.SetParam("lastName", getFeildValue(u, "LastName", buffer))
 	}
-	if getFeildValue(u, "JobTitle") != "" {
-		espXmlmc.SetParam("jobTitle", getFeildValue(u, "JobTitle"))
+	if getFeildValue(u, "JobTitle", buffer) != "" {
+		espXmlmc.SetParam("jobTitle", getFeildValue(u, "JobTitle", buffer))
 	}
 	if site != "" {
 		espXmlmc.SetParam("site", site)
 	}
-	if getFeildValue(u, "Phone") != "" {
-		espXmlmc.SetParam("phone", getFeildValue(u, "Phone"))
+	if getFeildValue(u, "Phone", buffer) != "" {
+		espXmlmc.SetParam("phone", getFeildValue(u, "Phone", buffer))
 	}
-	if getFeildValue(u, "Email") != "" {
-		espXmlmc.SetParam("email", getFeildValue(u, "Email"))
+	if getFeildValue(u, "Email", buffer) != "" {
+		espXmlmc.SetParam("email", getFeildValue(u, "Email", buffer))
 	}
-	if getFeildValue(u, "Mobile") != "" {
-		espXmlmc.SetParam("mobile", getFeildValue(u, "Mobile"))
+	if getFeildValue(u, "Mobile", buffer) != "" {
+		espXmlmc.SetParam("mobile", getFeildValue(u, "Mobile", buffer))
 	}
-	if getFeildValue(u, "AbsenceMessage") != "" {
-		espXmlmc.SetParam("absenceMessage", getFeildValue(u, "AbsenceMessage"))
+	if getFeildValue(u, "AbsenceMessage", buffer) != "" {
+		espXmlmc.SetParam("absenceMessage", getFeildValue(u, "AbsenceMessage", buffer))
 	}
-	if getFeildValue(u, "TimeZone") != "" {
-		espXmlmc.SetParam("timeZone", getFeildValue(u, "TimeZone"))
+	if getFeildValue(u, "TimeZone", buffer) != "" {
+		espXmlmc.SetParam("timeZone", getFeildValue(u, "TimeZone", buffer))
 	}
-	if getFeildValue(u, "Language") != "" {
-		espXmlmc.SetParam("language", getFeildValue(u, "Language"))
+	if getFeildValue(u, "Language", buffer) != "" {
+		espXmlmc.SetParam("language", getFeildValue(u, "Language", buffer))
 	}
-	if getFeildValue(u, "DateTimeFormat") != "" {
-		espXmlmc.SetParam("dateTimeFormat", getFeildValue(u, "DateTimeFormat"))
+	if getFeildValue(u, "DateTimeFormat", buffer) != "" {
+		espXmlmc.SetParam("dateTimeFormat", getFeildValue(u, "DateTimeFormat", buffer))
 	}
-	if getFeildValue(u, "DateFormat") != "" {
-		espXmlmc.SetParam("dateFormat", getFeildValue(u, "DateFormat"))
+	if getFeildValue(u, "DateFormat", buffer) != "" {
+		espXmlmc.SetParam("dateFormat", getFeildValue(u, "DateFormat", buffer))
 	}
-	if getFeildValue(u, "TimeFormat") != "" {
-		espXmlmc.SetParam("timeFormat", getFeildValue(u, "TimeFormat"))
+	if getFeildValue(u, "TimeFormat", buffer) != "" {
+		espXmlmc.SetParam("timeFormat", getFeildValue(u, "TimeFormat", buffer))
 	}
-	if getFeildValue(u, "CurrencySymbol") != "" {
-		espXmlmc.SetParam("currencySymbol", getFeildValue(u, "CurrencySymbol"))
+	if getFeildValue(u, "CurrencySymbol", buffer) != "" {
+		espXmlmc.SetParam("currencySymbol", getFeildValue(u, "CurrencySymbol", buffer))
 	}
-	if getFeildValue(u, "CountryCode") != "" {
-		espXmlmc.SetParam("countryCode", getFeildValue(u, "CountryCode"))
+	if getFeildValue(u, "CountryCode", buffer) != "" {
+		espXmlmc.SetParam("countryCode", getFeildValue(u, "CountryCode", buffer))
 	}
 	//-- Check for Dry Run
 	if configDryRun != true {
 		XMLCreate, xmlmcErr := espXmlmc.Invoke("admin", "userCreate")
 		var xmlRespon xmlmcResponse
 		if xmlmcErr != nil {
-			log.Fatal(xmlmcErr)
+			errorCount++
+			return false, xmlmcErr
 		}
 		err := xml.Unmarshal([]byte(XMLCreate), &xmlRespon)
 		if err != nil {
-			return false
-		}
-		if xmlRespon.MethodResult != "ok" {
-			logger(4, "Unable to Create User: "+xmlRespon.State.ErrorRet, false)
-			espLogger("Unable to Create User: "+xmlRespon.State.ErrorRet, "error")
 			errorCount++
-		} else {
-			if ldapImportConf.OrgLookup.Enabled {
-				userAddGroup(u)
-			}
-			if len(ldapImportConf.Roles) > 0 {
-				userAddRoles(getFeildValue(u, "UserID"))
-			}
-			counters.created++
-			return true
+			return false, err
 		}
-	} else {
-		//-- DEBUG XML TO LOG FILE
-		var XMLSTRING = espXmlmc.GetParam()
-		logger(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING), false)
-		counters.createskipped++
-		espXmlmc.ClearParam()
-	}
+		if xmlRespon.MethodResult != constOK {
+			err := errors.New(xmlRespon.State.ErrorRet)
+			errorCount++
+			return false, err
 
-	return true
+		}
+		if ldapImportConf.OrgLookup.Enabled {
+			userAddGroup(u, buffer)
+		}
+		if len(ldapImportConf.Roles) > 0 {
+			userAddRoles(userID, buffer)
+		}
+		counters.created++
+		return true, nil
+	}
+	//-- DEBUG XML TO LOG FILE
+	var XMLSTRING = espXmlmc.GetParam()
+	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
+	counters.createskipped++
+	espXmlmc.ClearParam()
+
+	return true, nil
 }
 
 //-- Deal with adding a user to a group
-func userAddGroup(u *ldap.Entry) bool {
+func userAddGroup(u *ldap.Entry, buffer *bytes.Buffer) bool {
 
 	//-- Check if Site Attribute is set
 	if ldapImportConf.OrgLookup.Attribute == "" {
-		logger(4, "Org Lookup is Enabled but Attribute is not Defined", true)
+		buffer.WriteString(loggerGen(2, "Org Lookup is Enabled but Attribute is not Defined"))
 		return false
 	}
 	//-- Get Value of Attribute
-	logger(1, "LDAP Attribute "+ldapImportConf.OrgLookup.Attribute, false)
-	orgAttributeName := processComplexFeild(u, ldapImportConf.OrgLookup.Attribute)
-	logger(1, "Looking Up Org "+orgAttributeName, false)
-	orgIsInCache, orgId := groupInCache(orgAttributeName)
+	buffer.WriteString(loggerGen(2, "LDAP Attribute "+ldapImportConf.OrgLookup.Attribute))
+	orgAttributeName := processComplexFeild(u, ldapImportConf.OrgLookup.Attribute, buffer)
+	buffer.WriteString(loggerGen(2, "Looking Up Org "+orgAttributeName))
+	orgIsInCache, orgID := groupInCache(orgAttributeName)
 	//-- Check if we have Chached the site already
 	if orgIsInCache {
-		logger(1, "Found Org in Cache "+orgId, false)
-		userAddGroupAsoc(u, orgId)
+		buffer.WriteString(loggerGen(1, "Found Org in Cache "+orgID))
+		userAddGroupAsoc(u, orgID, buffer)
 		return true
-	} else {
-		orgIsOnInstance, orgId := searchOrg(orgAttributeName)
-
-		if orgIsOnInstance {
-			logger(1, "Org Lookup found Id "+orgId, false)
-			userAddGroupAsoc(u, orgId)
-			return true
-		}
 	}
-	logger(1, "Unable to Find Organsiation "+orgAttributeName, false)
+
+	//-- We Get here if not in cache
+	orgIsOnInstance, orgID := searchOrg(orgAttributeName, buffer)
+	if orgIsOnInstance {
+		buffer.WriteString(loggerGen(1, "Org Lookup found Id "+orgID))
+		userAddGroupAsoc(u, orgID, buffer)
+		return true
+	}
+	buffer.WriteString(loggerGen(1, "Unable to Find Organsiation "+orgAttributeName))
 	return false
 }
 
-func userAddGroupAsoc(u *ldap.Entry, orgId string) {
-	userId := getFeildValue(u, "UserID")
-	espXmlmc.SetParam("userId", userId)
-	espXmlmc.SetParam("groupId", orgId)
+func userAddGroupAsoc(u *ldap.Entry, orgID string, buffer *bytes.Buffer) {
+	UserID := getFeildValue(u, "UserID", buffer)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	espXmlmc.SetParam("userId", UserID)
+	espXmlmc.SetParam("groupId", orgID)
 	espXmlmc.SetParam("memberRole", ldapImportConf.OrgLookup.Membership)
 	espXmlmc.OpenElement("options")
 	espXmlmc.SetParam("tasksView", strconv.FormatBool(ldapImportConf.OrgLookup.TasksView))
@@ -841,20 +846,21 @@ func userAddGroupAsoc(u *ldap.Entry, orgId string) {
 	var xmlRespon xmlmcuserSetGroupOptionsResponse
 	if xmlmcErr != nil {
 		log.Fatal(xmlmcErr)
+		buffer.WriteString(loggerGen(4, "Unable to Associate User To Group: "+fmt.Sprintf("%v", xmlmcErr)))
 	}
 	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
 	if err != nil {
-		logger(4, "Unable to Associate User To Group: "+fmt.Sprintf("%v", err), true)
+		buffer.WriteString(loggerGen(4, "Unable to Associate User To Group: "+fmt.Sprintf("%v", err)))
 	} else {
-		if xmlRespon.MethodResult != "ok" {
-			if xmlRespon.State.ErrorRet != "The specified user ["+userId+"] already belongs to ["+orgId+"] group" {
-				logger(4, "Unable to Associate User To Organsiation: "+xmlRespon.State.ErrorRet, true)
+		if xmlRespon.MethodResult != constOK {
+			if xmlRespon.State.ErrorRet != "The specified user ["+UserID+"] already belongs to ["+orgID+"] group" {
+				buffer.WriteString(loggerGen(4, "Unable to Associate User To Organsiation: "+xmlRespon.State.ErrorRet))
 			} else {
-				logger(1, "User: "+userId+" Already Added to Organsiation: "+orgId, false)
+				buffer.WriteString(loggerGen(1, "User: "+UserID+" Already Added to Organsiation: "+orgID))
 			}
 
 		} else {
-			logger(1, "User: "+userId+" Added to Organsiation: "+orgId, false)
+			buffer.WriteString(loggerGen(1, "User: "+UserID+" Added to Organsiation: "+orgID))
 		}
 	}
 
@@ -876,11 +882,11 @@ func groupInCache(groupName string) (bool, string) {
 }
 
 //-- Function to Check if site is on the instance
-func searchOrg(orgName string) (bool, string) {
+func searchOrg(orgName string, buffer *bytes.Buffer) (bool, string) {
 	boolReturn := false
 	strReturn := ""
 	//-- ESP Query for site
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	if orgName == "" {
 		return boolReturn, strReturn
 	}
@@ -894,14 +900,14 @@ func searchOrg(orgName string) (bool, string) {
 	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "queryExec")
 	var xmlRespon xmlmcGroupListResponse
 	if xmlmcErr != nil {
-		log.Fatal(xmlmcErr)
+		buffer.WriteString(loggerGen(4, "Unable to Search for Group: "+fmt.Sprintf("%v", xmlmcErr)))
 	}
 	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
 	if err != nil {
-		logger(4, "Unable to Search for Group: "+fmt.Sprintf("%v", err), true)
+		buffer.WriteString(loggerGen(4, "Unable to Search for Group: "+fmt.Sprintf("%v", err)))
 	} else {
-		if xmlRespon.MethodResult != "ok" {
-			logger(4, "Unable to Search for Group: "+xmlRespon.State.ErrorRet, true)
+		if xmlRespon.MethodResult != constOK {
+			buffer.WriteString(loggerGen(4, "Unable to Search for Group: "+xmlRespon.State.ErrorRet))
 		} else {
 			//-- Check Response
 			if xmlRespon.Params.RowData.Row.GroupID != "" {
@@ -921,12 +927,12 @@ func searchOrg(orgName string) (bool, string) {
 	return boolReturn, strReturn
 }
 
-func userAddRoles(userID string) bool {
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
+func userAddRoles(userID string, buffer *bytes.Buffer) bool {
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetParam("userId", userID)
 	for _, role := range ldapImportConf.Roles {
 		espXmlmc.SetParam("role", role)
-		logger(1, "Add Role to User: "+role, false)
+		buffer.WriteString(loggerGen(1, "Add Role to User: "+role))
 	}
 	XMLCreate, xmlmcErr := espXmlmc.Invoke("admin", "userAddRole")
 	var xmlRespon xmlmcResponse
@@ -937,29 +943,29 @@ func userAddRoles(userID string) bool {
 	if err != nil {
 		return false
 	}
-	if xmlRespon.MethodResult != "ok" {
-		logger(4, "Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, true)
+	if xmlRespon.MethodResult != constOK {
+		buffer.WriteString(loggerGen(4, "Unable to Assign Role to User: "+xmlRespon.State.ErrorRet))
 		espLogger("Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, "error")
 		return false
 	}
-	logger(1, "Roles Added Successfully", false)
+	buffer.WriteString(loggerGen(1, "Roles Added Successfully"))
 	return true
 }
 
 //-- Get XMLMC Feild from mapping via LDAP Object
-func getFeildValue(u *ldap.Entry, s string) string {
+func getFeildValue(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
 	//-- Dyniamicly Grab Mapped Value
 	r := reflect.ValueOf(ldapImportConf.LDAPMapping)
 	f := reflect.Indirect(r).FieldByName(s)
 	//-- Get Mapped Value
 	var LDAPMapping = f.String()
-	return processComplexFeild(u, LDAPMapping)
+	return processComplexFeild(u, LDAPMapping, buffer)
 }
-func processComplexFeild(u *ldap.Entry, s string) string {
+func processComplexFeild(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
 	//-- Match $variables from String
 	re1, err := regexp.Compile(`\[(.*?)\]`)
 	if err != nil {
-		fmt.Printf("[ERROR] %v", err)
+		buffer.WriteString(loggerGen(4, "Regex Error"+fmt.Sprintf("%v", err)))
 	}
 	//-- Get Array of all Matched max 100
 	result := re1.FindAllString(s, 100)
@@ -970,7 +976,7 @@ func processComplexFeild(u *ldap.Entry, s string) string {
 		var LDAPAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
 		//-- Check for Invalid Value
 		if LDAPAttributeValue == "" {
-			logger(4, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
+			buffer.WriteString(loggerGen(4, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s))
 			return LDAPAttributeValue
 		}
 		s = strings.Replace(s, v, LDAPAttributeValue, 1)
@@ -988,6 +994,28 @@ func generatePasswordString(n int) string {
 		arbytes[i] = letterBytes[b%byte(len(letterBytes))]
 	}
 	return string(arbytes)
+}
+
+func loggerGen(t int, s string) string {
+
+	var errorLogPrefix = ""
+	//-- Create Log Entry
+	switch t {
+	case 1:
+		errorLogPrefix = "[DEBUG] "
+	case 2:
+		errorLogPrefix = "[MESSAGE] "
+	case 3:
+		errorLogPrefix = "[WARN] "
+	case 4:
+		errorLogPrefix = "[ERROR] "
+	}
+	currentTime := time.Now().UTC()
+	time := currentTime.Format("2006/01/02 15:04:05")
+	return time + " " + errorLogPrefix + s + "\n"
+}
+func loggerWriteBuffer(s string) {
+	logger(0, s, false)
 }
 
 //-- Loggin function
@@ -1022,6 +1050,8 @@ func logger(t int, s string, outputtoCLI bool) {
 	var errorLogPrefix = ""
 	//-- Create Log Entry
 	switch t {
+	case 0:
+		errorLogPrefix = ""
 	case 1:
 		errorLogPrefix = "[DEBUG] "
 	case 2:
@@ -1044,8 +1074,8 @@ func logger(t int, s string, outputtoCLI bool) {
 	log.Println(errorLogPrefix + s)
 }
 
-//-- XMLMC LogOut
-func logout() {
+//-- complete
+func complete() {
 	//-- End output
 	espLogger("Errors: "+fmt.Sprintf("%d", errorCount), "error")
 	espLogger("Updated: "+fmt.Sprintf("%d", counters.updated), "debug")
@@ -1054,9 +1084,6 @@ func logout() {
 	espLogger("Created Skipped: "+fmt.Sprintf("%d", counters.createskipped), "debug")
 	espLogger("Time Taken: "+fmt.Sprintf("%v", endTime), "debug")
 	espLogger("---- XMLMC LDAP User Import Complete ---- ", "debug")
-	logger(1, "Logout", true)
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
-	espXmlmc.Invoke("session", "userLogoff")
 }
 
 // Set Instance Id
@@ -1082,7 +1109,7 @@ func setZone(zone string) {
 
 //-- Log to ESP
 func espLogger(message string, severity string) {
-	//espXmlmc := espXmlmc.NewXmlmcInstance(ldapImportConf.Url)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetParam("fileName", "LDAP_User_Import")
 	espXmlmc.SetParam("group", "general")
 	espXmlmc.SetParam("severity", severity)
