@@ -2,7 +2,7 @@
     "APIKey": "",
     "InstanceId": "",
     "UpdateUserType": false,
-    "LDAPConf": {
+    "LDAPServerConf": {
         "Server": "",
         "UserName": "",
         "Password": "",
@@ -18,7 +18,7 @@
         "DSN": "",
         "Debug":false
     },
-    "LDAPMapping":{
+    "UserMapping":{
         "UserId":"[sAMAccountName]",
         "UserType":"basic",
         "Name":"[cn]",
@@ -39,23 +39,74 @@
         "CurrencySymbol":"",
         "CountryCode":""
     },
-    "LDAPAttirubutes":[
+    "UserAccountStatus":{
+        "Action":"Update",
+        "Enabled": false,
+        "Status":"active"
+    },
+    "UserProfileMapping":{
+        "MiddleName":"",
+        "JobDescription":"",
+        "Manager":"",
+        "WorkPhone":"",
+        "Qualifications":"",
+        "Interests":"",
+        "Expertise":"",
+        "Gender":"",
+        "Dob":"",
+        "Nationality":"",
+        "Religion":"",
+        "HomeTelephone":"",
+        "SocialNetworkA":"",
+        "SocialNetworkB":"",
+        "SocialNetworkC":"",
+        "SocialNetworkD":"",
+        "SocialNetworkE":"",
+        "SocialNetworkF":"",
+        "SocialNetworkG":"",
+        "SocialNetworkH":"",
+        "PersonalInterests":"",
+        "homeAddress":"",
+        "PersonalBlog":"",
+        "Attrib1":"",
+    	"Attrib2":"",
+    	"Attrib3":"",
+    	"Attrib4":"",
+    	"Attrib5":"",
+    	"Attrib6":"",
+    	"Attrib7":"",
+    	"Attrib8":""
+    },
+    "UserManagerMapping":{
+        "Action":"Create",
+        "Enabled":true,
+        "Attribute":"[manager]",
+        "GetIDFromName":true,
+        "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
+        "Reverse":true
+    },
+    "LDAPAttributes":[
         "cn",
         "sn",
+        "telephoneNumber",
+        "mobile",
         "sAMAccountName",
         "userPrincipalName",
         "givenName",
         "description",
         "department"
+        "manager"
     ],
     "Roles":[
         "Basic User Role"
     ],
     "SiteLookup":{
+        "Action":"Both",
         "Enabled": false,
         "Attribute":""
     },
     "OrgLookup":{
+        "Action":"Both",
         "Enabled":false,
         "Attribute":"[department]",
         "Type":2,

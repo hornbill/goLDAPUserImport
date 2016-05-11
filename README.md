@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v1.7.0/ldap_user_import_win_x64_v1_7_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v1.7.0/ldap_user_import_win_x86_v1_7_0.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.0.0/ldap_user_import_win_x64_v2_0_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v1.7.0/ldap_user_import_win_x86_v2_0_0.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -29,11 +29,10 @@ Example JSON File:
 
 ```json
 {
-    "UserName": "",
-    "Password": "",
+    "APIKey": "",
     "InstanceId": "",
     "UpdateUserType": false,
-    "LDAPConf": {
+    "LDAPServerConf": {
         "Server": "",
         "UserName": "",
         "Password": "",
@@ -49,7 +48,7 @@ Example JSON File:
         "DSN": "",
         "Debug": false
     },
-    "LDAPMapping":{
+    "UserMapping":{
         "UserId":"[sAMAccountName]",
         "UserType":"user",
         "Name":"[cn]",
@@ -70,22 +69,71 @@ Example JSON File:
         "CurrencySymbol":"",
         "CountryCode":""
     },
-    "LDAPAttirubutes":[
+    "UserAccountStatus":{
+        "Action":"Update",
+        "Enabled": false,
+        "Status":"active"
+    },
+    "UserProfileMapping":{
+        "MiddleName":"",
+    	"JobDescription":"",
+    	"Manager":"",
+    	"WorkPhone":"",
+    	"Qualifications":"",
+    	"Interests":"",
+    	"Expertise":"",
+    	"Gender":"",
+    	"Dob":"",
+    	"Nationality":"",
+    	"Religion":"",
+    	"HomeTelephone":"",
+    	"SocialNetworkA":"",
+    	"SocialNetworkB":"",
+    	"SocialNetworkC":"",
+    	"SocialNetworkD":"",
+    	"SocialNetworkE":"",
+    	"SocialNetworkF":"",
+    	"SocialNetworkG":"",
+    	"SocialNetworkH":"",
+    	"PersonalInterests":"",
+    	"homeAddress":"",
+    	"PersonalBlog":"",
+        "Attrib1":"",
+    	"Attrib2":"",
+    	"Attrib3":"",
+    	"Attrib4":"",
+    	"Attrib5":"",
+    	"Attrib6":"",
+    	"Attrib7":"",
+    	"Attrib8":""
+    },
+    "UserManagerMapping":{
+        "Action":"Create",
+        "Enabled":true,
+        "Attribute":"[manager]",
+        "GetIDFromName":true,
+        "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
+        "Reverse":true
+    },
+    "LDAPAttributes":[
         "cn",
         "sn",
         "sAMAccountName",
         "userPrincipalName",
         "givenName",
-        "description"
+        "description",
+        "manager"
     ],
     "Roles":[
         "Collaboration Role"
     ],
     "SiteLookup":{
+        "Action":"Both",
         "Enabled": false,
         "Attribute":""
     },
     "OrgLookup":{
+        "Action":"Both",
         "Enabled":false,
         "Attribute":"[sAMAccountName]",
         "Type":2,
@@ -96,12 +144,11 @@ Example JSON File:
 }
 ```
 #### InstanceConfig
-* "UserName" - Instance User Name with Create / Update User Rights
-* "Password" - Instance Password for the above User
+* "APIKey" - A Valid API Assigned to a user with enough rights to process the import
 * "InstanceId" - Instance Id
 * "UpdateUserType" - If set to True then the Type of User will be updated when the user account Update is triggered
 
-#### LDAPConfig
+#### LDAPServerConf
 * "Server" LDAP Server Address
 * "UserName" LDAP User Name
 * "Password" Password for Above User Name
@@ -117,8 +164,9 @@ Example JSON File:
 * "DSN"  Search DSN I.e `DC=test,DC=hornbill,DC=com`
 * "Debug"  Enable LDAP Connection Debugging, should only ever be enabled to troubleshoot connection issues.
 
-#### LDAPMapping
+#### UserMapping
 * Any value wrapped with [] will be treaded ad an LDAP field
+* Do not try and add any new properties here they will be ignored
 * Any Other Value is treated literally as written example:
     * "Name":"[givenName] [sn]", - Both Variables are evaluated from LDAP and set to the Name param
     * "Password":"", - Auto Generated Password
@@ -126,7 +174,25 @@ Example JSON File:
 * If Password is left empty then a 10 character random string will be assigned so the user will need to recover the password using forgot my password functionality - The password will also be in the Log File
 * "UserType" - This defines if a user is Co-Worker or Basic user and can have the value user or basic.
 
-#### LDAPAttirubutes
+
+#### UserAccountStatus
+* Action - (Both | Update | Create) - When to Set the User Account Status On Create, On Update or Both
+* Enabled - Turns on or off the Status update
+* Status - Can be one of the following strings (active | suspended | archived)
+
+#### UserProfileMapping
+* Works in the same way as UserMapping
+* Do not try and add any new properties here they will be ignored
+
+#### UserManagerMapping
+* Action - (Both | Update | Create) - When to Set the User Manager On Create, On Update or Both
+* Enabled - Turns on or off the Manager Import
+* Attribute - The LDAP Attribute to use for the name of the Manager ,Any value wrapped with [] will be treaded ad an LDAP field
+* GetIDFromName - Lookup Hornbill User Id From Name, The Managers Name matched in the Regex must explicitly match the full name in Hornbill (true | false)
+* Regex - Optional Regex String to Match the Name from an DSN String
+* Reverse - Reverse the Name String Matched from the Regex (true | false)
+
+#### LDAPAttributes
 * Array of Attributes to query from the LDAP Server, only Attributes specified here can be used in the LDAPMapping
 
 #### Roles
@@ -135,12 +201,15 @@ This should contain an array of roles to be added to a user when they are create
 #### SiteLookup
 In Hornbill the Site field against a user is the numeric Id of the site, as the Name of a users site from LDAP is likely the Name and not an Id specific to Hornbill  we provide the ability for the Import to look up the Name of the Site in Hornbill and use the Numeric Id when adding or updating a user.
 The name of the Site in Hornbill must match the value of the Attribute in LDAP.
+
+* Action - (Both | Update | Create) - When to Associate Sites On Create, On Update or Both
 * Enabled - Turns on or off the Lookup of Sites
-* Attribute - The LDAP Attribute to use for the name of the Site
+* Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded ad an LDAP field
 
 #### OrgLookup
 The name of the Organization in Hornbill must match the value of the Attribute in LDAP.
 
+* Action - (Both | Update | Create) - When to Associate Organisation On Create, On Update or Both
 * Enabled - Turns on or off the Lookup of Orgnisations
 * Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded ad an LDAP field
 * Type - The Organisation Type (0=general ,1=team ,2=department ,3=costcenter ,4=division ,5=company)
@@ -153,6 +222,7 @@ Command Line Parameters
 * file - Defaults to `conf.json` - Name of the Configuration file to load
 * dryrun - Defaults to `false` - Set to True and the XMLMC for Create and Update users will not be called and instead the XML will be dumped to the log file, this is to aid in debugging the initial connection information.
 * zone - Defaults to `eur` - Allows you to change the ZONE used for creating the XMLMC EndPoint URL https://{ZONE}api.hornbill.com/{INSTANCE}/
+* workers - Defaults to `3` - Allows you to change the number of worker threads used to process the import, this can improve performance on slow import but using too many workers have a detriment to performance of your Hornbill instance.
 
 # Testing
 If you run the application with the argument dryrun=true then no users will be created or updated, the XML used to create or update will be saved in the log file so you can ensure the LDAP mappings are correct before running the import.
