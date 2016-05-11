@@ -2,9 +2,8 @@
 # Orignal https://gist.github.com/jmervine/7d3f455e923cf2ac3c9e
 # usage: ./golang-crosscompile-build.bash
 
-target=ldap_user_import.go
 # Get Version out of target then replace . with _
-version=$(go run $target -version)
+version=$(go build && ./goLDAPUserImport -version)
 version=${version//./_}
 version=${version// /}
 #platforms="darwin/386 darwin/amd64 freebsd/386 freebsd/amd64 freebsd/arm linux/386 linux/amd64 linux/arm windows/386 windows/amd64"

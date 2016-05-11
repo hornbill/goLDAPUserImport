@@ -110,7 +110,9 @@ func procFlags() {
 	flag.Parse()
 
 	//-- Output config
-	outputFlags()
+	if !configVersion {
+		outputFlags()
+	}
 }
 func outputFlags() {
 	//-- Output
