@@ -14,7 +14,7 @@ Bug Fixes:
 - Fix: Timetaken was not being reported in the ESP Log File
 - Fix: Version was not being reported in the ESP Log File
 - Fix: HTML Entities were not correct decoded when returned from an LDAP string
-- Fix: SiteLookup.Attribute was not expecting LDAP Attributes to be wrapped in [ ] like OrgLookup.Attribute this has been changed for consitency with other LDAP Attributes
+- Fix: SiteLookup.Attribute was not expecting LDAP Attributes to be wrapped in [ ] like OrgLookup.Attribute this has been changed for consistency with other LDAP Attributes
 
 Notes:
 
