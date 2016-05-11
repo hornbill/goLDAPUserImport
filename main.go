@@ -75,42 +75,6 @@ func main() {
 	outputEnd()
 }
 
-//-- Takes a string based on a LDAP DN and returns to the CN String Name
-func matchCN(feild string, regex string, reverse bool) string {
-	stringReturn := ""
-	fmt.Printf("%v \n", feild)
-	//-- Match $variables from String
-	re1, err := regexp.Compile(regex)
-	if err != nil {
-		fmt.Printf("%v \n", err)
-
-	}
-	//-- Get Array of all Matched max 100
-	result := re1.FindAllString(feild, 100)
-
-	//-- Loop Matches
-	for _, v := range result {
-		//-- String LDAP String Chars Out from match
-		v = strings.Replace(v, "CN=", "", -1)
-		v = strings.Replace(v, "OU=", "", -1)
-		v = strings.Replace(v, "DC=", "", -1)
-		v = strings.Replace(v, "\\", "", -1)
-		nameArray := strings.Split(v, ",")
-
-		for _, n := range nameArray {
-			n = strings.Trim(n, " ")
-			if reverse {
-				stringReturn = n + " " + stringReturn
-			} else {
-				stringReturn = stringReturn + " " + n
-			}
-		}
-
-	}
-	fmt.Printf("%v \n", stringReturn)
-	return stringReturn
-}
-
 func outputEnd() {
 	//-- End output
 	if errorCount > 0 {

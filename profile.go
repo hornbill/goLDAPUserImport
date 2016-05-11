@@ -20,13 +20,26 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer) bool {
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	espXmlmc.OpenElement("profileData")
 	espXmlmc.SetParam("userID", UserID)
-
+	value := ""
 	//-- Loop Through UserProfileMapping
 	for key := range userProfileArray {
 		name := userProfileArray[key]
 		feild := userProfileMappingMap[name]
-		//-- Get Value From LDAP
-		value := getFeildValueProfile(u, name, buffer)
+
+		if feild == "manager" {
+			//-- Process User manager
+			if ldapImportConf.UserManagerMapping.Enabled && ldapImportConf.UserManagerMapping.Action != updateString {
+				value = getManagerFromLookup(u, buffer)
+			} else {
+				//-- Get Value From LDAP
+				value = getFeildValueProfile(u, name, buffer)
+			}
+
+		} else {
+			//-- Get Value From LDAP
+			value = getFeildValueProfile(u, name, buffer)
+		}
+
 		//-- if we have Value then set it
 		if value != "" {
 			espXmlmc.SetParam(feild, value)

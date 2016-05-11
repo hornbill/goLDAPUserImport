@@ -142,6 +142,7 @@ var xmlmcInstanceConfig xmlmcConfig
 var ldapUsers []*ldap.Entry
 var xmlmcUsers []userListItemStruct
 var sites []siteListStruct
+var managers []managerListStruct
 var groups []groupListStruct
 var counters counterTypeStruct
 var configFileName string
@@ -159,6 +160,10 @@ var noValuesToUpdate = "There are no values to update"
 type siteListStruct struct {
 	SiteName string
 	SiteID   int
+}
+type managerListStruct struct {
+	UserName string
+	UserID   string
 }
 type groupListStruct struct {
 	GroupName string
@@ -295,14 +300,25 @@ type xmlmcCheckUserResponse struct {
 	State        stateStruct            `xml:"state"`
 }
 type xmlmcUserListResponse struct {
-	MethodResult string               `xml:"status,attr"`
-	Params       paramsUserListStruct `xml:"params"`
-	State        stateStruct          `xml:"state"`
+	MethodResult string                     `xml:"status,attr"`
+	Params       paramsUserSearchListStruct `xml:"params"`
+	State        stateStruct                `xml:"state"`
 }
 type xmlmcuserSetGroupOptionsResponse struct {
 	MethodResult string      `xml:"status,attr"`
 	State        stateStruct `xml:"state"`
 }
+type paramsUserSearchListStruct struct {
+	RowData paramsUserRowDataListStruct `xml:"rowData"`
+}
+type paramsUserRowDataListStruct struct {
+	Row userObjectStruct `xml:"row"`
+}
+type userObjectStruct struct {
+	UserID   string `xml:"h_user_id"`
+	UserName string `xml:"h_name"`
+}
+
 type xmlmcSiteListResponse struct {
 	MethodResult string               `xml:"status,attr"`
 	Params       paramsSiteListStruct `xml:"params"`

@@ -208,6 +208,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		if ldapImportConf.UserAccountStatus.Enabled && ldapImportConf.UserAccountStatus.Action != updateString {
 			userSetStatus(userID, ldapImportConf.UserAccountStatus.Status, buffer)
 		}
+
 		if len(ldapImportConf.Roles) > 0 {
 			userAddRoles(userID, buffer)
 		}
