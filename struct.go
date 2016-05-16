@@ -188,6 +188,7 @@ type ldapImportConfStruct struct {
 	APIKey             string
 	InstanceID         string
 	UpdateUserType     bool
+	UserRoleAction     string
 	URL                string
 	LDAPServerConf     ldapServerConfStruct
 	UserMapping        userMappingStruct

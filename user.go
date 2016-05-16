@@ -104,6 +104,10 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 			userSetStatus(userID, ldapImportConf.UserAccountStatus.Status, buffer)
 		}
 
+		//-- Add Roles
+		if ldapImportConf.UserRoleAction != createString && len(ldapImportConf.Roles) > 0 {
+			userAddRoles(userID, buffer)
+		}
 		//-- Process Profile Details
 		boolUpdateProfile := userUpdateProfile(u, buffer)
 		if boolUpdateProfile != true {
@@ -209,7 +213,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 			userSetStatus(userID, ldapImportConf.UserAccountStatus.Status, buffer)
 		}
 
-		if len(ldapImportConf.Roles) > 0 {
+		if ldapImportConf.UserRoleAction != updateString && len(ldapImportConf.Roles) > 0 {
 			userAddRoles(userID, buffer)
 		}
 		//-- Process Profile Details

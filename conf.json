@@ -2,6 +2,7 @@
     "APIKey": "",
     "InstanceId": "",
     "UpdateUserType": false,
+    "UserRoleAction": "Both",
     "LDAPServerConf": {
         "Server": "",
         "UserName": "",
@@ -94,7 +95,7 @@
         "userPrincipalName",
         "givenName",
         "description",
-        "department"
+        "department",
         "manager"
     ],
     "Roles":[

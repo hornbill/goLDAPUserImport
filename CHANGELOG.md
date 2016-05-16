@@ -1,3 +1,13 @@
+## 2.0.1 (May 16 , 2016)
+
+Features:
+
+- ADD: Ability to assign roles to a user on user update
+
+Bug Fixes:
+
+- Fix: conf.json was invalid
+
 ## 2.0.0 (May 11 , 2016)
 
 Features:

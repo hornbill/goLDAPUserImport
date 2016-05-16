@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.0.0/ldap_user_import_win_x64_v2_0_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v1.7.0/ldap_user_import_win_x86_v2_0_0.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.0.1/ldap_user_import_win_x64_v2_0_1.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.0.1/ldap_user_import_win_x86_v2_0_1.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -32,6 +32,7 @@ Example JSON File:
     "APIKey": "",
     "InstanceId": "",
     "UpdateUserType": false,
+    "UserRoleAction": "Both",
     "LDAPServerConf": {
         "Server": "",
         "UserName": "",
@@ -147,6 +148,7 @@ Example JSON File:
 * "APIKey" - A Valid API Assigned to a user with enough rights to process the import
 * "InstanceId" - Instance Id
 * "UpdateUserType" - If set to True then the Type of User will be updated when the user account Update is triggered
+* "UserRoleAction" - (Both | Update | Create) - When to Set controls what action will assign roles ro a user Create, On Update or Both
 
 #### LDAPServerConf
 * "Server" LDAP Server Address
