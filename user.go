@@ -123,6 +123,14 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		}
 
 		return true, nil
+	}else {
+		//-- Process Profile Details as part of the dry run for testing
+		boolUpdateProfile := userUpdateProfile(u, buffer)
+		if boolUpdateProfile != true {
+			err := errors.New("Error Updating User Profile")
+			errorCountInc()
+			return false, err
+		}
 	}
 	//-- Inc Counter
 	updateSkippedCountInc()
@@ -130,9 +138,6 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 	var XMLSTRING = espXmlmc.GetParam()
 	buffer.WriteString(loggerGen(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING)))
 	espXmlmc.ClearParam()
-
-	//-- Process Profile Details
-	userUpdateProfile(u, buffer)
 
 	return true, nil
 }
@@ -226,15 +231,20 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 
 		createCountInc()
 		return true, nil
+	}else {
+		//-- Process Profile Details as part of the dry run for testing
+		boolUpdateProfile := userUpdateProfile(u, buffer)
+		if boolUpdateProfile != true {
+			err := errors.New("Error Updating User Profile")
+			errorCountInc()
+			return false, err
+		}
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
 	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
 	createSkippedCountInc()
 	espXmlmc.ClearParam()
-
-	//-- Process Profile Details
-	userUpdateProfile(u, buffer)
 
 	return true, nil
 }
@@ -260,7 +270,6 @@ func userAddRoles(userID string, buffer *bytes.Buffer) bool {
 	}
 	if xmlRespon.MethodResult != constOK {
 		buffer.WriteString(loggerGen(4, "Unable to Assign Role to User: "+xmlRespon.State.ErrorRet))
-		espLogger("Unable to Assign Role to User: "+xmlRespon.State.ErrorRet, "error")
 		return false
 	}
 	buffer.WriteString(loggerGen(1, "Roles Added Successfully"))
@@ -290,7 +299,6 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	if xmlRespon.MethodResult != constOK {
 		if xmlRespon.State.ErrorRet != "Failed to update account status (target and the current status is the same)." {
 			buffer.WriteString(loggerGen(4, "Unable to Set User Status 111: "+xmlRespon.State.ErrorRet))
-			espLogger("Unable to Set User Status: "+xmlRespon.State.ErrorRet, "error")
 			return false
 		}
 		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+fmt.Sprintf("%s", status)))

@@ -1,3 +1,10 @@
+## 2.0.3 (May 18 , 2016)
+
+Bug Fixes:
+
+- Fix: Hardcoded number of records that would be processed to 100, removed total is now taken from results from LDAP 
+
+
 ## 2.0.2 (May 18 , 2016)
 
 Bug Fixes:

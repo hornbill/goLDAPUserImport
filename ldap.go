@@ -13,7 +13,7 @@ func connectLDAP() *ldap.LDAPConnection {
 		InsecureSkipVerify: ldapImportConf.LDAPServerConf.InsecureSkipVerify,
 	}
 	//-- Based on Connection Type Normal | TLS | SSL
-	logger(1, "Connecting... \nServer: "+ldapImportConf.LDAPServerConf.Server+"\nPort: "+fmt.Sprintf("%d", ldapImportConf.LDAPServerConf.Port)+"\nType: "+ldapImportConf.LDAPServerConf.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAPServerConf.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAPServerConf.Debug), true)
+	logger(1, "Attempting Connection to LDAP... \nServer: "+ldapImportConf.LDAPServerConf.Server+"\nPort: "+fmt.Sprintf("%d", ldapImportConf.LDAPServerConf.Port)+"\nType: "+ldapImportConf.LDAPServerConf.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAPServerConf.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAPServerConf.Debug), true)
 	t := ldapImportConf.LDAPServerConf.ConnectionType
 	switch t {
 	case "":

@@ -61,6 +61,7 @@ func main() {
 
 	//-- Generate Instance XMLMC Endpoint
 	ldapImportConf.URL = getInstanceURL()
+	logger(1, "Instance Endpoint "+fmt.Sprintf("%v", ldapImportConf.URL), true)
 
 	//-- Once we have loaded the config write to hornbill log file
 	espLogger("---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
@@ -205,10 +206,10 @@ func validateConf() error {
 func processUsersFromWorkers() {
 	bar := pb.StartNew(len(ldapUsers))
 	logger(1, "Processing Users", false)
-	jobs := make(chan int, 100)
-	results := make(chan int, 100)
-
+	
 	total := len(ldapUsers)
+	jobs := make(chan int, total)
+	results := make(chan int, total)
 	workers := configWorkers
 
 	if total < workers {
@@ -240,30 +241,34 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 		var buffer bytes.Buffer
 		//-- Get User Id based on the mapping
 		var userID = strings.ToLower(getFeildValue(ldapUser, "UserID", &buffer))
-		buffer.WriteString("[DEBUG] Buffer For Job: " + fmt.Sprintf("%d", j) + " - Worker: " + fmt.Sprintf("%d", id) + " - User: " + userID + "\n")
-
-		//-- For Each LDAP Users Check if they already Exist
-		boolUpdate, err := checkUserOnInstance(userID)
-		if err != nil {
-			buffer.WriteString(loggerGen(4, "Unable to Search For User: "+fmt.Sprintf("%+v", err)))
-		}
-		//-- User Exists so Update
-		if boolUpdate {
-			buffer.WriteString(loggerGen(1, "Update User: "+userID))
-			_, errUpdate := updateUser(ldapUser, &buffer)
-			if errUpdate != nil {
-				buffer.WriteString(loggerGen(4, "Unable to Update User: "+fmt.Sprintf("%+v", errUpdate)))
-			}
+		if userID == "" {
+			buffer.WriteString(loggerGen(1, "Unable to Proceess User - Invalid Id"+userID))
 		} else {
-			buffer.WriteString(loggerGen(1, "Create User: "+userID))
-			//-- User Does not Exist so Create
-			if ldapUser != nil {
-				_, errorCreate := createUser(ldapUser, &buffer)
-				if errorCreate != nil {
-					buffer.WriteString(loggerGen(4, "Unable to Create User: "+fmt.Sprintf("%+v", errorCreate)))
-				}
-			}
+			buffer.WriteString(loggerGen(1, "Buffer For Job: "+fmt.Sprintf("%d", j)+" - Worker: "+fmt.Sprintf("%d", id)+" - User: "+userID))
 
+			//-- For Each LDAP Users Check if they already Exist
+			boolUpdate, err := checkUserOnInstance(userID)
+			if err != nil {
+				buffer.WriteString(loggerGen(4, "Unable to Search For User: "+fmt.Sprintf("%v", err)))
+			}
+			//-- User Exists so Update
+			if boolUpdate {
+				buffer.WriteString(loggerGen(1, "Update User: "+userID))
+				_, errUpdate := updateUser(ldapUser, &buffer)
+				if errUpdate != nil {
+					buffer.WriteString(loggerGen(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate)))
+				}
+			} else {
+				buffer.WriteString(loggerGen(1, "Create User: "+userID))
+				//-- User Does not Exist so Create
+				if ldapUser != nil {
+					_, errorCreate := createUser(ldapUser, &buffer)
+					if errorCreate != nil {
+						buffer.WriteString(loggerGen(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate)))
+					}
+				}
+
+			}
 		}
 		//-- Increment
 		bar.Increment()
