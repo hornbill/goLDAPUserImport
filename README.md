@@ -32,7 +32,7 @@ Example JSON File:
     "APIKey": "",
     "InstanceId": "",
     "UpdateUserType": false,
-    "UserRoleAction": "Both",
+    "UserRoleAction": "Create",
     "LDAPServerConf": {
         "Server": "",
         "UserName": "",

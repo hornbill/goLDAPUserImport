@@ -9,7 +9,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.0.0"
+const version = "2.0.1"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
