@@ -1,4 +1,4 @@
-## 2.0.1 (May 16 , 2016)
+## 2.0.1 (May 18 , 2016)
 
 Features:
 
@@ -7,6 +7,7 @@ Features:
 Bug Fixes:
 
 - Fix: conf.json was invalid
+- Fix: Potential Race conditions after moving to Goroutines 
 
 ## 2.0.0 (May 11 , 2016)
 

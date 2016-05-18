@@ -45,6 +45,7 @@ func getSiteFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 func siteInCache(siteName string) (bool, int) {
 	boolReturn := false
 	intReturn := 0
+	mutexSites.Lock()
 	//-- Check if in Cache
 	for _, site := range sites {
 		if site.SiteName == siteName {
@@ -52,6 +53,7 @@ func siteInCache(siteName string) (bool, int) {
 			intReturn = site.SiteID
 		}
 	}
+	mutexSites.Unlock()
 	return boolReturn, intReturn
 }
 
@@ -89,11 +91,13 @@ func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
 					intReturn = xmlRespon.Params.RowData.Row.SiteID
 					boolReturn = true
 					//-- Add Site to Cache
+					mutexSites.Lock()
 					var newSiteForCache siteListStruct
 					newSiteForCache.SiteID = intReturn
 					newSiteForCache.SiteName = siteName
 					name := []siteListStruct{newSiteForCache}
 					sites = append(sites, name...)
+					mutexSites.Unlock()
 				}
 			}
 		}

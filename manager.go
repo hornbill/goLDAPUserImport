@@ -88,11 +88,13 @@ func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
 					strReturn = xmlRespon.Params.RowData.Row.UserID
 					boolReturn = true
 					//-- Add Site to Cache
+					mutexManagers.Lock()
 					var newManagerForCache managerListStruct
 					newManagerForCache.UserID = strReturn
 					newManagerForCache.UserName = managerName
 					name := []managerListStruct{newManagerForCache}
 					managers = append(managers, name...)
+					mutexManagers.Unlock()
 				}
 			}
 		}
@@ -105,12 +107,14 @@ func managerInCache(managerName string) (bool, string) {
 	boolReturn := false
 	stringReturn := ""
 	//-- Check if in Cache
+	mutexManagers.Lock()
 	for _, manager := range managers {
 		if strings.ToLower(manager.UserName) == strings.ToLower(managerName) {
 			boolReturn = true
 			stringReturn = manager.UserID
 		}
 	}
+	mutexManagers.Unlock()
 	return boolReturn, stringReturn
 }
 

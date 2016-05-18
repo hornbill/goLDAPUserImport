@@ -83,13 +83,14 @@ func groupInCache(groupName string) (bool, string) {
 	boolReturn := false
 	stringReturn := ""
 	//-- Check if in Cache
+	mutexGroups.Lock()
 	for _, group := range groups {
 		if group.GroupName == groupName {
 			boolReturn = true
 			stringReturn = group.GroupID
 		}
 	}
-
+	mutexGroups.Unlock()
 	return boolReturn, stringReturn
 }
 
@@ -127,12 +128,13 @@ func searchGroup(orgName string, buffer *bytes.Buffer) (bool, string) {
 				strReturn = xmlRespon.Params.RowData.Row.GroupID
 				boolReturn = true
 				//-- Add Group to Cache
+				mutexGroups.Lock()
 				var newgroupForCache groupListStruct
 				newgroupForCache.GroupID = strReturn
 				newgroupForCache.GroupName = orgName
 				name := []groupListStruct{newgroupForCache}
 				groups = append(groups, name...)
-
+				mutexGroups.Unlock()
 			}
 		}
 	}

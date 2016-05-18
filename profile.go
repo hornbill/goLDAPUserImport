@@ -62,7 +62,7 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer) bool {
 			return false
 		}
 		if xmlRespon.MethodResult != constOK {
-			counters.profileSkipped++
+			profileSkippedCountInc()
 			if xmlRespon.State.ErrorRet == noValuesToUpdate {
 				return true
 			}
@@ -70,7 +70,7 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer) bool {
 			buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+fmt.Sprintf("%v", err)))
 			return false
 		}
-		counters.profileUpdated++
+		profileCountInc()
 		buffer.WriteString(loggerGen(1, "User Profile Update Success"))
 		return true
 
@@ -78,7 +78,7 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer) bool {
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
 	buffer.WriteString(loggerGen(1, "User Profile Update XML "+fmt.Sprintf("%s", XMLSTRING)))
-	counters.profileSkipped++
+	profileSkippedCountInc()
 	espXmlmc.ClearParam()
 	return true
 

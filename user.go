@@ -91,7 +91,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 
 		if xmlRespon.MethodResult != constOK && xmlRespon.State.ErrorRet != noValuesToUpdate {
 			err = errors.New(xmlRespon.State.ErrorRet)
-			errorCount++
+			errorCountInc()
 			return false, err
 
 		}
@@ -112,20 +112,20 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		boolUpdateProfile := userUpdateProfile(u, buffer)
 		if boolUpdateProfile != true {
 			err = errors.New("Error Updating User Profile")
-			errorCount++
+			errorCountInc()
 			return false, err
 		}
 		if xmlRespon.State.ErrorRet != noValuesToUpdate {
 			buffer.WriteString(loggerGen(1, "User Update Success"))
-			counters.updated++
+			updateCountInc()
 		} else {
-			counters.updatedSkipped++
+			updateSkippedCountInc()
 		}
 
 		return true, nil
 	}
 	//-- Inc Counter
-	counters.updatedSkipped++
+	updateSkippedCountInc()
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
 	buffer.WriteString(loggerGen(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING)))
@@ -188,17 +188,17 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		XMLCreate, xmlmcErr := espXmlmc.Invoke("admin", "userCreate")
 		var xmlRespon xmlmcResponse
 		if xmlmcErr != nil {
-			errorCount++
+			errorCountInc()
 			return false, xmlmcErr
 		}
 		err := xml.Unmarshal([]byte(XMLCreate), &xmlRespon)
 		if err != nil {
-			errorCount++
+			errorCountInc()
 			return false, err
 		}
 		if xmlRespon.MethodResult != constOK {
 			err = errors.New(xmlRespon.State.ErrorRet)
-			errorCount++
+			errorCountInc()
 			return false, err
 
 		}
@@ -220,17 +220,17 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		boolUpdateProfile := userUpdateProfile(u, buffer)
 		if boolUpdateProfile != true {
 			err = errors.New("Error Updating User Profile")
-			errorCount++
+			errorCountInc()
 			return false, err
 		}
 
-		counters.created++
+		createCountInc()
 		return true, nil
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
 	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
-	counters.createskipped++
+	createSkippedCountInc()
 	espXmlmc.ClearParam()
 
 	//-- Process Profile Details

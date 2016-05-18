@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 
 	"github.com/hornbill/ldap"
@@ -12,6 +13,12 @@ const version = "2.0.0"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
+
+//-- MUTEX
+var mutexSites = &sync.Mutex{}
+var mutexGroups = &sync.Mutex{}
+var mutexManagers = &sync.Mutex{}
+var mutexCounters = &sync.Mutex{}
 
 var userProfileMappingMap = map[string]string{
 	"MiddleName":        "middleName",
