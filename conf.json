@@ -69,14 +69,14 @@
         "PersonalInterests":"",
         "homeAddress":"",
         "PersonalBlog":"",
-        "Attrib1":"",
-    	"Attrib2":"",
-    	"Attrib3":"",
-    	"Attrib4":"",
-    	"Attrib5":"",
-    	"Attrib6":"",
-    	"Attrib7":"",
-    	"Attrib8":""
+        "Attrib1":"1",
+    	"Attrib2":"2",
+    	"Attrib3":"3",
+    	"Attrib4":"4",
+    	"Attrib5":"5",
+    	"Attrib6":"6",
+    	"Attrib7":"7",
+    	"Attrib8":"8"
     },
     "UserManagerMapping":{
         "Action":"Create",

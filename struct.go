@@ -9,7 +9,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.0.1"
+const version = "2.0.2"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -19,6 +19,8 @@ var mutexSites = &sync.Mutex{}
 var mutexGroups = &sync.Mutex{}
 var mutexManagers = &sync.Mutex{}
 var mutexCounters = &sync.Mutex{}
+var logFileMutex = &sync.Mutex{}
+var bufferMutex = &sync.Mutex{}
 
 var userProfileMappingMap = map[string]string{
 	"MiddleName":        "middleName",
@@ -257,6 +259,14 @@ type userProfileMappingStruct struct {
 	PersonalInterests string
 	HomeAddress       string
 	PersonalBlog      string
+	Attrib1           string
+	Attrib2           string
+	Attrib3           string
+	Attrib4           string
+	Attrib5           string
+	Attrib6           string
+	Attrib7           string
+	Attrib8           string
 }
 type userManagerStruct struct {
 	Action        string

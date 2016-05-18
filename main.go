@@ -104,7 +104,7 @@ func procFlags() {
 	flag.StringVar(&configZone, "zone", "eur", "Override the default Zone the instance sits in")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
 	flag.BoolVar(&configVersion, "version", false, "Output Version")
-	flag.IntVar(&configWorkers, "workers", 3, "Number of Worker threads to use")
+	flag.IntVar(&configWorkers, "workers", 1, "Number of Worker threads to use")
 
 	//-- Parse Flags
 	flag.Parse()
@@ -267,7 +267,9 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 		}
 		//-- Increment
 		bar.Increment()
+		bufferMutex.Lock()
 		loggerWriteBuffer(buffer.String())
+		bufferMutex.Unlock()
 		buffer.Reset()
 		//-- Results
 		results <- j * 2
@@ -289,7 +291,9 @@ func getFeildValue(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
 func getFeildValueProfile(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
 	//-- Dyniamicly Grab Mapped Value
 	r := reflect.ValueOf(ldapImportConf.UserProfileMapping)
+
 	f := reflect.Indirect(r).FieldByName(s)
+
 	//-- Get Mapped Value
 	var UserProfileMapping = f.String()
 	return processComplexFeild(u, UserProfileMapping, buffer)
@@ -380,7 +384,9 @@ func logger(t int, s string, outputtoCLI bool) {
 	// don't forget to close it
 	defer f.Close()
 	// assign it to the standard logger
+	logFileMutex.Lock()
 	log.SetOutput(f)
+	logFileMutex.Unlock()
 	var errorLogPrefix = ""
 	//-- Create Log Entry
 	switch t {

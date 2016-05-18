@@ -1,5 +1,13 @@
 ## 2.0.1 (May 18 , 2016)
 
+Bug Fixes:
+
+- Fix: Attributes for user Profile were not being populated correctly
+- Fix: Potential Race conditions after moving to Goroutines
+- FIX: Reduce Potential for any errors and default workers back to 1
+
+## 2.0.1 (May 18 , 2016)
+
 Features:
 
 - ADD: Ability to assign roles to a user on user update
@@ -7,7 +15,7 @@ Features:
 Bug Fixes:
 
 - Fix: conf.json was invalid
-- Fix: Potential Race conditions after moving to Goroutines 
+- Fix: Potential Race conditions after moving to Goroutines
 
 ## 2.0.0 (May 11 , 2016)
 

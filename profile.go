@@ -14,7 +14,6 @@ import (
 func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer) bool {
 	UserID := getFeildValue(u, "UserID", buffer)
 	buffer.WriteString(loggerGen(1, "Processing User Profile Data "+UserID))
-
 	//-- Construct XMLMC
 	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
