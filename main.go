@@ -64,8 +64,12 @@ func main() {
 	logger(1, "Instance Endpoint "+fmt.Sprintf("%v", ldapImportConf.URL), true)
 
 	//-- Once we have loaded the config write to hornbill log file
-	espLogger("---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
+	logged := espLogger("---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
 
+	if !logged {
+		logger(4, "Unable to Connect to Instance", true)
+		return
+	}
 	//-- Query LDAP
 	var boolLDAPUsers = queryLdap()
 
@@ -206,7 +210,7 @@ func validateConf() error {
 func processUsersFromWorkers() {
 	bar := pb.StartNew(len(ldapUsers))
 	logger(1, "Processing Users", false)
-	
+
 	total := len(ldapUsers)
 	jobs := make(chan int, total)
 	results := make(chan int, total)
@@ -455,7 +459,7 @@ func setZone(zone string) {
 }
 
 //-- Log to ESP
-func espLogger(message string, severity string) {
+func espLogger(message string, severity string) bool {
 	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	espXmlmc.SetParam("fileName", "LDAP_User_Import")
@@ -467,14 +471,19 @@ func espLogger(message string, severity string) {
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", xmlmcErr), true)
+		return false
 	}
 	err := xml.Unmarshal([]byte(XMLLogger), &xmlRespon)
 	if err != nil {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", err), true)
+		return false
 	}
 	if xmlRespon.MethodResult != constOK {
 		logger(4, "Unable to write to log "+xmlRespon.State.ErrorRet, true)
+		return false
 	}
+
+	return true
 }
 
 func errorCountInc() {

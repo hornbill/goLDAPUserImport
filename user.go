@@ -123,14 +123,13 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		}
 
 		return true, nil
-	}else {
-		//-- Process Profile Details as part of the dry run for testing
-		boolUpdateProfile := userUpdateProfile(u, buffer)
-		if boolUpdateProfile != true {
-			err := errors.New("Error Updating User Profile")
-			errorCountInc()
-			return false, err
-		}
+	}
+	//-- Process Profile Details as part of the dry run for testing
+	boolUpdateProfile := userUpdateProfile(u, buffer)
+	if boolUpdateProfile != true {
+		err := errors.New("Error Updating User Profile")
+		errorCountInc()
+		return false, err
 	}
 	//-- Inc Counter
 	updateSkippedCountInc()
@@ -231,14 +230,13 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 
 		createCountInc()
 		return true, nil
-	}else {
-		//-- Process Profile Details as part of the dry run for testing
-		boolUpdateProfile := userUpdateProfile(u, buffer)
-		if boolUpdateProfile != true {
-			err := errors.New("Error Updating User Profile")
-			errorCountInc()
-			return false, err
-		}
+	}
+	//-- Process Profile Details as part of the dry run for testing
+	boolUpdateProfile := userUpdateProfile(u, buffer)
+	if boolUpdateProfile != true {
+		err := errors.New("Error Updating User Profile")
+		errorCountInc()
+		return false, err
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
@@ -305,7 +303,5 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 		return true
 	}
 	buffer.WriteString(loggerGen(1, "User Status Set Successfully"))
-	return true
-
 	return true
 }
