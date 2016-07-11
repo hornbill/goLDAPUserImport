@@ -88,6 +88,7 @@ func groupInCache(groupName string) (bool, string) {
 		if group.GroupName == groupName {
 			boolReturn = true
 			stringReturn = group.GroupID
+			break
 		}
 	}
 	mutexGroups.Unlock()

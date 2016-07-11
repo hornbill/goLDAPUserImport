@@ -51,6 +51,7 @@ func siteInCache(siteName string) (bool, int) {
 		if site.SiteName == siteName {
 			boolReturn = true
 			intReturn = site.SiteID
+			break
 		}
 	}
 	mutexSites.Unlock()
