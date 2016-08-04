@@ -107,6 +107,7 @@ func procFlags() {
 	//-- Grab Flags
 	flag.StringVar(&configFileName, "file", "conf.json", "Name of Configuration File To Load")
 	flag.StringVar(&configZone, "zone", "eur", "Override the default Zone the instance sits in")
+	flag.StringVar(&configLogPrefix, "logprefix", "", "Add prefix to the logfile")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
 	flag.BoolVar(&configVersion, "version", false, "Output Version")
 	flag.IntVar(&configWorkers, "workers", 1, "Number of Worker threads to use")
@@ -125,6 +126,7 @@ func outputFlags() {
 
 	logger(1, "Flag - Config File "+fmt.Sprintf("%s", configFileName), true)
 	logger(1, "Flag - Zone "+fmt.Sprintf("%s", configZone), true)
+	logger(1, "Flag - Log Prefix "+fmt.Sprintf("%s", configLogPrefix), true)
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
 }
@@ -372,7 +374,7 @@ func logger(t int, s string, outputtoCLI bool) {
 	//-- Log Folder
 	logPath := cwd + "/log"
 	//-- Log File
-	logFileName := logPath + "/LDAP_User_Import_" + timeNow + ".log"
+	logFileName := logPath + "/" + configLogPrefix + "LDAP_User_Import_" + timeNow + ".log"
 	red := color.New(color.FgRed).PrintfFunc()
 	orange := color.New(color.FgCyan).PrintfFunc()
 	//-- If Folder Does Not Exist then create it

@@ -9,7 +9,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.0.3"
+const version = "2.0.4"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -156,6 +156,7 @@ var groups []groupListStruct
 var counters counterTypeStruct
 var configFileName string
 var configZone string
+var configLogPrefix string
 var configDryRun bool
 var configVersion bool
 var configWorkers int

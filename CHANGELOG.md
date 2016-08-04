@@ -1,8 +1,14 @@
+## 2.0.4 (Aug 4 , 2016)
+
+Features:
+
+- ADD: New Input flag `-logprefix=` which allows you to append a string to the name of the log file generated 
+
 ## 2.0.3 (May 18 , 2016)
 
 Bug Fixes:
 
-- Fix: Hardcoded number of records that would be processed to 100, removed total is now taken from results from LDAP 
+- Fix: Hardcoded number of records that would be processed to 100, removed total is now taken from results from LDAP
 
 
 ## 2.0.2 (May 18 , 2016)

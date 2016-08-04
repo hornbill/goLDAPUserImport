@@ -223,6 +223,7 @@ The name of the Organization in Hornbill must match the value of the Attribute i
 Command Line Parameters
 * file - Defaults to `conf.json` - Name of the Configuration file to load
 * dryrun - Defaults to `false` - Set to True and the XMLMC for Create and Update users will not be called and instead the XML will be dumped to the log file, this is to aid in debugging the initial connection information.
+* logprefix - Default to `` - Allows you to define a string to prepend to the name of the log file generated
 * zone - Defaults to `eur` - Allows you to change the ZONE used for creating the XMLMC EndPoint URL https://{ZONE}api.hornbill.com/{INSTANCE}/
 * workers - Defaults to `3` - Allows you to change the number of worker threads used to process the import, this can improve performance on slow import but using too many workers have a detriment to performance of your Hornbill instance.
 
