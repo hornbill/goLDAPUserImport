@@ -203,6 +203,11 @@ func validateConf() error {
 		err := errors.New("InstanceID is not set")
 		return err
 	}
+	//-- Check LDAP Sever Connection type
+	if ldapImportConf.LDAPServerConf.ConnectionType != "" && ldapImportConf.LDAPServerConf.ConnectionType != "SSL" && ldapImportConf.LDAPServerConf.ConnectionType != "TLS" {
+		err := errors.New("Invalid ConnectionType: '" + ldapImportConf.LDAPServerConf.ConnectionType + "' Should be either '' or 'TLS' or 'SSL'")
+		return err
+	}
 	//-- Process Config File
 
 	return nil

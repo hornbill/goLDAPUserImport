@@ -24,7 +24,10 @@ func checkUserOnInstance(userID string) (bool, error) {
 	}
 	err := xml.Unmarshal([]byte(XMLCheckUser), &xmlRespon)
 	if err != nil {
-		return false, err
+		stringError := err.Error()
+		stringBody := string(XMLCheckUser)
+		errWithBody := errors.New(stringError + " RESPONSE BODY: " + stringBody)
+		return false, errWithBody
 	}
 	if xmlRespon.MethodResult != constOK {
 		err := errors.New(xmlRespon.State.ErrorRet)

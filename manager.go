@@ -76,7 +76,9 @@ func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
 	}
 	err := xml.Unmarshal([]byte(XMLUserSearch), &xmlRespon)
 	if err != nil {
-		buffer.WriteString(loggerGen(4, "Unable to Search for Manager: "+fmt.Sprintf("%v", err)))
+		stringError := err.Error()
+		stringBody := string(XMLUserSearch)
+		buffer.WriteString(loggerGen(4, "Unable to Search for Manager: "+fmt.Sprintf("%v", stringError+" RESPONSE BODY: "+stringBody)))
 	} else {
 		if xmlRespon.MethodResult != constOK {
 			buffer.WriteString(loggerGen(4, "Unable to Search for Manager: "+xmlRespon.State.ErrorRet))

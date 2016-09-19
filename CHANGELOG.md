@@ -1,8 +1,14 @@
+## 2.0.5 (Aug 4 , 2016)
+
+Features:
+
+- ADD: Validate LDAP Server ConnectionType, an invalid connection type would cause a panic in the LDAP Library. 
+
 ## 2.0.4 (Aug 4 , 2016)
 
 Features:
 
-- ADD: New Input flag `-logprefix=` which allows you to append a string to the name of the log file generated 
+- ADD: New Input flag `-logprefix=` which allows you to append a string to the name of the log file generated
 
 ## 2.0.3 (May 18 , 2016)
 
