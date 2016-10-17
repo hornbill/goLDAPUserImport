@@ -41,7 +41,7 @@
         "CountryCode":""
     },
     "UserAccountStatus":{
-        "Action":"Update",
+        "Action":"Both",
         "Enabled": false,
         "Status":"active"
     },
@@ -79,7 +79,7 @@
     	"Attrib8":"8"
     },
     "UserManagerMapping":{
-        "Action":"Create",
+        "Action":"Both",
         "Enabled":true,
         "Attribute":"[manager]",
         "GetIDFromName":true,

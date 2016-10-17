@@ -59,6 +59,7 @@ func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
 	//-- ESP Query for site
 	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+	espXmlmc.SetTrace("ldapUserImport")
 	if managerName == "" {
 		return boolReturn, strReturn
 	}

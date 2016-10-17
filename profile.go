@@ -11,12 +11,10 @@ import (
 )
 
 //-- Deal with User Profile Data
-func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer) bool {
+func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
 	UserID := getFeildValue(u, "UserID", buffer)
 	buffer.WriteString(loggerGen(1, "Processing User Profile Data "+UserID))
-	//-- Construct XMLMC
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+
 	espXmlmc.OpenElement("profileData")
 	espXmlmc.SetParam("userID", UserID)
 	value := ""

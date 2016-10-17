@@ -247,6 +247,12 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 
 	//-- Range On Jobs for worker
 	for j := range jobs {
+
+		//-- Create XMLMC Instance Per Worker
+		espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+		espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+		espXmlmc.SetTrace("ldapUserImportTool")
+
 		//-- Get User Record from Array
 		ldapUser := ldapUsers[j-1]
 		var buffer bytes.Buffer
@@ -258,14 +264,14 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 			buffer.WriteString(loggerGen(1, "Buffer For Job: "+fmt.Sprintf("%d", j)+" - Worker: "+fmt.Sprintf("%d", id)+" - User: "+userID))
 
 			//-- For Each LDAP Users Check if they already Exist
-			boolUpdate, err := checkUserOnInstance(userID)
+			boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
 			if err != nil {
 				buffer.WriteString(loggerGen(4, "Unable to Search For User: "+fmt.Sprintf("%v", err)))
 			}
 			//-- User Exists so Update
 			if boolUpdate {
 				buffer.WriteString(loggerGen(1, "Update User: "+userID))
-				_, errUpdate := updateUser(ldapUser, &buffer)
+				_, errUpdate := updateUser(ldapUser, &buffer, espXmlmc)
 				if errUpdate != nil {
 					buffer.WriteString(loggerGen(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate)))
 				}
@@ -273,7 +279,7 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 				buffer.WriteString(loggerGen(1, "Create User: "+userID))
 				//-- User Does not Exist so Create
 				if ldapUser != nil {
-					_, errorCreate := createUser(ldapUser, &buffer)
+					_, errorCreate := createUser(ldapUser, &buffer, espXmlmc)
 					if errorCreate != nil {
 						buffer.WriteString(loggerGen(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate)))
 					}

@@ -12,9 +12,8 @@ import (
 )
 
 //-- Does User Exist on Instance
-func checkUserOnInstance(userID string) (bool, error) {
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+func checkUserOnInstance(userID string, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
+
 	espXmlmc.SetParam("entity", "UserAccount")
 	espXmlmc.SetParam("keyValue", userID)
 	XMLCheckUser, xmlmcErr := espXmlmc.Invoke("data", "entityDoesRecordExist")
@@ -37,7 +36,7 @@ func checkUserOnInstance(userID string) (bool, error) {
 }
 
 //-- Update User Record
-func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
+func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
 	//-- Do we Lookup Site
 	site := ""
 
@@ -47,9 +46,6 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 	} else {
 		site = getFeildValue(u, "Site", buffer)
 	}
-
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 
 	userID := getFeildValue(u, "UserID", buffer)
 	if userID != "" {
@@ -109,10 +105,10 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 
 		//-- Add Roles
 		if ldapImportConf.UserRoleAction != createString && len(ldapImportConf.Roles) > 0 {
-			userAddRoles(userID, buffer)
+			userAddRoles(userID, buffer, espXmlmc)
 		}
 		//-- Process Profile Details
-		boolUpdateProfile := userUpdateProfile(u, buffer)
+		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc)
 		if boolUpdateProfile != true {
 			err = errors.New("Error Updating User Profile")
 			errorCountInc()
@@ -128,7 +124,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		return true, nil
 	}
 	//-- Process Profile Details as part of the dry run for testing
-	boolUpdateProfile := userUpdateProfile(u, buffer)
+	boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc)
 	if boolUpdateProfile != true {
 		err := errors.New("Error Updating User Profile")
 		errorCountInc()
@@ -145,7 +141,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 }
 
 //-- Create Users
-func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
+func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
 	//-- Do we Lookup Site
 	site := ""
 
@@ -155,8 +151,6 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 	} else {
 		site = getFeildValue(u, "Site", buffer)
 	}
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 
 	userID := getFeildValue(u, "UserID", buffer)
 	if userID != "" {
@@ -221,10 +215,10 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		}
 
 		if ldapImportConf.UserRoleAction != updateString && len(ldapImportConf.Roles) > 0 {
-			userAddRoles(userID, buffer)
+			userAddRoles(userID, buffer, espXmlmc)
 		}
 		//-- Process Profile Details
-		boolUpdateProfile := userUpdateProfile(u, buffer)
+		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc)
 		if boolUpdateProfile != true {
 			err = errors.New("Error Updating User Profile")
 			errorCountInc()
@@ -235,7 +229,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 		return true, nil
 	}
 	//-- Process Profile Details as part of the dry run for testing
-	boolUpdateProfile := userUpdateProfile(u, buffer)
+	boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc)
 	if boolUpdateProfile != true {
 		err := errors.New("Error Updating User Profile")
 		errorCountInc()
@@ -250,9 +244,8 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer) (bool, error) {
 	return true, nil
 }
 
-func userAddRoles(userID string, buffer *bytes.Buffer) bool {
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+func userAddRoles(userID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
+
 	espXmlmc.SetParam("userId", userID)
 	for _, role := range ldapImportConf.Roles {
 		espXmlmc.SetParam("role", role)

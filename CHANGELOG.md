@@ -1,8 +1,12 @@
-## 2.0.5 (Aug 4 , 2016)
+## 2.0.5 (Oct 17 , 2016)
 
 Features:
 
-- ADD: Validate LDAP Server ConnectionType, an invalid connection type would cause a panic in the LDAP Library. 
+- ADD: Validate LDAP Server ConnectionType, an invalid connection type would cause a panic in the LDAP Library.
+
+Bug Fixes:
+
+- Fix: Performance Issue with number of HTTP Connections being created
 
 ## 2.0.4 (Aug 4 , 2016)
 
