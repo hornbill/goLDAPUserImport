@@ -11,7 +11,7 @@ import (
 )
 
 //-- Deal with User Profile Data
-func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
+func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct, updateType string) bool {
 	UserID := getFeildValue(u, "UserID", buffer)
 	buffer.WriteString(loggerGen(1, "Processing User Profile Data "+UserID))
 
@@ -24,9 +24,17 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 		feild := userProfileMappingMap[name]
 
 		if feild == "manager" {
-			//-- Process User manager
-			if ldapImportConf.UserManagerMapping.Enabled && ldapImportConf.UserManagerMapping.Action != updateString {
-				value = getManagerFromLookup(u, buffer)
+			//-- Process User manager if enabled
+			if ldapImportConf.UserManagerMapping.Enabled {
+				//-- Action is Update
+				if updateType == "Update" && ldapImportConf.UserManagerMapping.Action != createString {
+					value = getManagerFromLookup(u, buffer)
+				}
+				//-- Action is Create
+				if updateType == "Create" && ldapImportConf.UserManagerMapping.Action != updateString {
+					value = getManagerFromLookup(u, buffer)
+				}
+
 			} else {
 				//-- Get Value From LDAP
 				value = getFeildValueProfile(u, name, buffer)

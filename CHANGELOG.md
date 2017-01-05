@@ -1,3 +1,13 @@
+## 2.0.6 (Jan 5 , 2017)
+
+Features:
+
+- ADD: Further debugging for LDAP Manager Lookups
+
+Bug Fixes:
+
+- Fix: Issue where if the Manager Import action was set to Update then the import would not process Managers
+
 ## 2.0.5 (Oct 17 , 2016)
 
 Features:

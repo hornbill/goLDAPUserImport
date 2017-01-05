@@ -245,13 +245,13 @@ func processUsersFromWorkers() {
 //-- Process Users
 func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 
+	//-- Create XMLMC Instance Per Worker
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+	espXmlmc.SetTrace("ldapUserImportTool")
+
 	//-- Range On Jobs for worker
 	for j := range jobs {
-
-		//-- Create XMLMC Instance Per Worker
-		espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-		espXmlmc.SetAPIKey(ldapImportConf.APIKey)
-		espXmlmc.SetTrace("ldapUserImportTool")
 
 		//-- Get User Record from Array
 		ldapUser := ldapUsers[j-1]
