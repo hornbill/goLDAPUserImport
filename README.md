@@ -123,11 +123,19 @@ Example JSON File:
         "userPrincipalName",
         "givenName",
         "description",
-        "manager"
+        "manager",
+        "thumbnailPhoto"
     ],
     "Roles":[
         "Collaboration Role"
     ],
+    "ImageLink":{
+        "Action":"Both"
+        , "Enabled": true
+        , "UploadType": "AD"
+        , "ImageType": "jpg"
+        , "URI": "thumbnailPhoto"
+    },
     "SiteLookup":{
         "Action":"Both",
         "Enabled": false,
@@ -196,9 +204,22 @@ Example JSON File:
 
 #### LDAPAttributes
 * Array of Attributes to query from the LDAP Server, only Attributes specified here can be used in the LDAPMapping
+* Please note that thumbnailPhoto will need to be included IF you are planning to use AD stored images
 
 #### Roles
 This should contain an array of roles to be added to a user when they are created. If importing Basic Users then only the '''Basic User Role''' should be specified any role with a User Privilege level will be rejected
+
+#### ImageLink
+The ability to upload images for User profiles in Hornbill. Only jpg/jpeg and png formats are accepted.
+
+* Action - (Both | Update | Create) - When to associate an Image On Create, On Update or Both
+* Enabled - Turns on or off the Image association
+* UploadType - (AD | URL | URI) - what TYPE of image upload sequence we are using
+** AD - using data stored in AD - set the "URI" as JUST the ldap field (i.e. without the square brackets; traditionally thumbnailPhoto)
+** URL - find the image at end of "URI" below - assuming that the URL is visible by our Hornbill servers (eg http://whatever.com/[userPrincipalName].jpg)
+** URI - find the image at end of "URI" below - from a LOCAL server (not fully tested; eg http://localserver/[userPrincipalName].jpg)
+* ImageType - (jpg | png) type of image as stored in AD
+* URI - referencing the image data
 
 #### SiteLookup
 In Hornbill the Site field against a user is the numeric Id of the site, as the Name of a users site from LDAP is likely the Name and not an Id specific to Hornbill  we provide the ability for the Import to look up the Name of the Site in Hornbill and use the Numeric Id when adding or updating a user.

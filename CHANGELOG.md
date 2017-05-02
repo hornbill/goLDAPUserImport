@@ -1,3 +1,9 @@
+## 2.1.0 (May 2 , 2017)
+
+Features:
+
+- ADD: Profile images
+
 ## 2.0.6 (Jan 5 , 2017)
 
 Features:

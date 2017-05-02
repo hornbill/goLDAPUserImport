@@ -9,7 +9,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.0.6"
+const version = "2.1.0"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -200,6 +200,7 @@ type ldapImportConfStruct struct {
 	UpdateUserType     bool
 	UserRoleAction     string
 	URL                string
+    DAVURL             string
 	LDAPServerConf     ldapServerConfStruct
 	UserMapping        userMappingStruct
 	UserAccountStatus  userAccountStatusStruct
@@ -207,6 +208,7 @@ type ldapImportConfStruct struct {
 	UserManagerMapping userManagerStruct
 	LDAPAttributes     []string
 	Roles              []string
+    ImageLink          imageLinkStruct
 	SiteLookup         siteLookupStruct
 	OrgLookup          orgLookupStruct
 }
@@ -389,4 +391,16 @@ type paramsUserListStruct struct {
 type userListItemStruct struct {
 	UserID string `xml:"userId"`
 	Name   string `xml:"name"`
+}
+type imageLinkStruct struct {
+	Action     string
+	Enabled    bool
+	UploadType string
+	ImageType  string
+	URI        string
+}
+type xmlmcprofileSetImageResponse struct {
+	MethodResult string                `xml:"status,attr"`
+	Params       paramsGroupListStruct `xml:"params"`
+	State        stateStruct           `xml:"state"`
 }

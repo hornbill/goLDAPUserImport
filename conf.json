@@ -96,11 +96,19 @@
         "givenName",
         "description",
         "department",
-        "manager"
+        "manager",
+        "thumbnailPhoto"
     ],
     "Roles":[
         "Basic User Role"
     ],
+    "ImageLink":{
+        "Action":"Both"
+        , "Enabled": false
+        , "UploadType": "AD"
+        , "ImageType": "jpg"
+        , "URI": "thumbnailPhoto"
+    },
     "SiteLookup":{
         "Action":"Both",
         "Enabled": false,

@@ -107,6 +107,12 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		if ldapImportConf.UserRoleAction != createString && len(ldapImportConf.Roles) > 0 {
 			userAddRoles(userID, buffer, espXmlmc)
 		}
+        
+        //-- Add Image
+		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != createString && ldapImportConf.ImageLink.URI != "" {
+			userAddImage(u, buffer)
+		}
+        
 		//-- Process Profile Details
 		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Update")
 		if boolUpdateProfile != true {
@@ -217,6 +223,12 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		if ldapImportConf.UserRoleAction != updateString && len(ldapImportConf.Roles) > 0 {
 			userAddRoles(userID, buffer, espXmlmc)
 		}
+        
+        //-- Add Image
+		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != updateString && ldapImportConf.ImageLink.URI != "" {
+			userAddImage(u, buffer)
+		}
+        
 		//-- Process Profile Details
 		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Create")
 		if boolUpdateProfile != true {
