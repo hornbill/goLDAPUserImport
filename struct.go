@@ -200,7 +200,7 @@ type ldapImportConfStruct struct {
 	UpdateUserType     bool
 	UserRoleAction     string
 	URL                string
-    DAVURL             string
+	DAVURL             string
 	LDAPServerConf     ldapServerConfStruct
 	UserMapping        userMappingStruct
 	UserAccountStatus  userAccountStatusStruct
@@ -208,7 +208,7 @@ type ldapImportConfStruct struct {
 	UserManagerMapping userManagerStruct
 	LDAPAttributes     []string
 	Roles              []string
-    ImageLink          imageLinkStruct
+	ImageLink          imageLinkStruct
 	SiteLookup         siteLookupStruct
 	OrgLookup          orgLookupStruct
 }

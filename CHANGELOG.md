@@ -2,7 +2,7 @@
 
 Features:
 
-- ADD: Profile images
+- ADD: Ability to set Profile images
 
 ## 2.0.6 (Jan 5 , 2017)
 

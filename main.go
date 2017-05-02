@@ -61,7 +61,7 @@ func main() {
 
 	//-- Generate Instance XMLMC Endpoint
 	ldapImportConf.URL = getInstanceURL()
-    ldapImportConf.DAVURL = getInstanceDAVURL()
+	ldapImportConf.DAVURL = getInstanceDAVURL()
 	logger(1, "Instance Endpoint "+fmt.Sprintf("%v", ldapImportConf.URL), true)
 
 	//-- Once we have loaded the config write to hornbill log file
@@ -555,4 +555,3 @@ func getInstanceDAVURL() string {
 
 	return xmlmcInstanceConfig.url
 }
-

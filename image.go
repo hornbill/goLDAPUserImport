@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-    "log"
+	"log"
 	"net/http"
 	"strings"
-    "time"
+	"time"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
@@ -20,14 +20,14 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 
 	UserID := getFeildValue(p, "UserID", buffer)
 
-//	value := p.GetAttributeValue(ldapImportConf.ImageLink.URI)
+	//	value := p.GetAttributeValue(ldapImportConf.ImageLink.URI)
 	value := getFeildValue(p, ldapImportConf.ImageLink.URI, buffer)
-    fmt.Println(value)
-    
+	fmt.Println(value)
+
 	strContentType := "image/jpeg"
-    if ldapImportConf.ImageLink.ImageType != "jpg" {
-        strContentType = "image/png"
-    }
+	if ldapImportConf.ImageLink.ImageType != "jpg" {
+		strContentType = "image/png"
+	}
 
 	if strings.ToUpper(ldapImportConf.ImageLink.UploadType) != "URI" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
@@ -60,8 +60,8 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 				return
 			}
 		case "AD":
-            value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
-            imageB = []byte(value)
+			value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
+			imageB = []byte(value)
 
 		default:
 			imageB, Berr = hex.DecodeString(value[2:]) //stripping leading 0x

@@ -104,7 +104,7 @@
     ],
     "ImageLink":{
         "Action":"Both"
-        , "Enabled": false
+        , "Enabled": true
         , "UploadType": "AD"
         , "ImageType": "jpg"
         , "URI": "thumbnailPhoto"
