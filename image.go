@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
@@ -31,12 +30,6 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 
 	if strings.ToUpper(ldapImportConf.ImageLink.UploadType) != "URI" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
-		client := http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-			},
-			Timeout: time.Duration(10 * time.Second),
-		}
 
 		rel_link := "session/" + UserID
 		strDAVurl := ldapImportConf.DAVURL + rel_link

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
@@ -20,6 +21,13 @@ var mutexGroups = &sync.Mutex{}
 var mutexManagers = &sync.Mutex{}
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
+
+var client = http.Client{
+	Transport: &http.Transport{
+		MaxIdleConnsPerHost: 1,
+	},
+	Timeout: time.Duration(10 * time.Second),
+}
 
 var userProfileMappingMap = map[string]string{
 	"MiddleName":        "middleName",
