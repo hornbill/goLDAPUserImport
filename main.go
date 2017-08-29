@@ -49,7 +49,7 @@ func main() {
 	err := validateConf()
 	if err != nil {
 		logger(4, fmt.Sprintf("%v", err), true)
-		logger(4, "Please Check your Configuration File: "+fmt.Sprintf("%s", configFileName), true)
+		logger(4, "Please Check your Configuration File: "+configFileName, true)
 		return
 	}
 
@@ -61,7 +61,7 @@ func main() {
 
 	//-- Generate Instance XMLMC Endpoint
 	ldapImportConf.URL = getInstanceURL()
-    ldapImportConf.DAVURL = getInstanceDAVURL()
+	ldapImportConf.DAVURL = getInstanceDAVURL()
 	logger(1, "Instance Endpoint "+fmt.Sprintf("%v", ldapImportConf.URL), true)
 
 	//-- Once we have loaded the config write to hornbill log file
@@ -98,7 +98,7 @@ func outputEnd() {
 	logger(1, "Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), true)
 
 	//-- Show Time Takens
-	endTime = time.Now().Sub(startTime)
+	endTime = time.Since(startTime)
 	logger(1, "Time Taken: "+fmt.Sprintf("%v", endTime), true)
 	//-- complete
 	complete()
@@ -125,9 +125,9 @@ func outputFlags() {
 	//-- Output
 	logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
 
-	logger(1, "Flag - Config File "+fmt.Sprintf("%s", configFileName), true)
-	logger(1, "Flag - Zone "+fmt.Sprintf("%s", configZone), true)
-	logger(1, "Flag - Log Prefix "+fmt.Sprintf("%s", configLogPrefix), true)
+	logger(1, "Flag - Config File "+configFileName, true)
+	logger(1, "Flag - Zone "+configZone, true)
+	logger(1, "Flag - Log Prefix "+configLogPrefix, true)
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
 }
@@ -155,7 +155,7 @@ func checkVersion() {
 		return
 	}
 	if res.Outdated {
-		logger(3, fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" by downloading the latest package Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current), true)
+		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+res.Current, true)
 	}
 }
 
@@ -468,8 +468,6 @@ func setInstance(strZone string, instanceID string) bool {
 // Set Instance Zone to Overide Live
 func setZone(zone string) {
 	xmlmcInstanceConfig.zone = zone
-
-	return
 }
 
 //-- Log to ESP
@@ -555,4 +553,3 @@ func getInstanceDAVURL() string {
 
 	return xmlmcInstanceConfig.url
 }
-

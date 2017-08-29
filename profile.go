@@ -82,7 +82,7 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Profile Update XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Profile Update XML "+XMLSTRING))
 	profileSkippedCountInc()
 	espXmlmc.ClearParam()
 	return true

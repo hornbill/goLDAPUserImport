@@ -107,12 +107,12 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		if ldapImportConf.UserRoleAction != createString && len(ldapImportConf.Roles) > 0 {
 			userAddRoles(userID, buffer, espXmlmc)
 		}
-        
-        //-- Add Image
+
+		//-- Add Image
 		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != createString && ldapImportConf.ImageLink.URI != "" {
 			userAddImage(u, buffer)
 		}
-        
+
 		//-- Process Profile Details
 		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Update")
 		if boolUpdateProfile != true {
@@ -140,7 +140,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 	updateSkippedCountInc()
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Update XML "+XMLSTRING))
 	espXmlmc.ClearParam()
 
 	return true, nil
@@ -223,12 +223,12 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		if ldapImportConf.UserRoleAction != updateString && len(ldapImportConf.Roles) > 0 {
 			userAddRoles(userID, buffer, espXmlmc)
 		}
-        
-        //-- Add Image
+
+		//-- Add Image
 		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != updateString && ldapImportConf.ImageLink.URI != "" {
 			userAddImage(u, buffer)
 		}
-        
+
 		//-- Process Profile Details
 		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Create")
 		if boolUpdateProfile != true {
@@ -249,7 +249,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Create XML "+XMLSTRING))
 	createSkippedCountInc()
 	espXmlmc.ClearParam()
 
@@ -283,7 +283,7 @@ func userAddRoles(userID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 }
 
 func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
-	buffer.WriteString(loggerGen(1, "Set Status for User: "+fmt.Sprintf("%s", userID)+" Status:"+fmt.Sprintf("%s", status)))
+	buffer.WriteString(loggerGen(1, "Set Status for User: "+userID+" Status:"+status))
 
 	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
@@ -307,7 +307,7 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 			buffer.WriteString(loggerGen(4, "Unable to Set User Status 111: "+xmlRespon.State.ErrorRet))
 			return false
 		}
-		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+fmt.Sprintf("%s", status)))
+		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+status))
 		return true
 	}
 	buffer.WriteString(loggerGen(1, "User Status Set Successfully"))

@@ -149,7 +149,6 @@ var userCreateArray = []string{
 var ldapImportConf ldapImportConfStruct
 var xmlmcInstanceConfig xmlmcConfig
 var ldapUsers []*ldap.Entry
-var xmlmcUsers []userListItemStruct
 var sites []siteListStruct
 var managers []managerListStruct
 var groups []groupListStruct
@@ -200,7 +199,7 @@ type ldapImportConfStruct struct {
 	UpdateUserType     bool
 	UserRoleAction     string
 	URL                string
-    DAVURL             string
+	DAVURL             string
 	LDAPServerConf     ldapServerConfStruct
 	UserMapping        userMappingStruct
 	UserAccountStatus  userAccountStatusStruct
@@ -208,7 +207,7 @@ type ldapImportConfStruct struct {
 	UserManagerMapping userManagerStruct
 	LDAPAttributes     []string
 	Roles              []string
-    ImageLink          imageLinkStruct
+	ImageLink          imageLinkStruct
 	SiteLookup         siteLookupStruct
 	OrgLookup          orgLookupStruct
 }
@@ -384,13 +383,6 @@ type paramsCheckUsersStruct struct {
 }
 type paramsStruct struct {
 	SessionID string `xml:"sessionId"`
-}
-type paramsUserListStruct struct {
-	UserListItem []userListItemStruct `xml:"userListItem"`
-}
-type userListItemStruct struct {
-	UserID string `xml:"userId"`
-	Name   string `xml:"name"`
 }
 type imageLinkStruct struct {
 	Action     string
