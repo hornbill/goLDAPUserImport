@@ -11,7 +11,7 @@ import (
 	"github.com/hornbill/ldap"
 )
 
-func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
+func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) string {
 
 	//-- Check if Manager Attribute is set
 	if ldapImportConf.UserManagerMapping.Attribute == "" {
@@ -42,7 +42,7 @@ func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 		return ManagerIDCache
 	}
 	buffer.WriteString(loggerGen(1, "Manager Not In Cache Searching Hornbill"))
-	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer)
+	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer, espXmlmc)
 	//-- If Returned set output
 	if ManagerIsOnInstance {
 		buffer.WriteString(loggerGen(1, "Manager Lookup found Id: "+ManagerIDInstance))
@@ -53,13 +53,10 @@ func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 }
 
 //-- Search Manager on Instance
-func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
+func searchManager(managerName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, string) {
 	boolReturn := false
 	strReturn := ""
 	//-- ESP Query for site
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
-	espXmlmc.SetTrace("ldapUserImport")
 	if managerName == "" {
 		return boolReturn, strReturn
 	}

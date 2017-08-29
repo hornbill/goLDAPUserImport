@@ -96,7 +96,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		}
 		//-- Only use Org lookup if enabled and not set to create only
 		if ldapImportConf.OrgLookup.Enabled && ldapImportConf.OrgLookup.Action != createString {
-			userAddGroup(u, buffer)
+			userAddGroup(u, buffer, espXmlmc)
 		}
 		//-- Process User Status
 		if ldapImportConf.UserAccountStatus.Enabled && ldapImportConf.UserAccountStatus.Action != createString {
@@ -110,7 +110,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 
 		//-- Add Image
 		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != createString && ldapImportConf.ImageLink.URI != "" {
-			userAddImage(u, buffer)
+			userAddImage(u, buffer, espXmlmc)
 		}
 
 		//-- Process Profile Details
@@ -213,7 +213,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 
 		//-- Only use Org lookup if enabled and not set to Update only
 		if ldapImportConf.OrgLookup.Enabled && ldapImportConf.OrgLookup.Action != updateString {
-			userAddGroup(u, buffer)
+			userAddGroup(u, buffer, espXmlmc)
 		}
 		//-- Process Account Status
 		if ldapImportConf.UserAccountStatus.Enabled && ldapImportConf.UserAccountStatus.Action != updateString {
@@ -226,7 +226,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 
 		//-- Add Image
 		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != updateString && ldapImportConf.ImageLink.URI != "" {
-			userAddImage(u, buffer)
+			userAddImage(u, buffer, espXmlmc)
 		}
 
 		//-- Process Profile Details

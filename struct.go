@@ -9,7 +9,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.1.0"
+const version = "2.1.1"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -19,7 +19,6 @@ var mutexSites = &sync.Mutex{}
 var mutexGroups = &sync.Mutex{}
 var mutexManagers = &sync.Mutex{}
 var mutexCounters = &sync.Mutex{}
-var logFileMutex = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
 
 var userProfileMappingMap = map[string]string{

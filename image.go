@@ -16,7 +16,7 @@ import (
 	"github.com/hornbill/ldap"
 )
 
-func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
+func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) {
 
 	UserID := getFeildValue(p, "UserID", buffer)
 
@@ -102,8 +102,6 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 		}
 	}
 
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	espXmlmc.SetParam("objectRef", "urn:sys:user:"+UserID)
 	espXmlmc.SetParam("sourceImage", value)
 

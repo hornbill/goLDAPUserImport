@@ -28,11 +28,11 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 			if ldapImportConf.UserManagerMapping.Enabled {
 				//-- Action is Update
 				if updateType == "Update" && ldapImportConf.UserManagerMapping.Action != createString {
-					value = getManagerFromLookup(u, buffer)
+					value = getManagerFromLookup(u, buffer, espXmlmc)
 				}
 				//-- Action is Create
 				if updateType == "Create" && ldapImportConf.UserManagerMapping.Action != updateString {
-					value = getManagerFromLookup(u, buffer)
+					value = getManagerFromLookup(u, buffer, espXmlmc)
 				}
 
 			} else {
