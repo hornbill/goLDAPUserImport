@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
@@ -52,7 +53,6 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 				return
 			}
 		case "AD":
-
 			imageB = []byte(value)
 
 		default:

@@ -215,7 +215,7 @@ The ability to upload images for User profiles in Hornbill. Only jpg/jpeg and pn
 * Action - (Both | Update | Create) - When to associate an Image On Create, On Update or Both
 * Enabled - Turns on or off the Image association
 * UploadType - (AD | URL | URI) - what TYPE of image upload sequence we are using
-** AD - using data stored in AD - set the "URI" as JUST the ldap field (i.e. without the square brackets; traditionally thumbnailPhoto)
+** AD - using data stored in AD - set the "URI" as JUST the ldap field (i.e. without the square brackets; traditionally AD stores the binary in thumbnailPhoto)
 ** URL - find the image at end of "URI" below - assuming that the URL is visible by our Hornbill servers (eg http://whatever.com/[userPrincipalName].jpg)
 ** URI - find the image at end of "URI" below - from a LOCAL server (not fully tested; eg http://localserver/[userPrincipalName].jpg)
 * ImageType - (jpg | png) type of image as stored in AD
