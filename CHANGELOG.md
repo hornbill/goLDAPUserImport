@@ -1,3 +1,11 @@
+## 2.1.1 (Aug 30 , 2017)
+
+Bug Fixes:
+
+- FIX: Improve mutithreaded performance
+- FIX: Improve http request pool
+- FIX: Issue importing profile image from URI
+
 ## 2.1.0 (May 2 , 2017)
 
 Features:

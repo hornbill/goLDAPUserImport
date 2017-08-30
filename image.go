@@ -30,10 +30,9 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 
 	if strings.ToUpper(ldapImportConf.ImageLink.UploadType) != "URI" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
-
-		rel_link := "session/" + UserID
-		strDAVurl := ldapImportConf.DAVURL + rel_link
-
+		relLink := "session/" + UserID
+		strDAVurl := ldapImportConf.DAVURL + relLink
+		value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
 		var imageB []byte
 		var Berr error
 		switch strings.ToUpper(ldapImportConf.ImageLink.UploadType) {
@@ -41,7 +40,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 		case "URL":
 			resp, err := http.Get(value)
 			if err != nil {
-				buffer.WriteString(loggerGen(4, "Unable to find "+value+" ["+fmt.Sprintf("%v", http.StatusInternalServerError)+"]"))
+				buffer.WriteString(loggerGen(4, "Unable to find "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%sv", err)+"]"))
 				return
 			}
 			defer resp.Body.Close()
@@ -53,7 +52,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 				return
 			}
 		case "AD":
-			value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
+
 			imageB = []byte(value)
 
 		default:
@@ -84,7 +83,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 			_, _ = io.Copy(ioutil.Discard, response.Body)
 			if response.StatusCode == 201 || response.StatusCode == 200 {
 				buffer.WriteString(loggerGen(1, "Uploaded"))
-				value = "/" + rel_link
+				value = "/" + relLink
 			} else {
 				buffer.WriteString(loggerGen(4, "Unsuccesful Upload: "+fmt.Sprintf("%v", response.StatusCode)))
 				return
