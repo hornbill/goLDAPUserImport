@@ -1,3 +1,15 @@
+## 2.2.0 (Aug 30 , 2017)
+
+Features:
+
+- CHANGE: Remove -zone flag and look up correctly using instanceID
+- CHANGE: -workers flag now default to 10 not 1 to improve performance
+
+Bug Fixes:
+
+- FIX: Profile Image Upload now correctly support URL (Public) and URI (Internal) Images as well as AD Binary images
+- FIX: Manage Import can now correctly be earched on any user profile feild not just h_name
+
 ## 2.1.1 (Aug 30 , 2017)
 
 Bug Fixes:

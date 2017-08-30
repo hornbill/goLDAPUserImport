@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.1.1/ldap_user_import_win_x64_v2_1_1.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.1.1/ldap_user_import_win_x86_v2_1_1.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.2.0/ldap_user_import_win_x64_v2_2_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.2.0/ldap_user_import_win_x86_v2_2_0.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -114,7 +114,8 @@ Example JSON File:
         "Attribute":"[manager]",
         "GetIDFromName":true,
         "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
-        "Reverse":true
+        "Reverse":true,
+        "ManagerSearchField":"h_name"
     },
     "LDAPAttributes":[
         "cn",
@@ -175,7 +176,7 @@ Example JSON File:
 * "Debug"  Enable LDAP Connection Debugging, should only ever be enabled to troubleshoot connection issues.
 
 #### UserMapping
-* Any value wrapped with [] will be treaded ad an LDAP field
+* Any value wrapped with [] will be treaded as an LDAP field
 * Do not try and add any new properties here they will be ignored
 * Any Other Value is treated literally as written example:
     * "Name":"[givenName] [sn]", - Both Variables are evaluated from LDAP and set to the Name param
@@ -197,10 +198,11 @@ Example JSON File:
 #### UserManagerMapping
 * Action - (Both | Update | Create) - When to Set the User Manager On Create, On Update or Both
 * Enabled - Turns on or off the Manager Import
-* Attribute - The LDAP Attribute to use for the name of the Manager ,Any value wrapped with [] will be treaded ad an LDAP field
+* Attribute - The LDAP Attribute to use for the name of the Manager ,Any value wrapped with [] will be treaded as an LDAP field
 * GetIDFromName - Lookup Hornbill User Id From Name, The Managers Name matched in the Regex must explicitly match the full name in Hornbill (true | false)
 * Regex - Optional Regex String to Match the Name from an DSN String
 * Reverse - Reverse the Name String Matched from the Regex (true | false)
+* ManagerSearchField - Change the User profile feild that is being searched on, default is h_name
 
 #### LDAPAttributes
 * Array of Attributes to query from the LDAP Server, only Attributes specified here can be used in the LDAPMapping
@@ -215,11 +217,12 @@ The ability to upload images for User profiles in Hornbill. Only jpg/jpeg and pn
 * Action - (Both | Update | Create) - When to associate an Image On Create, On Update or Both
 * Enabled - Turns on or off the Image association
 * UploadType - (AD | URL | URI) - what TYPE of image upload sequence we are using
-** AD - using data stored in AD - set the "URI" as JUST the ldap field (i.e. without the square brackets; traditionally thumbnailPhoto)
+** AD - using data stored in AD - set the "URI" as JUST the ldap field with brackets
 ** URL - find the image at end of "URI" below - assuming that the URL is visible by our Hornbill servers (eg http://whatever.com/[userPrincipalName].jpg)
 ** URI - find the image at end of "URI" below - from a LOCAL server (not fully tested; eg http://localserver/[userPrincipalName].jpg)
 * ImageType - (jpg | png) type of image as stored in AD
-* URI - referencing the image data
+* InsecureSkipVerify - Will allow the verification of SSL Certifications to be disabled - For use with internal URI and self signed certificates
+* URI - referencing the image data - Any value wrapped with [] will be treaded as an LDAP field
 
 #### SiteLookup
 In Hornbill the Site field against a user is the numeric Id of the site, as the Name of a users site from LDAP is likely the Name and not an Id specific to Hornbill  we provide the ability for the Import to look up the Name of the Site in Hornbill and use the Numeric Id when adding or updating a user.
@@ -227,14 +230,14 @@ The name of the Site in Hornbill must match the value of the Attribute in LDAP.
 
 * Action - (Both | Update | Create) - When to Associate Sites On Create, On Update or Both
 * Enabled - Turns on or off the Lookup of Sites
-* Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded ad an LDAP field
+* Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded as an LDAP field
 
 #### OrgLookup
 The name of the Organization in Hornbill must match the value of the Attribute in LDAP.
 
 * Action - (Both | Update | Create) - When to Associate Organisation On Create, On Update or Both
 * Enabled - Turns on or off the Lookup of Orgnisations
-* Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded ad an LDAP field
+* Attribute - The LDAP Attribute to use for the name of the Site ,Any value wrapped with [] will be treaded as an LDAP field
 * Type - The Organisation Type (0=general ,1=team ,2=department ,3=costcenter ,4=division ,5=company)
 * Membership - The Organisation Membership the users will be added with (member,teamLeader,manager)
 * TasksView - If set true, then the user can view tasks assigned to this group

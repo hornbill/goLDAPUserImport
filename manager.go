@@ -6,13 +6,19 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
 )
 
-func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) string {
+var (
+	onceManager  sync.Once
+	managerAPI   *apiLib.XmlmcInstStruct
+	mutexManager = &sync.Mutex{}
+)
 
+func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 	//-- Check if Manager Attribute is set
 	if ldapImportConf.UserManagerMapping.Attribute == "" {
 		buffer.WriteString(loggerGen(4, "Manager Lookup is Enabled but Attribute is not Defined"))
@@ -42,7 +48,7 @@ func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.
 		return ManagerIDCache
 	}
 	buffer.WriteString(loggerGen(1, "Manager Not In Cache Searching Hornbill"))
-	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer, espXmlmc)
+	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer)
 	//-- If Returned set output
 	if ManagerIsOnInstance {
 		buffer.WriteString(loggerGen(1, "Manager Lookup found Id: "+ManagerIDInstance))
@@ -53,21 +59,37 @@ func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.
 }
 
 //-- Search Manager on Instance
-func searchManager(managerName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, string) {
+func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
 	boolReturn := false
 	strReturn := ""
 	//-- ESP Query for site
 	if managerName == "" {
 		return boolReturn, strReturn
 	}
+	// We lock the whole function so we dont reuse the same connection for multiple logging attempts
+	mutexManager.Lock()
+	defer mutexManager.Unlock()
 
-	espXmlmc.SetParam("entity", "UserAccount")
-	espXmlmc.SetParam("matchScope", "all")
-	espXmlmc.OpenElement("searchFilter")
-	espXmlmc.SetParam("h_name", managerName)
-	espXmlmc.CloseElement("searchFilter")
-	espXmlmc.SetParam("maxResults", "1")
-	XMLUserSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords")
+	// We initilaise the connection pool the first time the function is called and reuse it
+	// This is reuse the connections rather than creating a pool each invocation
+	onceManager.Do(func() {
+
+		managerAPI = apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
+		managerAPI.SetAPIKey(ldapImportConf.APIKey)
+		managerAPI.SetTimeout(5)
+	})
+	//-- Add support for Search Feild configuration
+	strSearchField := "h_name"
+	if ldapImportConf.UserManagerMapping.ManagerSearchField != "" {
+		strSearchField = ldapImportConf.UserManagerMapping.ManagerSearchField
+	}
+
+	managerAPI.SetParam("matchScope", "all")
+	managerAPI.OpenElement("searchFilter")
+	managerAPI.SetParam(strSearchField, managerName)
+	managerAPI.CloseElement("searchFilter")
+	managerAPI.SetParam("maxResults", "1")
+	XMLUserSearch, xmlmcErr := managerAPI.Invoke("data", "entityBrowseRecords")
 	var xmlRespon xmlmcUserListResponse
 	if xmlmcErr != nil {
 		buffer.WriteString(loggerGen(4, "Unable to Search for Manager: "+fmt.Sprintf("%v", xmlmcErr)))

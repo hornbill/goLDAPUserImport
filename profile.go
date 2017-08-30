@@ -5,18 +5,37 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
 )
 
+var (
+	onceProfile  sync.Once
+	profileAPI   *apiLib.XmlmcInstStruct
+	mutexProfile = &sync.Mutex{}
+)
+
 //-- Deal with User Profile Data
-func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct, updateType string) bool {
+func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, updateType string) bool {
+	// We lock the whole function so we dont reuse the same connection for multiple logging attempts
+	mutexProfile.Lock()
+	defer mutexProfile.Unlock()
+
+	// We initilaise the connection pool the first time the function is called and reuse it
+	// This is reuse the connections rather than creating a pool each invocation
+	onceProfile.Do(func() {
+		profileAPI = apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
+		profileAPI.SetAPIKey(ldapImportConf.APIKey)
+		profileAPI.SetTimeout(5)
+	})
+
 	UserID := getFeildValue(u, "UserID", buffer)
 	buffer.WriteString(loggerGen(1, "Processing User Profile Data "+UserID))
 
-	espXmlmc.OpenElement("profileData")
-	espXmlmc.SetParam("userID", UserID)
+	profileAPI.OpenElement("profileData")
+	profileAPI.SetParam("userID", UserID)
 	value := ""
 	//-- Loop Through UserProfileMapping
 	for key := range userProfileArray {
@@ -28,11 +47,11 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 			if ldapImportConf.UserManagerMapping.Enabled {
 				//-- Action is Update
 				if updateType == "Update" && ldapImportConf.UserManagerMapping.Action != createString {
-					value = getManagerFromLookup(u, buffer, espXmlmc)
+					value = getManagerFromLookup(u, buffer)
 				}
 				//-- Action is Create
 				if updateType == "Create" && ldapImportConf.UserManagerMapping.Action != updateString {
-					value = getManagerFromLookup(u, buffer, espXmlmc)
+					value = getManagerFromLookup(u, buffer)
 				}
 
 			} else {
@@ -47,14 +66,14 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 
 		//-- if we have Value then set it
 		if value != "" {
-			espXmlmc.SetParam(feild, value)
+			profileAPI.SetParam(feild, value)
 		}
 	}
 
-	espXmlmc.CloseElement("profileData")
+	profileAPI.CloseElement("profileData")
 	//-- Check for Dry Run
 	if configDryRun != true {
-		XMLCreate, xmlmcErr := espXmlmc.Invoke("admin", "userProfileSet")
+		XMLCreate, xmlmcErr := profileAPI.Invoke("admin", "userProfileSet")
 		var xmlRespon xmlmcResponse
 		if xmlmcErr != nil {
 			buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+fmt.Sprintf("%v", xmlmcErr)))
@@ -81,10 +100,10 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 
 	}
 	//-- DEBUG XML TO LOG FILE
-	var XMLSTRING = espXmlmc.GetParam()
+	var XMLSTRING = profileAPI.GetParam()
 	buffer.WriteString(loggerGen(1, "User Profile Update XML "+XMLSTRING))
 	profileSkippedCountInc()
-	espXmlmc.ClearParam()
+	profileAPI.ClearParam()
 	return true
 
 }

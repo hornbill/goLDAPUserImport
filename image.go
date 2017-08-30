@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
@@ -19,51 +20,52 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 
 	UserID := getFeildValue(p, "UserID", buffer)
 
-	//	value := p.GetAttributeValue(ldapImportConf.ImageLink.URI)
-	value := getFeildValue(p, ldapImportConf.ImageLink.URI, buffer)
-	fmt.Println(value)
+	//-- Work out the value of URI which may contain [] for LDAP attribute references or just a string
+	value := processComplexFeild(p, ldapImportConf.ImageLink.URI, buffer)
+	buffer.WriteString(loggerGen(1, "Image Lookup URI: "+fmt.Sprintf("%s", value)))
 
 	strContentType := "image/jpeg"
 	if ldapImportConf.ImageLink.ImageType != "jpg" {
 		strContentType = "image/png"
 	}
 
-	if strings.ToUpper(ldapImportConf.ImageLink.UploadType) != "URI" {
+	if strings.ToUpper(ldapImportConf.ImageLink.UploadType) != "URL" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
-		relLink := "session/" + UserID
-		strDAVurl := ldapImportConf.DAVURL + relLink
-		value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
 		var imageB []byte
 		var Berr error
 		switch strings.ToUpper(ldapImportConf.ImageLink.UploadType) {
-
-		case "URL":
-			resp, err := http.Get(value)
+		//-- Get Local URL
+		case "URI":
+			//-- Add Support for local HTTPS URLS with invalid cert
+			tr := &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: ldapImportConf.ImageLink.InsecureSkipVerify},
+			}
+			client := &http.Client{Transport: tr}
+			resp, err := client.Get(value)
 			if err != nil {
-				buffer.WriteString(loggerGen(4, "Unable to get image URI "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", err)+"]"))
+				buffer.WriteString(loggerGen(4, "Unable to get image URI: "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", err)+"]"))
 				return
 			}
 			defer resp.Body.Close()
 			if resp.StatusCode == 201 || resp.StatusCode == 200 {
 				imageB, _ = ioutil.ReadAll(resp.Body)
-
 			} else {
 				buffer.WriteString(loggerGen(4, "Unsuccesful download: "+fmt.Sprintf("%v", resp.StatusCode)))
 				return
 			}
 		case "AD":
-
 			imageB = []byte(value)
-
 		default:
 			imageB, Berr = hex.DecodeString(value[2:]) //stripping leading 0x
 			if Berr != nil {
-				buffer.WriteString(loggerGen(4, "Unsuccesful Decoding "+fmt.Sprintf("%v", Berr)))
+				buffer.WriteString(loggerGen(4, "Unsuccesful Decoding: "+fmt.Sprintf("%v", Berr)))
 				return
 			}
-
 		}
 		//WebDAV upload
+		relLink := "session/" + UserID + "." + ldapImportConf.ImageLink.ImageType
+		strDAVurl := espXmlmc.DavEndpoint + relLink
+		buffer.WriteString(loggerGen(1, "DAV Upload URL: "+fmt.Sprintf("%s", strDAVurl)))
 		if len(imageB) > 0 {
 			putbody := bytes.NewReader(imageB)
 			req, Perr := http.NewRequest("PUT", strDAVurl, putbody)
@@ -76,7 +78,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 			req.Header.Set("User-Agent", "Go-http-client/1.1")
 			response, Perr := client.Do(req)
 			if Perr != nil {
-				buffer.WriteString(loggerGen(4, "PUT connection issue: "+fmt.Sprintf("%v", http.StatusInternalServerError)))
+				buffer.WriteString(loggerGen(4, "PUT connection Issue: ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", Perr)+"]"))
 				return
 			}
 			defer response.Body.Close()
@@ -93,7 +95,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 			return
 		}
 	}
-
+	buffer.WriteString(loggerGen(1, "Profile Set Image URL: "+fmt.Sprintf("%s", value)))
 	espXmlmc.SetParam("objectRef", "urn:sys:user:"+UserID)
 	espXmlmc.SetParam("sourceImage", value)
 

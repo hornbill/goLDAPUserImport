@@ -114,7 +114,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		}
 
 		//-- Process Profile Details
-		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Update")
+		boolUpdateProfile := userUpdateProfile(u, buffer, "Update")
 		if boolUpdateProfile != true {
 			err = errors.New("Error Updating User Profile")
 			errorCountInc()
@@ -130,7 +130,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		return true, nil
 	}
 	//-- Process Profile Details as part of the dry run for testing
-	boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Update")
+	boolUpdateProfile := userUpdateProfile(u, buffer, "Update")
 	if boolUpdateProfile != true {
 		err := errors.New("Error Updating User Profile")
 		errorCountInc()
@@ -230,7 +230,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		}
 
 		//-- Process Profile Details
-		boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Create")
+		boolUpdateProfile := userUpdateProfile(u, buffer, "Create")
 		if boolUpdateProfile != true {
 			err = errors.New("Error Updating User Profile")
 			errorCountInc()
@@ -241,7 +241,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		return true, nil
 	}
 	//-- Process Profile Details as part of the dry run for testing
-	boolUpdateProfile := userUpdateProfile(u, buffer, espXmlmc, "Create")
+	boolUpdateProfile := userUpdateProfile(u, buffer, "Create")
 	if boolUpdateProfile != true {
 		err := errors.New("Error Updating User Profile")
 		errorCountInc()

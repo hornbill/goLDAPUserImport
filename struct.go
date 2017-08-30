@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.1.1"
+const version = "2.2.0"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -161,7 +161,6 @@ var managers []managerListStruct
 var groups []groupListStruct
 var counters counterTypeStruct
 var configFileName string
-var configZone string
 var configLogPrefix string
 var configDryRun bool
 var configVersion bool
@@ -278,14 +277,14 @@ type userProfileMappingStruct struct {
 	Attrib8           string
 }
 type userManagerStruct struct {
-	Action        string
-	Enabled       bool
-	Attribute     string
-	GetIDFromName bool
-	Regex         string
-	Reverse       bool
+	Action             string
+	Enabled            bool
+	Attribute          string
+	GetIDFromName      bool
+	Regex              string
+	Reverse            bool
+	ManagerSearchField string
 }
-
 type ldapServerConfStruct struct {
 	Server             string
 	UserName           string
@@ -392,11 +391,12 @@ type paramsStruct struct {
 	SessionID string `xml:"sessionId"`
 }
 type imageLinkStruct struct {
-	Action     string
-	Enabled    bool
-	UploadType string
-	ImageType  string
-	URI        string
+	Action             string
+	Enabled            bool
+	InsecureSkipVerify bool
+	UploadType         string
+	ImageType          string
+	URI                string
 }
 type xmlmcprofileSetImageResponse struct {
 	MethodResult string                `xml:"status,attr"`

@@ -29,7 +29,7 @@ var (
 	once        sync.Once
 	onceLog     sync.Once
 	mutexLogger = &sync.Mutex{}
-	loggerApi   *apiLib.XmlmcInstStruct
+	loggerAPI   *apiLib.XmlmcInstStruct
 	mutexLog    = &sync.Mutex{}
 	f           *os.File
 )
@@ -62,17 +62,6 @@ func main() {
 		logger(4, "Please Check your Configuration File: "+configFileName, true)
 		return
 	}
-
-	//-- Set Instance ID
-	var boolSetInstance = setInstance(configZone, ldapImportConf.InstanceID)
-	if boolSetInstance != true {
-		return
-	}
-
-	//-- Generate Instance XMLMC Endpoint
-	ldapImportConf.URL = getInstanceURL()
-	ldapImportConf.DAVURL = getInstanceDAVURL()
-	logger(1, "Instance Endpoint "+fmt.Sprintf("%v", ldapImportConf.URL), true)
 
 	//-- Once we have loaded the config write to hornbill log file
 	logged := espLogger("---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
@@ -117,11 +106,10 @@ func outputEnd() {
 func procFlags() {
 	//-- Grab Flags
 	flag.StringVar(&configFileName, "file", "conf.json", "Name of Configuration File To Load")
-	flag.StringVar(&configZone, "zone", "eur", "Override the default Zone the instance sits in")
 	flag.StringVar(&configLogPrefix, "logprefix", "", "Add prefix to the logfile")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
 	flag.BoolVar(&configVersion, "version", false, "Output Version")
-	flag.IntVar(&configWorkers, "workers", 1, "Number of Worker threads to use")
+	flag.IntVar(&configWorkers, "workers", 10, "Number of Worker threads to use")
 
 	//-- Parse Flags
 	flag.Parse()
@@ -134,9 +122,7 @@ func procFlags() {
 func outputFlags() {
 	//-- Output
 	logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
-
 	logger(1, "Flag - Config File "+configFileName, true)
-	logger(1, "Flag - Zone "+configZone, true)
 	logger(1, "Flag - Log Prefix "+configLogPrefix, true)
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
@@ -257,7 +243,7 @@ func processUsersFromWorkers() {
 func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 
 	//-- Create XMLMC Instance Per Worker
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	espXmlmc.SetTrace("ldapUserImportTool")
 
@@ -335,7 +321,7 @@ func processComplexFeild(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
 	//-- Match $variables from String
 	re1, err := regexp.Compile(`\[(.*?)\]`)
 	if err != nil {
-		buffer.WriteString(loggerGen(4, "Regex Error"+fmt.Sprintf("%v", err)))
+		buffer.WriteString(loggerGen(4, "Regex Error: "+fmt.Sprintf("%v", err)))
 	}
 	//-- Get Array of all Matched max 100
 	result := re1.FindAllString(s, 100)
@@ -496,17 +482,17 @@ func espLogger(message string, severity string) bool {
 	// This is reuse the connections rather than creating a pool each invocation
 	once.Do(func() {
 
-		loggerApi = apiLib.NewXmlmcInstance(ldapImportConf.URL)
-		loggerApi.SetAPIKey(ldapImportConf.APIKey)
-		loggerApi.SetTimeout(5)
+		loggerAPI = apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
+		loggerAPI.SetAPIKey(ldapImportConf.APIKey)
+		loggerAPI.SetTimeout(5)
 	})
 
-	loggerApi.SetParam("fileName", "LDAP_User_Import")
-	loggerApi.SetParam("group", "general")
-	loggerApi.SetParam("severity", severity)
-	loggerApi.SetParam("message", message)
+	loggerAPI.SetParam("fileName", "LDAP_User_Import")
+	loggerAPI.SetParam("group", "general")
+	loggerAPI.SetParam("severity", severity)
+	loggerAPI.SetParam("message", message)
 
-	XMLLogger, xmlmcErr := loggerApi.Invoke("system", "logMessage")
+	XMLLogger, xmlmcErr := loggerAPI.Invoke("system", "logMessage")
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", xmlmcErr), true)
@@ -559,24 +545,4 @@ func profileSkippedCountInc() {
 	mutexCounters.Lock()
 	counters.profileSkipped++
 	mutexCounters.Unlock()
-}
-
-//-- Function Builds XMLMC End Point
-func getInstanceURL() string {
-	xmlmcInstanceConfig.url = "https://"
-	xmlmcInstanceConfig.url += xmlmcInstanceConfig.zone
-	xmlmcInstanceConfig.url += "api.hornbill.com/"
-	xmlmcInstanceConfig.url += xmlmcInstanceConfig.instance
-	xmlmcInstanceConfig.url += "/xmlmc/"
-
-	return xmlmcInstanceConfig.url
-}
-func getInstanceDAVURL() string {
-	xmlmcInstanceConfig.url = "https://"
-	xmlmcInstanceConfig.url += xmlmcInstanceConfig.zone
-	xmlmcInstanceConfig.url += "api.hornbill.com/"
-	xmlmcInstanceConfig.url += xmlmcInstanceConfig.instance
-	xmlmcInstanceConfig.url += "/dav/"
-
-	return xmlmcInstanceConfig.url
 }

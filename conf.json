@@ -84,7 +84,8 @@
         "Attribute":"[manager]",
         "GetIDFromName":true,
         "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
-        "Reverse":true
+        "Reverse":true,
+        "ManagerSearchField":"h_name"
     },
     "LDAPAttributes":[
         "cn",
@@ -103,11 +104,12 @@
         "Basic User Role"
     ],
     "ImageLink":{
-        "Action":"Both"
-        , "Enabled": false
-        , "UploadType": "AD"
-        , "ImageType": "jpg"
-        , "URI": "thumbnailPhoto"
+        "Action":"Both",
+        "Enabled": false,
+        "UploadType": "AD",
+        "InsecureSkipVerify": true,
+        "ImageType": "jpg",
+        "URI": "thumbnailPhoto"
     },
     "SiteLookup":{
         "Action":"Both",
