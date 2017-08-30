@@ -28,11 +28,11 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 			if ldapImportConf.UserManagerMapping.Enabled {
 				//-- Action is Update
 				if updateType == "Update" && ldapImportConf.UserManagerMapping.Action != createString {
-					value = getManagerFromLookup(u, buffer)
+					value = getManagerFromLookup(u, buffer, espXmlmc)
 				}
 				//-- Action is Create
 				if updateType == "Create" && ldapImportConf.UserManagerMapping.Action != updateString {
-					value = getManagerFromLookup(u, buffer)
+					value = getManagerFromLookup(u, buffer, espXmlmc)
 				}
 
 			} else {
@@ -82,7 +82,7 @@ func userUpdateProfile(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.Xml
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Profile Update XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Profile Update XML "+XMLSTRING))
 	profileSkippedCountInc()
 	espXmlmc.ClearParam()
 	return true

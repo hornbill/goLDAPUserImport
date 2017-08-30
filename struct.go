@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.1.0"
+const version = "2.1.1"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -19,8 +20,14 @@ var mutexSites = &sync.Mutex{}
 var mutexGroups = &sync.Mutex{}
 var mutexManagers = &sync.Mutex{}
 var mutexCounters = &sync.Mutex{}
-var logFileMutex = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
+
+var client = http.Client{
+	Transport: &http.Transport{
+		MaxIdleConnsPerHost: 1,
+	},
+	Timeout: time.Duration(10 * time.Second),
+}
 
 var userProfileMappingMap = map[string]string{
 	"MiddleName":        "middleName",
@@ -149,7 +156,6 @@ var userCreateArray = []string{
 var ldapImportConf ldapImportConfStruct
 var xmlmcInstanceConfig xmlmcConfig
 var ldapUsers []*ldap.Entry
-var xmlmcUsers []userListItemStruct
 var sites []siteListStruct
 var managers []managerListStruct
 var groups []groupListStruct
@@ -384,13 +390,6 @@ type paramsCheckUsersStruct struct {
 }
 type paramsStruct struct {
 	SessionID string `xml:"sessionId"`
-}
-type paramsUserListStruct struct {
-	UserListItem []userListItemStruct `xml:"userListItem"`
-}
-type userListItemStruct struct {
-	UserID string `xml:"userId"`
-	Name   string `xml:"name"`
 }
 type imageLinkStruct struct {
 	Action     string

@@ -96,7 +96,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 		}
 		//-- Only use Org lookup if enabled and not set to create only
 		if ldapImportConf.OrgLookup.Enabled && ldapImportConf.OrgLookup.Action != createString {
-			userAddGroup(u, buffer)
+			userAddGroup(u, buffer, espXmlmc)
 		}
 		//-- Process User Status
 		if ldapImportConf.UserAccountStatus.Enabled && ldapImportConf.UserAccountStatus.Action != createString {
@@ -110,7 +110,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 
 		//-- Add Image
 		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != createString && ldapImportConf.ImageLink.URI != "" {
-			userAddImage(u, buffer)
+			userAddImage(u, buffer, espXmlmc)
 		}
 
 		//-- Process Profile Details
@@ -140,7 +140,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 	updateSkippedCountInc()
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Update XML "+XMLSTRING))
 	espXmlmc.ClearParam()
 
 	return true, nil
@@ -213,7 +213,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 
 		//-- Only use Org lookup if enabled and not set to Update only
 		if ldapImportConf.OrgLookup.Enabled && ldapImportConf.OrgLookup.Action != updateString {
-			userAddGroup(u, buffer)
+			userAddGroup(u, buffer, espXmlmc)
 		}
 		//-- Process Account Status
 		if ldapImportConf.UserAccountStatus.Enabled && ldapImportConf.UserAccountStatus.Action != updateString {
@@ -226,7 +226,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 
 		//-- Add Image
 		if ldapImportConf.ImageLink.Enabled && ldapImportConf.ImageLink.Action != updateString && ldapImportConf.ImageLink.URI != "" {
-			userAddImage(u, buffer)
+			userAddImage(u, buffer, espXmlmc)
 		}
 
 		//-- Process Profile Details
@@ -249,7 +249,7 @@ func createUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Create XML "+XMLSTRING))
 	createSkippedCountInc()
 	espXmlmc.ClearParam()
 
@@ -283,7 +283,7 @@ func userAddRoles(userID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 }
 
 func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
-	buffer.WriteString(loggerGen(1, "Set Status for User: "+fmt.Sprintf("%s", userID)+" Status:"+fmt.Sprintf("%s", status)))
+	buffer.WriteString(loggerGen(1, "Set Status for User: "+userID+" Status:"+status))
 
 	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
@@ -307,7 +307,7 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 			buffer.WriteString(loggerGen(4, "Unable to Set User Status 111: "+xmlRespon.State.ErrorRet))
 			return false
 		}
-		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+fmt.Sprintf("%s", status)))
+		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+status))
 		return true
 	}
 	buffer.WriteString(loggerGen(1, "User Status Set Successfully"))

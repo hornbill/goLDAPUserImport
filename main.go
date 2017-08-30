@@ -15,6 +15,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fatih/color" //-- CLI Colour
@@ -22,6 +23,15 @@ import (
 	"github.com/hornbill/ldap"    //-- Hornbill Clone of "github.com/mavricknz/ldap"
 	"github.com/hornbill/pb"      //--Hornbil Clone of "github.com/cheggaaa/pb"
 	"github.com/tcnksm/go-latest" //-- For Version checking
+)
+
+var (
+	once        sync.Once
+	onceLog     sync.Once
+	mutexLogger = &sync.Mutex{}
+	loggerApi   *apiLib.XmlmcInstStruct
+	mutexLog    = &sync.Mutex{}
+	f           *os.File
 )
 
 //----- Main Function -----
@@ -49,7 +59,7 @@ func main() {
 	err := validateConf()
 	if err != nil {
 		logger(4, fmt.Sprintf("%v", err), true)
-		logger(4, "Please Check your Configuration File: "+fmt.Sprintf("%s", configFileName), true)
+		logger(4, "Please Check your Configuration File: "+configFileName, true)
 		return
 	}
 
@@ -98,7 +108,7 @@ func outputEnd() {
 	logger(1, "Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), true)
 
 	//-- Show Time Takens
-	endTime = time.Now().Sub(startTime)
+	endTime = time.Since(startTime)
 	logger(1, "Time Taken: "+fmt.Sprintf("%v", endTime), true)
 	//-- complete
 	complete()
@@ -125,9 +135,9 @@ func outputFlags() {
 	//-- Output
 	logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
 
-	logger(1, "Flag - Config File "+fmt.Sprintf("%s", configFileName), true)
-	logger(1, "Flag - Zone "+fmt.Sprintf("%s", configZone), true)
-	logger(1, "Flag - Log Prefix "+fmt.Sprintf("%s", configLogPrefix), true)
+	logger(1, "Flag - Config File "+configFileName, true)
+	logger(1, "Flag - Zone "+configZone, true)
+	logger(1, "Flag - Log Prefix "+configLogPrefix, true)
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
 }
@@ -155,7 +165,7 @@ func checkVersion() {
 		return
 	}
 	if res.Outdated {
-		logger(3, fmt.Sprintf("%s", version)+" is not latest, you should upgrade to "+fmt.Sprintf("%s", res.Current)+" by downloading the latest package Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+fmt.Sprintf("%s", res.Current), true)
+		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/goLDAPUserImport/releases/tag/v"+res.Current, true)
 	}
 }
 
@@ -381,35 +391,40 @@ func loggerWriteBuffer(s string) {
 
 //-- Loggin function
 func logger(t int, s string, outputtoCLI bool) {
-	//-- Curreny WD
-	cwd, _ := os.Getwd()
-	//-- Log Folder
-	logPath := cwd + "/log"
-	//-- Log File
-	logFileName := logPath + "/" + configLogPrefix + "LDAP_User_Import_" + timeNow + ".log"
+
+	mutexLog.Lock()
+	defer mutexLog.Unlock()
+
+	onceLog.Do(func() {
+		//-- Curreny WD
+		cwd, _ := os.Getwd()
+		//-- Log Folder
+		logPath := cwd + "/log"
+		//-- Log File
+		logFileName := logPath + "/" + configLogPrefix + "LDAP_User_Import_" + timeNow + ".log"
+		//-- If Folder Does Not Exist then create it
+		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			err := os.Mkdir(logPath, 0777)
+			if err != nil {
+				fmt.Printf("Error Creating Log Folder %q: %s \r", logPath, err)
+				os.Exit(101)
+			}
+		}
+
+		//-- Open Log File
+		var err error
+		f, err = os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+		if err != nil {
+			fmt.Printf("Error Creating Log File %q: %s \n", logFileName, err)
+			os.Exit(100)
+		}
+		log.SetOutput(f)
+
+	})
+	// don't forget to close it
+	//defer f.Close()
 	red := color.New(color.FgRed).PrintfFunc()
 	orange := color.New(color.FgCyan).PrintfFunc()
-	//-- If Folder Does Not Exist then create it
-	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-		err := os.Mkdir(logPath, 0777)
-		if err != nil {
-			fmt.Printf("Error Creating Log Folder %q: %s \r", logPath, err)
-			os.Exit(101)
-		}
-	}
-
-	//-- Open Log File
-	f, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-	if err != nil {
-		fmt.Printf("Error Creating Log File %q: %s \n", logFileName, err)
-		os.Exit(100)
-	}
-	// don't forget to close it
-	defer f.Close()
-	// assign it to the standard logger
-	logFileMutex.Lock()
-	log.SetOutput(f)
-	logFileMutex.Unlock()
 	var errorLogPrefix = ""
 	//-- Create Log Entry
 	switch t {
@@ -468,20 +483,30 @@ func setInstance(strZone string, instanceID string) bool {
 // Set Instance Zone to Overide Live
 func setZone(zone string) {
 	xmlmcInstanceConfig.zone = zone
-
-	return
 }
 
 //-- Log to ESP
 func espLogger(message string, severity string) bool {
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
-	espXmlmc.SetParam("fileName", "LDAP_User_Import")
-	espXmlmc.SetParam("group", "general")
-	espXmlmc.SetParam("severity", severity)
-	espXmlmc.SetParam("message", message)
 
-	XMLLogger, xmlmcErr := espXmlmc.Invoke("system", "logMessage")
+	// We lock the whole function so we dont reuse the same connection for multiple logging attempts
+	mutexLogger.Lock()
+	defer mutexLogger.Unlock()
+
+	// We initilaise the connection pool the first time the function is called and reuse it
+	// This is reuse the connections rather than creating a pool each invocation
+	once.Do(func() {
+
+		loggerApi = apiLib.NewXmlmcInstance(ldapImportConf.URL)
+		loggerApi.SetAPIKey(ldapImportConf.APIKey)
+		loggerApi.SetTimeout(5)
+	})
+
+	loggerApi.SetParam("fileName", "LDAP_User_Import")
+	loggerApi.SetParam("group", "general")
+	loggerApi.SetParam("severity", severity)
+	loggerApi.SetParam("message", message)
+
+	XMLLogger, xmlmcErr := loggerApi.Invoke("system", "logMessage")
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", xmlmcErr), true)

@@ -16,7 +16,7 @@ import (
 	"github.com/hornbill/ldap"
 )
 
-func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
+func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) {
 
 	UserID := getFeildValue(p, "UserID", buffer)
 
@@ -31,16 +31,9 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 
 	if strings.ToUpper(ldapImportConf.ImageLink.UploadType) != "URI" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
-		client := http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-			},
-			Timeout: time.Duration(10 * time.Second),
-		}
-
-		rel_link := "session/" + UserID
-		strDAVurl := ldapImportConf.DAVURL + rel_link
-
+		relLink := "session/" + UserID
+		strDAVurl := ldapImportConf.DAVURL + relLink
+		value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
 		var imageB []byte
 		var Berr error
 		switch strings.ToUpper(ldapImportConf.ImageLink.UploadType) {
@@ -48,7 +41,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 		case "URL":
 			resp, err := http.Get(value)
 			if err != nil {
-				buffer.WriteString(loggerGen(4, "Unable to find "+value+" ["+fmt.Sprintf("%v", http.StatusInternalServerError)+"]"))
+				buffer.WriteString(loggerGen(4, "Unable to find "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%sv", err)+"]"))
 				return
 			}
 			defer resp.Body.Close()
@@ -60,7 +53,6 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 				return
 			}
 		case "AD":
-			value = p.GetAttributeValue(ldapImportConf.ImageLink.URI)
 			imageB = []byte(value)
 
 		default:
@@ -75,6 +67,10 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 		if len(imageB) > 0 {
 			putbody := bytes.NewReader(imageB)
 			req, Perr := http.NewRequest("PUT", strDAVurl, putbody)
+			if Perr != nil {
+				buffer.WriteString(loggerGen(4, "Unsuccesful Request PUT Creation: "+fmt.Sprintf("%v", Perr)))
+				return
+			}
 			req.Header.Set("Content-Type", strContentType)
 			req.Header.Add("Authorization", "ESP-APIKEY "+ldapImportConf.APIKey)
 			req.Header.Set("User-Agent", "Go-http-client/1.1")
@@ -87,7 +83,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 			_, _ = io.Copy(ioutil.Discard, response.Body)
 			if response.StatusCode == 201 || response.StatusCode == 200 {
 				buffer.WriteString(loggerGen(1, "Uploaded"))
-				value = "/" + rel_link
+				value = "/" + relLink
 			} else {
 				buffer.WriteString(loggerGen(4, "Unsuccesful Upload: "+fmt.Sprintf("%v", response.StatusCode)))
 				return
@@ -98,8 +94,6 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer) {
 		}
 	}
 
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	espXmlmc.SetParam("objectRef", "urn:sys:user:"+UserID)
 	espXmlmc.SetParam("sourceImage", value)
 

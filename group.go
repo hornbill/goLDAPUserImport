@@ -12,7 +12,7 @@ import (
 )
 
 //-- Deal with adding a user to a group
-func userAddGroup(u *ldap.Entry, buffer *bytes.Buffer) bool {
+func userAddGroup(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
 
 	//-- Check if Site Attribute is set
 	if ldapImportConf.OrgLookup.Attribute == "" {
@@ -27,25 +27,24 @@ func userAddGroup(u *ldap.Entry, buffer *bytes.Buffer) bool {
 	//-- Check if we have Chached the site already
 	if orgIsInCache {
 		buffer.WriteString(loggerGen(1, "Found Org in Cache "+orgID))
-		userAddGroupAsoc(u, orgID, buffer)
+		userAddGroupAsoc(u, orgID, buffer, espXmlmc)
 		return true
 	}
 
 	//-- We Get here if not in cache
-	orgIsOnInstance, orgID := searchGroup(orgAttributeName, buffer)
+	orgIsOnInstance, orgID := searchGroup(orgAttributeName, buffer, espXmlmc)
 	if orgIsOnInstance {
 		buffer.WriteString(loggerGen(1, "Org Lookup found Id "+orgID))
-		userAddGroupAsoc(u, orgID, buffer)
+		userAddGroupAsoc(u, orgID, buffer, espXmlmc)
 		return true
 	}
 	buffer.WriteString(loggerGen(1, "Unable to Find Organsiation "+orgAttributeName))
 	return false
 }
 
-func userAddGroupAsoc(u *ldap.Entry, orgID string, buffer *bytes.Buffer) {
+func userAddGroupAsoc(u *ldap.Entry, orgID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) {
 	UserID := getFeildValue(u, "UserID", buffer)
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
+
 	espXmlmc.SetParam("userId", UserID)
 	espXmlmc.SetParam("groupId", orgID)
 	espXmlmc.SetParam("memberRole", ldapImportConf.OrgLookup.Membership)
@@ -96,12 +95,10 @@ func groupInCache(groupName string) (bool, string) {
 }
 
 //-- Function to Check if site is on the instance
-func searchGroup(orgName string, buffer *bytes.Buffer) (bool, string) {
+func searchGroup(orgName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, string) {
 	boolReturn := false
 	strReturn := ""
 	//-- ESP Query for site
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	if orgName == "" {
 		return boolReturn, strReturn
 	}
