@@ -40,7 +40,7 @@ func userAddImage(p *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 		case "URL":
 			resp, err := http.Get(value)
 			if err != nil {
-				buffer.WriteString(loggerGen(4, "Unable to find "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%sv", err)+"]"))
+				buffer.WriteString(loggerGen(4, "Unable to get image URI "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", err)+"]"))
 				return
 			}
 			defer resp.Body.Close()
