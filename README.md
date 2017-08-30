@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.2.0/ldap_user_import_win_x64_v2_2_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.2.0/ldap_user_import_win_x86_v2_2_0.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.2.1/ldap_user_import_win_x64_v2_2_1.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.2.1/ldap_user_import_win_x86_v2_2_1.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -248,8 +248,7 @@ Command Line Parameters
 * file - Defaults to `conf.json` - Name of the Configuration file to load
 * dryrun - Defaults to `false` - Set to True and the XMLMC for Create and Update users will not be called and instead the XML will be dumped to the log file, this is to aid in debugging the initial connection information.
 * logprefix - Default to `` - Allows you to define a string to prepend to the name of the log file generated
-* zone - Defaults to `eur` - Allows you to change the ZONE used for creating the XMLMC EndPoint URL https://{ZONE}api.hornbill.com/{INSTANCE}/
-* workers - Defaults to `3` - Allows you to change the number of worker threads used to process the import, this can improve performance on slow import but using too many workers have a detriment to performance of your Hornbill instance.
+* workers - Defaults to `10` - Allows you to change the number of worker threads used to process the import, this can improve performance on slow import but using too many workers have a detriment to performance of your Hornbill instance.
 
 # Testing
 If you run the application with the argument dryrun=true then no users will be created or updated, the XML used to create or update will be saved in the log file so you can ensure the LDAP mappings are correct before running the import.

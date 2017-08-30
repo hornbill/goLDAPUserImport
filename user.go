@@ -124,6 +124,7 @@ func updateUser(u *ldap.Entry, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstS
 			buffer.WriteString(loggerGen(1, "User Update Success"))
 			updateCountInc()
 		} else {
+			buffer.WriteString(loggerGen(1, "User Update Skipped"))
 			updateSkippedCountInc()
 		}
 

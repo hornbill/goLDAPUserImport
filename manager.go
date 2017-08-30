@@ -73,7 +73,6 @@ func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
 	// We initilaise the connection pool the first time the function is called and reuse it
 	// This is reuse the connections rather than creating a pool each invocation
 	onceManager.Do(func() {
-
 		managerAPI = apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
 		managerAPI.SetAPIKey(ldapImportConf.APIKey)
 		managerAPI.SetTimeout(5)
@@ -84,6 +83,8 @@ func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
 		strSearchField = ldapImportConf.UserManagerMapping.ManagerSearchField
 	}
 
+	buffer.WriteString(loggerGen(1, "Manager Search: "+fmt.Sprintf("%s", strSearchField)+" - "+fmt.Sprintf("%s", managerName)))
+	managerAPI.SetParam("entity", "UserAccount")
 	managerAPI.SetParam("matchScope", "all")
 	managerAPI.OpenElement("searchFilter")
 	managerAPI.SetParam(strSearchField, managerName)

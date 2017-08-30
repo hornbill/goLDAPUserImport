@@ -1,3 +1,9 @@
+## 2.2.1 (Aug 30 , 2017)
+
+Bug Fixes:
+
+- FIX: Issue with Manager lookup following 2.2.0 changes
+
 ## 2.2.0 (Aug 30 , 2017)
 
 Features:
