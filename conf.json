@@ -109,7 +109,7 @@
         "UploadType": "AD",
         "InsecureSkipVerify": true,
         "ImageType": "jpg",
-        "URI": "thumbnailPhoto"
+        "URI": "[thumbnailPhoto]"
     },
     "SiteLookup":{
         "Action":"Both",
