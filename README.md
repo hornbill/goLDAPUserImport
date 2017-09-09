@@ -135,7 +135,7 @@ Example JSON File:
         , "Enabled": true
         , "UploadType": "AD"
         , "ImageType": "jpg"
-        , "URI": "thumbnailPhoto"
+        , "URI": "[thumbnailPhoto]"
     },
     "SiteLookup":{
         "Action":"Both",
