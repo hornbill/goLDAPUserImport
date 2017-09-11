@@ -305,7 +305,7 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 		bufferMutex.Lock()
 		loggerWriteBuffer(buffer.String())
 		bufferMutex.Unlock()
-		buffer.Reset("")
+		buffer.Reset()
 		//-- Results
 		results <- j * 2
 	}
