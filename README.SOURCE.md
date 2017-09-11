@@ -68,7 +68,8 @@ Example JSON File:
         "DateFormat":"",
         "TimeFormat":"",
         "CurrencySymbol":"",
-        "CountryCode":""
+        "CountryCode":"",
+        "UserDNCache":"[distinguishedName]"
     },
     "UserAccountStatus":{
         "Action":"Update",
@@ -115,10 +116,12 @@ Example JSON File:
         "GetIDFromName":true,
         "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
         "Reverse":true,
-        "ManagerSearchField":"h_name"
+        "ManagerSearchField":"h_name",
+        "UseDNCacheFirst":false
     },
     "LDAPAttributes":[
         "cn",
+        "distinguishedName",
         "sn",
         "sAMAccountName",
         "userPrincipalName",
@@ -200,9 +203,10 @@ Example JSON File:
 * Enabled - Turns on or off the Manager Import
 * Attribute - The LDAP Attribute to use for the name of the Manager ,Any value wrapped with [] will be treaded as an LDAP field
 * GetIDFromName - Lookup Hornbill User Id From Name, The Managers Name matched in the Regex must explicitly match the full name in Hornbill (true | false)
-* Regex - Optional Regex String to Match the Name from an DSN String
-* Reverse - Reverse the Name String Matched from the Regex (true | false)
+* Regex - Optional Regex String to Match the Name from an DSN String when using GetIDFromName
+* Reverse - Reverse the Name String Matched from the Regex (true | false) when using GetIDFromName
 * ManagerSearchField - Change the User profile feild that is being searched on, default is h_name
+* UseDNCacheFirst - When enabled the manager look up will match based on a cache of users and their DN matching the Attribute specified, if nothing is found it will try the search using the Attribute and Regex
 
 #### LDAPAttributes
 * Array of Attributes to query from the LDAP Server, only Attributes specified here can be used in the LDAPMapping

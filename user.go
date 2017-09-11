@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
@@ -313,4 +314,39 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	}
 	buffer.WriteString(loggerGen(1, "User Status Set Successfully"))
 	return true
+}
+
+// Write DN and User ID to Cache
+func writeUserToCache(DN string, ID string, buffer *bytes.Buffer) {
+
+	//-- Check if ID or DN is empty then just return
+	if DN == "" {
+		return
+	}
+	if ID == "" {
+		return
+	}
+
+	buffer.WriteString(loggerGen(1, "Write to DN Cache: "+DN+" ID:"+ID))
+	mutexUsersDN.Lock()
+	var newuserForCache usersDNStruct
+	newuserForCache.DN = DN
+	newuserForCache.UserID = ID
+	name := []usersDNStruct{newuserForCache}
+	usersDN = append(usersDN, name...)
+	mutexUsersDN.Unlock()
+}
+
+// Get User ID From Cache By DN
+func getUserFromDNCache(DN string) string {
+	stringReturn := ""
+	//-- Check if in Cache
+	mutexUsersDN.Lock()
+	for _, user := range usersDN {
+		if strings.ToLower(user.DN) == strings.ToLower(DN) {
+			stringReturn = user.UserID
+		}
+	}
+	mutexUsersDN.Unlock()
+	return stringReturn
 }

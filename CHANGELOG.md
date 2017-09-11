@@ -1,3 +1,10 @@
+
+## 2.3.0 (Sep 11 , 2017)
+
+Features:
+
+- ADD: Ability to Cache users and their DN to use for Manager lookups
+
 ## 2.2.2 (Sep 11 , 2017)
 
 Bug Fixes:

@@ -255,10 +255,18 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 		var buffer bytes.Buffer
 		//-- Get User Id based on the mapping
 		var userID = strings.ToLower(getFeildValue(ldapUser, "UserID", &buffer))
+
 		if userID == "" {
-			buffer.WriteString(loggerGen(1, "Unable to Proceess User - Invalid Id"+userID))
+			buffer.WriteString(loggerGen(1, "Unable to Proceess User - Invalid Id "+userID))
 		} else {
 			buffer.WriteString(loggerGen(1, "Buffer For Job: "+fmt.Sprintf("%d", j)+" - Worker: "+fmt.Sprintf("%d", id)+" - User: "+userID))
+
+			//-- GET DN
+			var userDN = getFeildValue(ldapUser, "UserDNCache", &buffer)
+			buffer.WriteString(loggerGen(4, "User DN: "+fmt.Sprintf("%s", userDN)))
+
+			//-- Write to Cache
+			writeUserToCache(userDN, userID, &buffer)
 
 			//-- For Each LDAP Users Check if they already Exist
 			boolUpdate, err := checkUserOnInstance(userID, espXmlmc)

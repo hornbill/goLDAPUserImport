@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.2.2"
+const version = "2.3.0"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -19,6 +19,7 @@ const createString = "Create"
 var mutexSites = &sync.Mutex{}
 var mutexGroups = &sync.Mutex{}
 var mutexManagers = &sync.Mutex{}
+var mutexUsersDN = &sync.Mutex{}
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
 
@@ -158,6 +159,7 @@ var xmlmcInstanceConfig xmlmcConfig
 var ldapUsers []*ldap.Entry
 var sites []siteListStruct
 var managers []managerListStruct
+var usersDN []usersDNStruct
 var groups []groupListStruct
 var counters counterTypeStruct
 var configFileName string
@@ -175,6 +177,10 @@ var noValuesToUpdate = "There are no values to update"
 type siteListStruct struct {
 	SiteName string
 	SiteID   int
+}
+type usersDNStruct struct {
+	DN     string
+	UserID string
 }
 type managerListStruct struct {
 	UserName string
@@ -237,6 +243,7 @@ type userMappingStruct struct {
 	TimeFormat     string
 	CurrencySymbol string
 	CountryCode    string
+	UserDNCache    string
 }
 type userAccountStatusStruct struct {
 	Action  string
@@ -284,6 +291,7 @@ type userManagerStruct struct {
 	Regex              string
 	Reverse            bool
 	ManagerSearchField string
+	UseDNCacheFirst    bool
 }
 type ldapServerConfStruct struct {
 	Server             string

@@ -31,6 +31,15 @@ func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 	//-- Get Value of Attribute
 	ManagerAttributeName := processComplexFeild(u, ldapImportConf.UserManagerMapping.Attribute, buffer)
 
+	if ldapImportConf.UserManagerMapping.UseDNCacheFirst {
+		buffer.WriteString(loggerGen(1, "Searching DN Cache for: "+ManagerAttributeName))
+		managerID := getUserFromDNCache(ManagerAttributeName)
+		if managerID != "" {
+			buffer.WriteString(loggerGen(1, "Found Manager in DN Cache: "+managerID))
+			return managerID
+		}
+		buffer.WriteString(loggerGen(1, "Unable to find Manager in DN Cache Coninuing search"))
+	}
 	//-- Dont Continue if we didn't get anything
 	if ManagerAttributeName == "" {
 		return ""

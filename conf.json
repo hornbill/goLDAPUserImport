@@ -38,7 +38,8 @@
         "DateFormat":"",
         "TimeFormat":"",
         "CurrencySymbol":"",
-        "CountryCode":""
+        "CountryCode":"",
+        "UserDNCache":"[distinguishedName]"
     },
     "UserAccountStatus":{
         "Action":"Both",
@@ -85,10 +86,12 @@
         "GetIDFromName":true,
         "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
         "Reverse":true,
-        "ManagerSearchField":"h_name"
+        "ManagerSearchField":"h_name",
+        "UseDNCacheFirst":true
     },
     "LDAPAttributes":[
         "cn",
+        "distinguishedName",
         "sn",
         "telephoneNumber",
         "mobile",
