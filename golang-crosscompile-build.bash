@@ -15,6 +15,14 @@ versiond=${versiond// /}
 platforms="windows/386 windows/amd64"
 printf " ---- Building LDAP User Import $versiond ---- \n"
 
+
+
+printf "Replace Version Variable\n"
+cp README.SOURCE.md README.md
+#Replace Version in ReadMe
+replace "{version}" "${version}" -- "README.md" > /dev/null
+replace "{versiond}" "${versiond}" -- "README.md" > /dev/null
+printf "\n"
 for platform in ${platforms}
 do
     split=(${platform//\// })
@@ -41,14 +49,6 @@ do
     #Copy Source to Build Dir
     cp LICENSE.md "builds/$goos/$goarch/LICENSE.md"
     cp conf.json "builds/$goos/$goarch/conf.json"
-
-    cp README.md README.SOURCE.md
-
-    printf "Replace Version Veriable\n"
-    #Replace Version in ReadMe
-    replace "{version}" "${version}" -- "README.md"
-    replace "{versiond}" "${versiond}" -- "README.md"
-
     cp README.md "builds/$goos/$goarch/README.md"
 
     printf "Build Zip \n"
