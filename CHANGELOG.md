@@ -1,3 +1,8 @@
+## 2.3.1 (Sep 11 , 2017)
+
+Bug Fixes:
+
+- FIX: Manager Lookup Cache is build before users are processed.
 
 ## 2.3.0 (Sep 11 , 2017)
 

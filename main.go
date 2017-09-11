@@ -220,6 +220,8 @@ func processUsersFromWorkers() {
 	results := make(chan int, total)
 	workers := configWorkers
 
+	// Create map of users
+	mapUsers()
 	if total < workers {
 		workers = total
 	}
@@ -237,6 +239,18 @@ func processUsersFromWorkers() {
 		<-results
 	}
 	bar.FinishPrint("Processing Complete!")
+}
+
+func mapUsers() {
+	var buffer bytes.Buffer
+	for user := range ldapUsers {
+		var userID = strings.ToLower(getFeildValue(ldapUsers[user], "UserID", &buffer))
+		var userDN = getFeildValue(ldapUsers[user], "UserDNCache", &buffer)
+		//-- Write to Cache
+		writeUserToCache(userDN, userID, &buffer)
+	}
+	//-- Write Buffer to log
+	loggerWriteBuffer(buffer.String())
 }
 
 //-- Process Users
@@ -262,13 +276,7 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 			buffer.WriteString(loggerGen(1, "Buffer For Job: "+fmt.Sprintf("%d", j)+" - Worker: "+fmt.Sprintf("%d", id)+" - User: "+userID))
 
 			//-- GET DN
-			var userDN = getFeildValue(ldapUser, "UserDNCache", &buffer)
-			buffer.WriteString(loggerGen(4, "User DN: "+fmt.Sprintf("%s", userDN)))
 
-			//-- Write to Cache
-			writeUserToCache(userDN, userID, &buffer)
-
-			//-- For Each LDAP Users Check if they already Exist
 			boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
 			if err != nil {
 				buffer.WriteString(loggerGen(4, "Unable to Search For User: "+fmt.Sprintf("%v", err)))
@@ -297,7 +305,7 @@ func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressB
 		bufferMutex.Lock()
 		loggerWriteBuffer(buffer.String())
 		bufferMutex.Unlock()
-		buffer.Reset()
+		buffer.Reset("")
 		//-- Results
 		results <- j * 2
 	}
