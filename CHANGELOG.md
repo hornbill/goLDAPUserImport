@@ -1,3 +1,9 @@
+## 2.2.2 (Sep 11 , 2017)
+
+Bug Fixes:
+
+- FIX: thumbnailPhoto in default configuration should now be [thumbnailPhoto] for Image Uploads
+
 ## 2.2.1 (Aug 30 , 2017)
 
 Bug Fixes:

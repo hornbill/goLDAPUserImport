@@ -3,12 +3,14 @@
 # usage: ./golang-crosscompile-build.bash
 
 # Get Version out of target then replace . with _
-version=$(go build && ./goLDAPUserImport -version)
-version=${version//./_}
+versiond=$(go build && ./goLDAPUserImport -version)
+version=${versiond//./_}
+#Remove White Space
 version=${version// /}
+versiond=${versiond// /}
 #platforms="darwin/386 darwin/amd64 freebsd/386 freebsd/amd64 freebsd/arm linux/386 linux/amd64 linux/arm windows/386 windows/amd64"
 platforms="windows/386 windows/amd64"
-echo "Building Version: $version"
+echo "Building Version: $versiond"
 
 for platform in ${platforms}
 do
@@ -30,9 +32,13 @@ do
     echo "GOOS=$goos GOARCH=$goarch go build -o $destination $target"
     GOOS=$goos GOARCH=$goarch go build  -o $destination $target
 
+    #Copy Source to Build Dir
     cp LICENSE.md "builds/$goos/$goarch/LICENSE.md"
     cp README.md "builds/$goos/$goarch/README.md"
     cp conf.json "builds/$goos/$goarch/conf.json"
+    #Replace Version in ReadMe
+    replace "{version}" "${version}" -- "builds/$goos/$goarch/README.md"
+    replace "{versiond}" "${versiond}" -- "builds/$goos/$goarch/README.md"
     cd "builds/$goos/$goarch/"
     echo "zip -j "${package}_${os}_${arch}_v${version}.zip" $output LICENSE.md README.md conf.json"
     zip -r "${package}_${os}_${arch}_v${version}.zip" $output LICENSE.md README.md conf.json
