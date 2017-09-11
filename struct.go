@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.3.1"
+const version = "2.4.0"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -315,13 +315,14 @@ type siteLookupStruct struct {
 	Attribute string
 }
 type orgLookupStruct struct {
-	Action      string
-	Enabled     bool
-	Attribute   string
-	Type        int
-	Membership  string
-	TasksView   bool
-	TasksAction bool
+	Action                 string
+	Enabled                bool
+	Attribute              string
+	Type                   int
+	Membership             string
+	TasksView              bool
+	TasksAction            bool
+	OnlyOneGroupAssignment bool
 }
 type xmlmcResponse struct {
 	MethodResult string       `xml:"status,attr"`
@@ -338,16 +339,30 @@ type xmlmcUserListResponse struct {
 	Params       paramsUserSearchListStruct `xml:"params"`
 	State        stateStruct                `xml:"state"`
 }
-type xmlmcuserSetGroupOptionsResponse struct {
-	MethodResult string      `xml:"status,attr"`
-	State        stateStruct `xml:"state"`
-}
 type paramsUserSearchListStruct struct {
 	RowData paramsUserRowDataListStruct `xml:"rowData"`
 }
 type paramsUserRowDataListStruct struct {
 	Row userObjectStruct `xml:"row"`
 }
+type xmlmcuserSetGroupOptionsResponse struct {
+	MethodResult string      `xml:"status,attr"`
+	State        stateStruct `xml:"state"`
+}
+type xmlmcUserGroupListResponse struct {
+	MethodResult string                    `xml:"status,attr"`
+	Params       paramsUserGroupListStruct `xml:"params"`
+	State        stateStruct               `xml:"state"`
+}
+
+type paramsUserGroupListStruct struct {
+	GroupItem []paramsgroupItemStruct `xml:"groupItem"`
+}
+type paramsgroupItemStruct struct {
+	GroupID string `xml:"groupId"`
+	Type    string `xml:"type"`
+}
+
 type userObjectStruct struct {
 	UserID   string `xml:"h_user_id"`
 	UserName string `xml:"h_name"`

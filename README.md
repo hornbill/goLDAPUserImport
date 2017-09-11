@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.3.1/ldap_user_import_win_x64_v2_3_1.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.3.1/ldap_user_import_win_x86_v2_3_1.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.4.0/ldap_user_import_win_x64_v2_4_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.4.0/ldap_user_import_win_x86_v2_4_0.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -152,7 +152,8 @@ Example JSON File:
         "Type":2,
         "Membership":"member",
         "TasksView":false,
-        "TasksAction":false
+        "TasksAction":false,
+        "OnlyOneGroupAssignment":false
     }
 }
 ```
@@ -246,6 +247,7 @@ The name of the Organization in Hornbill must match the value of the Attribute i
 * Membership - The Organisation Membership the users will be added with (member,teamLeader,manager)
 * TasksView - If set true, then the user can view tasks assigned to this group
 * TasksAction - If set true, then the user can action tasks assigned to this group.
+* OnlyOneGroupAssignment - If set to try then any existing group assignment of the specified type will be removed.
 
 # execute
 Command Line Parameters

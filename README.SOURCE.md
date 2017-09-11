@@ -152,7 +152,8 @@ Example JSON File:
         "Type":2,
         "Membership":"member",
         "TasksView":false,
-        "TasksAction":false
+        "TasksAction":false,
+        "OnlyOneGroupAssignment":false
     }
 }
 ```
@@ -246,6 +247,7 @@ The name of the Organization in Hornbill must match the value of the Attribute i
 * Membership - The Organisation Membership the users will be added with (member,teamLeader,manager)
 * TasksView - If set true, then the user can view tasks assigned to this group
 * TasksAction - If set true, then the user can action tasks assigned to this group.
+* OnlyOneGroupAssignment - If set to try then any existing group assignment of the specified type will be removed.
 
 # execute
 Command Line Parameters

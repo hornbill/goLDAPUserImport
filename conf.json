@@ -126,6 +126,7 @@
         "Type":2,
         "Membership":"member",
         "TasksView":false,
-        "TasksAction":false
+        "TasksAction":false,
+        "OnlyOneGroupAssignment":false
     }
 }
