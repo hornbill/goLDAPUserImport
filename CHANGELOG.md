@@ -1,3 +1,20 @@
+## 2.4.1 (Sep 20 , 2017)
+
+Bug Fixes:
+
+FIX: Error setting User Status and Import Status following previous change
+
+
+## 2.4.0 (Sep 11 , 2017)
+
+Features:
+
+ADD: It is now possible to overwrite group assignments to a user based on a specific type i.e users can only be assigned to one department and existing associations that do not match the updated associate that is to be made will be removed.
+
+Bug Fixes:
+
+FIX: Concurrency issue when assigning users to a group
+
 ## 2.3.1 (Sep 11 , 2017)
 
 Bug Fixes:
