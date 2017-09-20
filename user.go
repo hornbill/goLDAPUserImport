@@ -287,9 +287,8 @@ func userAddRoles(userID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	buffer.WriteString(loggerGen(1, "Set Status for User: "+userID+" Status:"+status))
 
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
-
 	espXmlmc.SetParam("userId", userID)
 	espXmlmc.SetParam("accountStatus", status)
 
@@ -297,7 +296,6 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to Set User Status: "+fmt.Sprintf("%s", xmlmcErr), true)
-
 	}
 	err := xml.Unmarshal([]byte(XMLCreate), &xmlRespon)
 	if err != nil {
@@ -306,7 +304,7 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	}
 	if xmlRespon.MethodResult != constOK {
 		if xmlRespon.State.ErrorRet != "Failed to update account status (target and the current status is the same)." {
-			buffer.WriteString(loggerGen(4, "Unable to Set User Status 111: "+xmlRespon.State.ErrorRet))
+			buffer.WriteString(loggerGen(4, "Unable to Set User Status: "+xmlRespon.State.ErrorRet))
 			return false
 		}
 		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+status))

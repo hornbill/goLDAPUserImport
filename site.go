@@ -63,7 +63,7 @@ func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
 	boolReturn := false
 	intReturn := 0
 	//-- ESP Query for site
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.URL)
+	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
 	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
 	if siteName == "" {
 		return boolReturn, intReturn
