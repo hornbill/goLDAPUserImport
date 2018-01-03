@@ -189,6 +189,7 @@ Example JSON File:
 * If Password is left empty then a 10 character random string will be assigned so the user will need to recover the password using forgot my password functionality - The password will also be in the Log File
 * "UserType" - This defines if a user is Co-Worker or Basic user and can have the value user or basic.
 
+`CountryCode expects ISO 3166 Alpha 2 (2 Character Country Code) - Adctive Directory provides this here https://msdn.microsoft.com/en-us/library/ms677987(v=vs.85).aspx`
 
 #### UserAccountStatus
 * Action - (Both | Update | Create) - When to Set the User Account Status On Create, On Update or Both
