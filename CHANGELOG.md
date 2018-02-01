@@ -2,7 +2,7 @@
 
 Features:
 
-ADD: Error setting User Status and Import Status following previous change
+ADD: "SearchforManager" added to Manager Mapping configuration allowing you to disable the search for a managers userId if you already have the value from an LDAP Attribute. 
 
 ## 2.4.1 (Sep 20 , 2017)
 

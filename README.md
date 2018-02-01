@@ -16,7 +16,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.4.1/ldap_user_import_win_x64_v2_4_1.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.4.1/ldap_user_import_win_x86_v2_4_1.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.4.2/ldap_user_import_win_x64_v2_4_2.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.4.2/ldap_user_import_win_x86_v2_4_2.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
@@ -190,7 +190,6 @@ Example JSON File:
 * If Password is left empty then a 10 character random string will be assigned so the user will need to recover the password using forgot my password functionality - The password will also be in the Log File
 * "UserType" - This defines if a user is Co-Worker or Basic user and can have the value user or basic.
 
-`CountryCode expects ISO 3166 Alpha 2 (2 Character Country Code) - Adctive Directory provides this here https://msdn.microsoft.com/en-us/library/ms677987(v=vs.85).aspx`
 
 #### UserAccountStatus
 * Action - (Both | Update | Create) - When to Set the User Account Status On Create, On Update or Both

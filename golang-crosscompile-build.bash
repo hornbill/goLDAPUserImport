@@ -20,8 +20,10 @@ printf " ---- Building LDAP User Import $versiond ---- \n"
 printf "Replace Version Variable\n"
 cp README.SOURCE.md README.md
 #Replace Version in ReadMe
-replace "{version}" "${version}" -- "README.md" > /dev/null
-replace "{versiond}" "${versiond}" -- "README.md" > /dev/null
+
+sed -i.bak 's/{version}/'${version}'/g' README.md
+sed -i.bak 's/{versiond}/'${versiond}'/g' README.md
+
 printf "\n"
 for platform in ${platforms}
 do
