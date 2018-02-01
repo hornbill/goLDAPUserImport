@@ -1,3 +1,9 @@
+## 2.4.2 (Feb 1 , 2018)
+
+Features:
+
+ADD: Error setting User Status and Import Status following previous change
+
 ## 2.4.1 (Sep 20 , 2017)
 
 Bug Fixes:

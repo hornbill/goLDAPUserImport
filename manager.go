@@ -44,26 +44,39 @@ func getManagerFromLookup(u *ldap.Entry, buffer *bytes.Buffer) string {
 	if ManagerAttributeName == "" {
 		return ""
 	}
+
+	//-- Pull Data from Attriute using regext
 	if ldapImportConf.UserManagerMapping.GetIDFromName {
 		buffer.WriteString(loggerGen(1, "LDAP Manager String: "+ManagerAttributeName))
 		ManagerAttributeName = getNameFromLDAPString(ManagerAttributeName, buffer)
 	}
-	buffer.WriteString(loggerGen(1, "Looking Up Manager from Cache: "+ManagerAttributeName))
-	managerIsInCache, ManagerIDCache := managerInCache(ManagerAttributeName)
+	//-- Is Search Enabled
+	if ldapImportConf.UserManagerMapping.SearchforManager {
+		buffer.WriteString(loggerGen(1, "Search for Manager is Enabled"))
 
-	//-- Check if we have Chached the site already
-	if managerIsInCache {
-		buffer.WriteString(loggerGen(1, "Found Manager in Cache: "+ManagerIDCache))
-		return ManagerIDCache
+		buffer.WriteString(loggerGen(1, "Looking Up Manager from Cache: "+ManagerAttributeName))
+		managerIsInCache, ManagerIDCache := managerInCache(ManagerAttributeName)
+	
+		//-- Check if we have Chached the site already
+		if managerIsInCache {
+			buffer.WriteString(loggerGen(1, "Found Manager in Cache: "+ManagerIDCache))
+			return ManagerIDCache
+		}
+		buffer.WriteString(loggerGen(1, "Manager Not In Cache Searching Hornbill"))
+		ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer)
+		//-- If Returned set output
+		if ManagerIsOnInstance {
+			buffer.WriteString(loggerGen(1, "Manager Lookup found Id: "+ManagerIDInstance))
+			return ManagerIDInstance
+		}
+	}else{
+		buffer.WriteString(loggerGen(1, "Search for Manager is Disabled"))
+		//-- Assume data is manager id
+		buffer.WriteString(loggerGen(1, "Manager Id: "+ManagerAttributeName))
+		return ManagerAttributeName
 	}
-	buffer.WriteString(loggerGen(1, "Manager Not In Cache Searching Hornbill"))
-	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer)
-	//-- If Returned set output
-	if ManagerIsOnInstance {
-		buffer.WriteString(loggerGen(1, "Manager Lookup found Id: "+ManagerIDInstance))
-		return ManagerIDInstance
-	}
-
+	
+	//else return empty
 	return ""
 }
 

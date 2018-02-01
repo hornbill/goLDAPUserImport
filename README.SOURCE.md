@@ -114,6 +114,7 @@ Example JSON File:
         "Enabled":true,
         "Attribute":"[manager]",
         "GetIDFromName":true,
+        "SearchforManager":true,
         "Regex":"CN=(.*?)(?:,[A-Z]+=|$)",
         "Reverse":true,
         "ManagerSearchField":"h_name",
@@ -203,7 +204,8 @@ Example JSON File:
 * Action - (Both | Update | Create) - When to Set the User Manager On Create, On Update or Both
 * Enabled - Turns on or off the Manager Import
 * Attribute - The LDAP Attribute to use for the name of the Manager ,Any value wrapped with [] will be treaded as an LDAP field
-* GetIDFromName - Lookup Hornbill User Id From Name, The Managers Name matched in the Regex must explicitly match the full name in Hornbill (true | false)
+* GetIDFromName - Pull data from the Attribute using the bellow Regex (true | false)
+* SearchforManager - Use data extracted from Attribute to search for the name of the manager this must match the name as stored in hornbill. If set to false then the data pulled from the attribute using the Regex match is used as the manager id (true | false)
 * Regex - Optional Regex String to Match the Name from an DSN String when using GetIDFromName
 * Reverse - Reverse the Name String Matched from the Regex (true | false) when using GetIDFromName
 * ManagerSearchField - Change the User profile feild that is being searched on, default is h_name

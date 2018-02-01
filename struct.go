@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.4.1"
+const version = "2.4.2"
 const constOK = "ok"
 const updateString = "Update"
 const createString = "Create"
@@ -288,6 +288,7 @@ type userManagerStruct struct {
 	Enabled            bool
 	Attribute          string
 	GetIDFromName      bool
+	SearchforManager   bool
 	Regex              string
 	Reverse            bool
 	ManagerSearchField string
