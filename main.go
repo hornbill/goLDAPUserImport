@@ -2,26 +2,21 @@ package main
 
 //----- Packages -----
 import (
-	"bytes"
-	"crypto/rand"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"flag"
 	"fmt"
-	"html"
 	"log"
 	"os"
-	"reflect"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fatih/color" //-- CLI Colour
 	"github.com/hornbill/goApiLib"
-	"github.com/hornbill/ldap"    //-- Hornbill Clone of "github.com/mavricknz/ldap"
-	"github.com/hornbill/pb"      //--Hornbil Clone of "github.com/cheggaaa/pb"
+	//-- Hornbill Clone of "github.com/mavricknz/ldap"
+	//--Hornbil Clone of "github.com/cheggaaa/pb"
 	"github.com/tcnksm/go-latest" //-- For Version checking
 )
 
@@ -34,17 +29,20 @@ var (
 	f           *os.File
 )
 
-//----- Main Function -----
+// Main
 func main() {
-
-	//-- Initiate Variables
-	initVars()
+	//-- Start Time for Durration
+	Time.startTime = time.Now()
+	//-- Start Time for Log File
+	Time.timeNow = time.Now().Format(time.RFC3339)
+	//-- Remove :
+	Time.timeNow = strings.Replace(Time.timeNow, ":", "-", -1)
 
 	//-- Process Flags
 	procFlags()
 
-	//-- If configVersion just output version number and die
-	if configVersion {
+	//-- Used for Building
+	if Flags.configVersion {
 		fmt.Printf("%v \n", version)
 		return
 	}
@@ -56,35 +54,82 @@ func main() {
 	ldapImportConf = loadConfig()
 
 	//-- Validation on Configuration File
-	err := validateConf()
-	if err != nil {
-		logger(4, fmt.Sprintf("%v", err), true)
-		logger(4, "Please Check your Configuration File: "+configFileName, true)
+	configError := validateConf()
+
+	//-- Check for Error
+	if configError != nil {
+		logger(4, fmt.Sprintf("%v", configError), true)
+		logger(4, "Please Check your Configuration File: "+Flags.configFileName, true)
 		return
 	}
 
 	//-- Once we have loaded the config write to hornbill log file
 	logged := espLogger("---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
 
+	//-- Check for Connections
 	if !logged {
 		logger(4, "Unable to Connect to Instance", true)
 		return
 	}
 	//-- Query LDAP
-	var boolLDAPUsers = queryLdap()
+	queryLdap()
 
-	if boolLDAPUsers {
-		processUsersFromWorkers()
-	}
+	//-- Process LDAP User Data First
+	//-- So we only store data about users we have
+	processLDAPUsers()
 
+	//-- Fetch Users from Hornbill
+	loadUsers()
+
+	//-- Load User Roles
+	loadUsersRoles()
+
+	//-- Fetch Sites
+	loadSites()
+
+	//-- Fetch Groups
+	loadGroups()
+
+	//-- Fetch User Groups
+	loadUserGroups()
+
+	//-- Create List of Actions that need to happen
+	//-- (Create,Update,profileUpdate,Assign Role, Assign Group, Assign Site)
+	processData()
+
+	//-- End Ouput
 	outputEnd()
 }
 
+//-- Process Input Flags
+func procFlags() {
+	//-- Grab Flags
+	flag.StringVar(&Flags.configFileName, "file", "conf.json", "Name of Configuration File To Load")
+	flag.StringVar(&Flags.configLogPrefix, "logprefix", "", "Add prefix to the logfile")
+	flag.BoolVar(&Flags.configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
+	flag.BoolVar(&Flags.configVersion, "version", false, "Output Version")
+	flag.IntVar(&Flags.configWorkers, "workers", 1, "Number of Worker threads to use")
+
+	//-- Parse Flags
+	flag.Parse()
+
+	//-- Output config
+	if !Flags.configVersion {
+		logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
+		logger(1, "Flag - Config File "+Flags.configFileName, true)
+		logger(1, "Flag - Log Prefix "+Flags.configLogPrefix, true)
+		logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", Flags.configDryRun), true)
+		logger(1, "Flag - Workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
+	}
+}
+
+//-- Generate Output
 func outputEnd() {
+	logger(1, "Import Complete", true)
 	//-- End output
-	if errorCount > 0 {
+	if counters.errors > 0 {
 		logger(4, "Error encountered please check the log file", true)
-		logger(4, "Error Count: "+fmt.Sprintf("%d", errorCount), true)
+		logger(4, "Error Count: "+fmt.Sprintf("%d", counters.errors), true)
 		//logger(4, "Check Log File for Details", true)
 	}
 	logger(1, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
@@ -97,45 +142,11 @@ func outputEnd() {
 	logger(1, "Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), true)
 
 	//-- Show Time Takens
-	endTime = time.Since(startTime)
-	logger(1, "Time Taken: "+fmt.Sprintf("%v", endTime), true)
+	Time.endTime = time.Since(Time.startTime).Round(time.Second)
+	logger(1, "Time Taken: "+fmt.Sprintf("%s", Time.endTime), true)
 	//-- complete
 	complete()
 	logger(1, "---- XMLMC LDAP Import Complete ---- ", true)
-}
-func procFlags() {
-	//-- Grab Flags
-	flag.StringVar(&configFileName, "file", "conf.json", "Name of Configuration File To Load")
-	flag.StringVar(&configLogPrefix, "logprefix", "", "Add prefix to the logfile")
-	flag.BoolVar(&configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
-	flag.BoolVar(&configVersion, "version", false, "Output Version")
-	flag.IntVar(&configWorkers, "workers", 10, "Number of Worker threads to use")
-
-	//-- Parse Flags
-	flag.Parse()
-
-	//-- Output config
-	if !configVersion {
-		outputFlags()
-	}
-}
-func outputFlags() {
-	//-- Output
-	logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
-	logger(1, "Flag - Config File "+configFileName, true)
-	logger(1, "Flag - Log Prefix "+configLogPrefix, true)
-	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
-	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
-}
-func initVars() {
-	//-- Start Time for Durration
-	startTime = time.Now()
-	//-- Start Time for Log File
-	timeNow = time.Now().Format(time.RFC3339)
-	//-- Remove :
-	timeNow = strings.Replace(timeNow, ":", "-", -1)
-	//-- Set Counter
-	errorCount = 0
 }
 
 //-- Check Latest
@@ -159,7 +170,7 @@ func checkVersion() {
 func loadConfig() ldapImportConfStruct {
 	//-- Check Config File File Exists
 	cwd, _ := os.Getwd()
-	configurationFilePath := cwd + "/" + configFileName
+	configurationFilePath := cwd + "/" + Flags.configFileName
 	logger(1, "Loading Config File: "+configurationFilePath, false)
 	if _, fileCheckErr := os.Stat(configurationFilePath); os.IsNotExist(fileCheckErr) {
 		logger(4, "No Configuration File", true)
@@ -201,172 +212,13 @@ func validateConf() error {
 		return err
 	}
 	//-- Check LDAP Sever Connection type
-	if ldapImportConf.LDAPServerConf.ConnectionType != "" && ldapImportConf.LDAPServerConf.ConnectionType != "SSL" && ldapImportConf.LDAPServerConf.ConnectionType != "TLS" {
-		err := errors.New("Invalid ConnectionType: '" + ldapImportConf.LDAPServerConf.ConnectionType + "' Should be either '' or 'TLS' or 'SSL'")
+	if ldapImportConf.LDAP.Server.ConnectionType != "" && ldapImportConf.LDAP.Server.ConnectionType != "SSL" && ldapImportConf.LDAP.Server.ConnectionType != "TLS" {
+		err := errors.New("Invalid ConnectionType: '" + ldapImportConf.LDAP.Server.ConnectionType + "' Should be either '' or 'TLS' or 'SSL'")
 		return err
 	}
 	//-- Process Config File
 
 	return nil
-}
-
-//-- Worker Pool Function
-func processUsersFromWorkers() {
-	bar := pb.StartNew(len(ldapUsers))
-	logger(1, "Processing Users", false)
-
-	total := len(ldapUsers)
-	jobs := make(chan int, total)
-	results := make(chan int, total)
-	workers := configWorkers
-
-	// Create map of users
-	mapUsers()
-	if total < workers {
-		workers = total
-	}
-	//This starts up 3 workers, initially blocked because there are no jobs yet.
-	for w := 1; w <= workers; w++ {
-		go processUsers(w, jobs, results, bar)
-	}
-	//-- Here we send a job for each user we have to process
-	for j := 1; j <= total; j++ {
-		jobs <- j
-	}
-	close(jobs)
-	//-- Finally we collect all the results of the work.
-	for a := 1; a <= total; a++ {
-		<-results
-	}
-	bar.FinishPrint("Processing Complete!")
-}
-
-func mapUsers() {
-	var buffer bytes.Buffer
-	for user := range ldapUsers {
-		var userID = strings.ToLower(getFeildValue(ldapUsers[user], "UserID", &buffer))
-		var userDN = getFeildValue(ldapUsers[user], "UserDNCache", &buffer)
-		//-- Write to Cache
-		writeUserToCache(userDN, userID, &buffer)
-	}
-	//-- Write Buffer to log
-	loggerWriteBuffer(buffer.String())
-}
-
-//-- Process Users
-func processUsers(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
-
-	//-- Create XMLMC Instance Per Worker
-	espXmlmc := apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
-	espXmlmc.SetAPIKey(ldapImportConf.APIKey)
-	espXmlmc.SetTrace("ldapUserImportTool")
-
-	//-- Range On Jobs for worker
-	for j := range jobs {
-
-		//-- Get User Record from Array
-		ldapUser := ldapUsers[j-1]
-		var buffer bytes.Buffer
-		//-- Get User Id based on the mapping
-		var userID = strings.ToLower(getFeildValue(ldapUser, "UserID", &buffer))
-
-		if userID == "" {
-			buffer.WriteString(loggerGen(1, "Unable to Proceess User - Invalid Id "+userID))
-		} else {
-			buffer.WriteString(loggerGen(1, "Buffer For Job: "+fmt.Sprintf("%d", j)+" - Worker: "+fmt.Sprintf("%d", id)+" - User: "+userID))
-
-			//-- GET DN
-
-			boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
-			if err != nil {
-				buffer.WriteString(loggerGen(4, "Unable to Search For User: "+fmt.Sprintf("%v", err)))
-			}
-			//-- User Exists so Update
-			if boolUpdate {
-				buffer.WriteString(loggerGen(1, "Update User: "+userID))
-				_, errUpdate := updateUser(ldapUser, &buffer, espXmlmc)
-				if errUpdate != nil {
-					buffer.WriteString(loggerGen(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate)))
-				}
-			} else {
-				buffer.WriteString(loggerGen(1, "Create User: "+userID))
-				//-- User Does not Exist so Create
-				if ldapUser != nil {
-					_, errorCreate := createUser(ldapUser, &buffer, espXmlmc)
-					if errorCreate != nil {
-						buffer.WriteString(loggerGen(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate)))
-					}
-				}
-
-			}
-		}
-		//-- Increment
-		bar.Increment()
-		bufferMutex.Lock()
-		loggerWriteBuffer(buffer.String())
-		bufferMutex.Unlock()
-		buffer.Reset()
-		//-- Results
-		results <- j * 2
-	}
-
-}
-
-//-- Get XMLMC Feild from mapping via User Object
-func getFeildValue(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
-	//-- Dyniamicly Grab Mapped Value
-	r := reflect.ValueOf(ldapImportConf.UserMapping)
-	f := reflect.Indirect(r).FieldByName(s)
-	//-- Get Mapped Value
-	var UserMapping = f.String()
-	return processComplexFeild(u, UserMapping, buffer)
-}
-
-//-- Get XMLMC Feild from mapping via profile Object
-func getFeildValueProfile(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
-	//-- Dyniamicly Grab Mapped Value
-	r := reflect.ValueOf(ldapImportConf.UserProfileMapping)
-
-	f := reflect.Indirect(r).FieldByName(s)
-
-	//-- Get Mapped Value
-	var UserProfileMapping = f.String()
-	return processComplexFeild(u, UserProfileMapping, buffer)
-}
-func processComplexFeild(u *ldap.Entry, s string, buffer *bytes.Buffer) string {
-	//-- Match $variables from String
-	re1, err := regexp.Compile(`\[(.*?)\]`)
-	if err != nil {
-		buffer.WriteString(loggerGen(4, "Regex Error: "+fmt.Sprintf("%v", err)))
-	}
-	//-- Get Array of all Matched max 100
-	result := re1.FindAllString(s, 100)
-
-	//-- Loop Matches
-	for _, v := range result {
-		//-- Grab LDAP Mapping value from result set
-		var LDAPAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
-		//-- Check for Invalid Value
-		if LDAPAttributeValue == "" {
-			buffer.WriteString(loggerGen(4, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s))
-			return LDAPAttributeValue
-		}
-		//-- TK UnescapeString to HTML entities are replaced
-		s = html.UnescapeString(strings.Replace(s, v, LDAPAttributeValue, 1))
-	}
-
-	//-- Return Value
-	return s
-}
-
-//-- Generate Password String
-func generatePasswordString(n int) string {
-	var arbytes = make([]byte, n)
-	rand.Read(arbytes)
-	for i, b := range arbytes {
-		arbytes[i] = letterBytes[b%byte(len(letterBytes))]
-	}
-	return string(arbytes)
 }
 
 func loggerGen(t int, s string) string {
@@ -403,7 +255,7 @@ func logger(t int, s string, outputtoCLI bool) {
 		//-- Log Folder
 		logPath := cwd + "/log"
 		//-- Log File
-		logFileName := logPath + "/" + configLogPrefix + "LDAP_User_Import_" + timeNow + ".log"
+		logFileName := logPath + "/" + Flags.configLogPrefix + "LDAP_User_Import_" + Time.timeNow + ".log"
 		//-- If Folder Does Not Exist then create it
 		if _, err := os.Stat(logPath); os.IsNotExist(err) {
 			err := os.Mkdir(logPath, 0777)
@@ -457,34 +309,15 @@ func logger(t int, s string, outputtoCLI bool) {
 //-- complete
 func complete() {
 	//-- End output
-	espLogger("Errors: "+fmt.Sprintf("%d", errorCount), "error")
+	espLogger("Errors: "+fmt.Sprintf("%d", counters.errors), "error")
 	espLogger("Updated: "+fmt.Sprintf("%d", counters.updated), "debug")
 	espLogger("Updated Skipped: "+fmt.Sprintf("%d", counters.updatedSkipped), "debug")
 	espLogger("Created: "+fmt.Sprintf("%d", counters.created), "debug")
 	espLogger("Created Skipped: "+fmt.Sprintf("%d", counters.createskipped), "debug")
 	espLogger("Profiles Updated: "+fmt.Sprintf("%d", counters.profileUpdated), "debug")
 	espLogger("Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), "debug")
-	espLogger("Time Taken: "+fmt.Sprintf("%v", endTime), "debug")
+	espLogger("Time Taken: "+fmt.Sprintf("%v", Time.endTime), "debug")
 	espLogger("---- XMLMC LDAP User Import Complete ---- ", "debug")
-}
-
-// Set Instance Id
-func setInstance(strZone string, instanceID string) bool {
-	//-- Set Zone
-	setZone(strZone)
-	//-- Check for blank instance
-	if instanceID == "" {
-		logger(4, "InstanceId Must be Specified in the Configuration File", true)
-		return false
-	}
-	//-- Set Instance
-	xmlmcInstanceConfig.instance = instanceID
-	return true
-}
-
-// Set Instance Zone to Overide Live
-func setZone(zone string) {
-	xmlmcInstanceConfig.zone = zone
 }
 
 //-- Log to ESP
@@ -509,7 +342,7 @@ func espLogger(message string, severity string) bool {
 	loggerAPI.SetParam("message", message)
 
 	XMLLogger, xmlmcErr := loggerAPI.Invoke("system", "logMessage")
-	var xmlRespon xmlmcResponse
+	var xmlRespon xmlmcLogMessageResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", xmlmcErr), true)
 		return false
@@ -519,7 +352,7 @@ func espLogger(message string, severity string) bool {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", err), true)
 		return false
 	}
-	if xmlRespon.MethodResult != constOK {
+	if xmlRespon.MethodResult != "ok" {
 		logger(4, "Unable to write to log "+xmlRespon.State.ErrorRet, true)
 		return false
 	}
@@ -527,38 +360,9 @@ func espLogger(message string, severity string) bool {
 	return true
 }
 
-func errorCountInc() {
-	mutexCounters.Lock()
-	errorCount++
-	mutexCounters.Unlock()
-}
-func updateCountInc() {
-	mutexCounters.Lock()
-	counters.updated++
-	mutexCounters.Unlock()
-}
-func updateSkippedCountInc() {
-	mutexCounters.Lock()
-	counters.updatedSkipped++
-	mutexCounters.Unlock()
-}
-func createSkippedCountInc() {
-	mutexCounters.Lock()
-	counters.createskipped++
-	mutexCounters.Unlock()
-}
-func createCountInc() {
-	mutexCounters.Lock()
-	counters.created++
-	mutexCounters.Unlock()
-}
-func profileCountInc() {
-	mutexCounters.Lock()
-	counters.profileUpdated++
-	mutexCounters.Unlock()
-}
-func profileSkippedCountInc() {
-	mutexCounters.Lock()
-	counters.profileSkipped++
-	mutexCounters.Unlock()
+// CounterInc Generic Counter Increment
+func CounterInc(counter uint32) {
+	Mutex.Counters.Lock()
+	counter++
+	Mutex.Counters.Unlock()
 }

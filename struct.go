@@ -10,19 +10,71 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "2.4.2"
-const constOK = "ok"
-const updateString = "Update"
-const createString = "Create"
+const version = "3.0.0"
 
-//-- MUTEX
-var mutexSites = &sync.Mutex{}
-var mutexGroups = &sync.Mutex{}
-var mutexManagers = &sync.Mutex{}
-var mutexUsersDN = &sync.Mutex{}
-var mutexCounters = &sync.Mutex{}
-var bufferMutex = &sync.Mutex{}
+// Mutex List
+var Mutex struct {
+	Sites    sync.Mutex
+	Groups   sync.Mutex
+	Managers sync.Mutex
+	UsersDN  sync.Mutex
+	Counters sync.Mutex
+	Buffer   sync.Mutex
+}
 
+// Flags List
+var Flags struct {
+	configFileName  string
+	configLogPrefix string
+	configDryRun    bool
+	configVersion   bool
+	configWorkers   int
+}
+var siteListStrut struct {
+	ID   string
+	Name string
+}
+
+// HornbillCache Struct
+var HornbillCache struct {
+	//-- User Id to account
+	Users map[string]userAccountStruct
+	//-- Site Name to Site Id Map
+	Sites map[string]siteStruct
+	//-- User Id to Map of Role IDs
+	UserRoles map[string][]string
+	//-- User Id to Map of Group Ids
+	UserGroups map[string][]string
+	//-- Group Name to Group id
+	Groups map[string]string
+	//-- User Working Data
+	UsersWorking map[string]*userWorkingDataStruct
+	//-- Map Manager Name to Id
+	Managers map[string]string
+	//-- Map DN to UserId
+	DN map[string]string
+	//-- Image URI to image stuct
+	Images map[string]imageStruct
+}
+
+type imageStruct struct {
+	imageBytes    []byte
+	imageCheckSum string
+}
+type userWorkingDataStruct struct {
+	Account AccountMappingStruct
+	Profile ProfileMappingStruct
+	LDAP    *ldap.Entry
+	Roles   []string
+	GroupID string
+}
+
+// Time Struct
+var Time struct {
+	timeNow   string
+	startTime time.Time
+	endTime   time.Duration
+}
 var client = http.Client{
 	Transport: &http.Transport{
 		MaxIdleConnsPerHost: 1,
@@ -30,6 +82,158 @@ var client = http.Client{
 	Timeout: time.Duration(10 * time.Second),
 }
 
+//----- Variables -----
+var ldapImportConf ldapImportConfStruct
+var ldapUsers []*ldap.Entry
+var counters struct {
+	errors         uint16
+	updated        uint16
+	created        uint16
+	profileUpdated uint16
+	updatedSkipped uint16
+	createskipped  uint16
+	profileSkipped uint16
+}
+
+//----- Structures -----
+type ldapImportConfStruct struct {
+	APIKey     string `json:"APIKey"`
+	InstanceID string `json:"InstanceId"`
+	LDAP       struct {
+		Server struct {
+			Host               string `json:"Host"`
+			UserName           string `json:"UserName"`
+			Password           string `json:"Password"`
+			Port               uint16 `json:"Port"`
+			ConnectionType     string `json:"ConnectionType"`
+			InsecureSkipVerify bool   `json:"InsecureSkipVerify"`
+			Debug              bool   `json:"Debug"`
+		} `json:"Server"`
+		Query struct {
+			Attributes   []string `json:"Attributes"`
+			Scope        int      `json:"Scope"`
+			DerefAliases int      `json:"DerefAliases"`
+			SizeLimit    int      `json:"SizeLimit"`
+			TimeLimit    int      `json:"TimeLimit"`
+			TypesOnly    bool     `json:"TypesOnly"`
+			Filter       string   `json:"Filter"`
+			DSN          string   `json:"DSN"`
+		} `json:"Query"`
+	} `json:"LDAP"`
+	User struct {
+		AccountMapping AccountMappingStruct `json:"AccountMapping"`
+		UserDN         string               `json:"UserDN"`
+		Type           struct {
+			Action string `json:"Action"`
+		} `json:"Type"`
+		Status struct {
+			Action string `json:"Action"`
+			Value  string `json:"Value"`
+		} `json:"Status"`
+		Role struct {
+			Action string   `json:"Action"`
+			Roles  []string `json:"Roles"`
+		} `json:"Role"`
+		ProfileMapping ProfileMappingStruct `json:"ProfileMapping"`
+		Manager        struct {
+			Action  string `json:"Action"`
+			Value   string `json:"Value"`
+			Options struct {
+				GetStringFromValue struct {
+					Regex   string `json:"Regex"`
+					Reverse bool   `json:"Reverse"`
+				} `json:"GetStringFromValue"`
+				MatchAgainstDistinguishedName bool `json:"MatchAgainstDistinguishedName"`
+				Search                        struct {
+					Enable      bool   `json:"Enable"`
+					SearchField string `json:"SearchField"`
+				} `json:"Search"`
+			} `json:"Options"`
+		} `json:"Manager"`
+		Image struct {
+			Action             string `json:"Action"`
+			UploadType         string `json:"UploadType"`
+			InsecureSkipVerify bool   `json:"InsecureSkipVerify"`
+			ImageType          string `json:"ImageType"`
+			URI                string `json:"URI"`
+		} `json:"Image"`
+		Site struct {
+			Action string `json:"Action"`
+			Value  string `json:"Value"`
+		} `json:"Site"`
+		Org struct {
+			Action  string `json:"Action"`
+			Value   string `json:"Value"`
+			Options struct {
+				Type                   int    `json:"Type"`
+				Membership             string `json:"Membership"`
+				TasksView              bool   `json:"TasksView"`
+				TasksAction            bool   `json:"TasksAction"`
+				OnlyOneGroupAssignment bool   `json:"OnlyOneGroupAssignment"`
+			} `json:"Options"`
+		} `json:"Org"`
+	} `json:"User"`
+}
+
+// AccountMappingStruct Used
+type AccountMappingStruct struct {
+	UserID         string `json:"UserID"`
+	UserType       string `json:"UserType"`
+	Name           string `json:"Name"`
+	Password       string `json:"Password"`
+	FirstName      string `json:"FirstName"`
+	LastName       string `json:"LastName"`
+	JobTitle       string `json:"JobTitle"`
+	Site           string `json:"Site"`
+	Phone          string `json:"Phone"`
+	Email          string `json:"Email"`
+	Mobile         string `json:"Mobile"`
+	AbsenceMessage string `json:"AbsenceMessage"`
+	TimeZone       string `json:"TimeZone"`
+	Language       string `json:"Language"`
+	DateTimeFormat string `json:"DateTimeFormat"`
+	DateFormat     string `json:"DateFormat"`
+	TimeFormat     string `json:"TimeFormat"`
+	CurrencySymbol string `json:"CurrencySymbol"`
+	CountryCode    string `json:"CountryCode"`
+}
+
+// ProfileMappingStruct Used
+type ProfileMappingStruct struct {
+	MiddleName        string `json:"middleName"`
+	JobDescription    string `json:"jobDescription"`
+	Manager           string `json:"manager"`
+	WorkPhone         string `json:"workPhone"`
+	Qualifications    string `json:"qualifications"`
+	Interests         string `json:"interests"`
+	Expertise         string `json:"expertise"`
+	Gender            string `json:"gender"`
+	Dob               string `json:"dob"`
+	Nationality       string `json:"nationality"`
+	Religion          string `json:"religion"`
+	HomeTelephone     string `json:"homeTelephone"`
+	SocialNetworkA    string `json:"socialNetworkA"`
+	SocialNetworkB    string `json:"socialNetworkB"`
+	SocialNetworkC    string `json:"socialNetworkC"`
+	SocialNetworkD    string `json:"socialNetworkD"`
+	SocialNetworkE    string `json:"socialNetworkE"`
+	SocialNetworkF    string `json:"socialNetworkF"`
+	SocialNetworkG    string `json:"socialNetworkG"`
+	SocialNetworkH    string `json:"socialNetworkH"`
+	PersonalInterests string `json:"personalInterests"`
+	HomeAddress       string `json:"homeAddress"`
+	PersonalBlog      string `json:"personalBlog"`
+	Attrib1           string `json:"Attrib1"`
+	Attrib2           string `json:"Attrib2"`
+	Attrib3           string `json:"Attrib3"`
+	Attrib4           string `json:"Attrib4"`
+	Attrib5           string `json:"Attrib5"`
+	Attrib6           string `json:"Attrib6"`
+	Attrib7           string `json:"Attrib7"`
+	Attrib8           string `json:"Attrib8"`
+}
+
+//-- Maps
 var userProfileMappingMap = map[string]string{
 	"MiddleName":        "middleName",
 	"JobDescription":    "jobDescription",
@@ -61,7 +265,8 @@ var userProfileMappingMap = map[string]string{
 	"Attrib5":           "attrib5",
 	"Attrib6":           "attrib6",
 	"Attrib7":           "attrib7",
-	"Attrib8":           "attrib8"}
+	"Attrib8":           "attrib8",
+}
 var userProfileArray = []string{
 	"MiddleName",
 	"JobDescription",
@@ -93,8 +298,8 @@ var userProfileArray = []string{
 	"Attrib5",
 	"Attrib6",
 	"Attrib7",
-	"Attrib8"}
-
+	"Attrib8",
+}
 var userMappingMap = map[string]string{
 	"Name":           "name",
 	"Password":       "password",
@@ -113,7 +318,8 @@ var userMappingMap = map[string]string{
 	"DateFormat":     "dateFormat",
 	"TimeFormat":     "timeFormat",
 	"CurrencySymbol": "currencySymbol",
-	"CountryCode":    "countryCode"}
+	"CountryCode":    "countryCode",
+}
 var userUpdateArray = []string{
 	"UserType",
 	"Name",
@@ -132,7 +338,8 @@ var userUpdateArray = []string{
 	"DateFormat",
 	"TimeFormat",
 	"CurrencySymbol",
-	"CountryCode"}
+	"CountryCode",
+}
 var userCreateArray = []string{
 	"Name",
 	"Password",
@@ -151,279 +358,160 @@ var userCreateArray = []string{
 	"DateFormat",
 	"TimeFormat",
 	"CurrencySymbol",
-	"CountryCode"}
-
-//----- Variables -----
-var ldapImportConf ldapImportConfStruct
-var xmlmcInstanceConfig xmlmcConfig
-var ldapUsers []*ldap.Entry
-var sites []siteListStruct
-var managers []managerListStruct
-var usersDN []usersDNStruct
-var groups []groupListStruct
-var counters counterTypeStruct
-var configFileName string
-var configLogPrefix string
-var configDryRun bool
-var configVersion bool
-var configWorkers int
-var timeNow string
-var startTime time.Time
-var endTime time.Duration
-var errorCount uint64
-var noValuesToUpdate = "There are no values to update"
-
-//----- Structures -----
-type siteListStruct struct {
-	SiteName string
-	SiteID   int
-}
-type usersDNStruct struct {
-	DN     string
-	UserID string
-}
-type managerListStruct struct {
-	UserName string
-	UserID   string
-}
-type groupListStruct struct {
-	GroupName string
-	GroupID   string
-}
-
-type xmlmcConfig struct {
-	instance string
-	zone     string
-	url      string
-}
-
-type counterTypeStruct struct {
-	updated        uint16
-	created        uint16
-	profileUpdated uint16
-	updatedSkipped uint16
-	createskipped  uint16
-	profileSkipped uint16
-}
-type ldapImportConfStruct struct {
-	APIKey             string
-	InstanceID         string
-	UpdateUserType     bool
-	UserRoleAction     string
-	URL                string
-	DAVURL             string
-	LDAPServerConf     ldapServerConfStruct
-	UserMapping        userMappingStruct
-	UserAccountStatus  userAccountStatusStruct
-	UserProfileMapping userProfileMappingStruct
-	UserManagerMapping userManagerStruct
-	LDAPAttributes     []string
-	Roles              []string
-	ImageLink          imageLinkStruct
-	SiteLookup         siteLookupStruct
-	OrgLookup          orgLookupStruct
-}
-type userMappingStruct struct {
-	UserID         string
-	UserType       string
-	Name           string
-	Password       string
-	FirstName      string
-	LastName       string
-	JobTitle       string
-	Site           string
-	Phone          string
-	Email          string
-	Mobile         string
-	AbsenceMessage string
-	TimeZone       string
-	Language       string
-	DateTimeFormat string
-	DateFormat     string
-	TimeFormat     string
-	CurrencySymbol string
-	CountryCode    string
-	UserDNCache    string
-}
-type userAccountStatusStruct struct {
-	Action  string
-	Enabled bool
-	Status  string
-}
-type userProfileMappingStruct struct {
-	MiddleName        string
-	JobDescription    string
-	Manager           string
-	WorkPhone         string
-	Qualifications    string
-	Interests         string
-	Expertise         string
-	Gender            string
-	Dob               string
-	Nationality       string
-	Religion          string
-	HomeTelephone     string
-	SocialNetworkA    string
-	SocialNetworkB    string
-	SocialNetworkC    string
-	SocialNetworkD    string
-	SocialNetworkE    string
-	SocialNetworkF    string
-	SocialNetworkG    string
-	SocialNetworkH    string
-	PersonalInterests string
-	HomeAddress       string
-	PersonalBlog      string
-	Attrib1           string
-	Attrib2           string
-	Attrib3           string
-	Attrib4           string
-	Attrib5           string
-	Attrib6           string
-	Attrib7           string
-	Attrib8           string
-}
-type userManagerStruct struct {
-	Action             string
-	Enabled            bool
-	Attribute          string
-	GetIDFromName      bool
-	SearchforManager   bool
-	Regex              string
-	Reverse            bool
-	ManagerSearchField string
-	UseDNCacheFirst    bool
-}
-type ldapServerConfStruct struct {
-	Server             string
-	UserName           string
-	Password           string
-	Port               uint16
-	ConnectionType     string
-	InsecureSkipVerify bool
-	Scope              int
-	DerefAliases       int
-	SizeLimit          int
-	TimeLimit          int
-	TypesOnly          bool
-	Filter             string
-	DSN                string
-	Debug              bool
-}
-type siteLookupStruct struct {
-	Action    string
-	Enabled   bool
-	Attribute string
-}
-type orgLookupStruct struct {
-	Action                 string
-	Enabled                bool
-	Attribute              string
-	Type                   int
-	Membership             string
-	TasksView              bool
-	TasksAction            bool
-	OnlyOneGroupAssignment bool
-}
-type xmlmcResponse struct {
-	MethodResult string       `xml:"status,attr"`
-	Params       paramsStruct `xml:"params"`
-	State        stateStruct  `xml:"state"`
-}
-type xmlmcCheckUserResponse struct {
-	MethodResult string                 `xml:"status,attr"`
-	Params       paramsCheckUsersStruct `xml:"params"`
-	State        stateStruct            `xml:"state"`
-}
-type xmlmcUserListResponse struct {
-	MethodResult string                     `xml:"status,attr"`
-	Params       paramsUserSearchListStruct `xml:"params"`
-	State        stateStruct                `xml:"state"`
-}
-type paramsUserSearchListStruct struct {
-	RowData paramsUserRowDataListStruct `xml:"rowData"`
-}
-type paramsUserRowDataListStruct struct {
-	Row userObjectStruct `xml:"row"`
-}
-type xmlmcuserSetGroupOptionsResponse struct {
-	MethodResult string      `xml:"status,attr"`
-	State        stateStruct `xml:"state"`
-}
-type xmlmcUserGroupListResponse struct {
-	MethodResult string                    `xml:"status,attr"`
-	Params       paramsUserGroupListStruct `xml:"params"`
-	State        stateStruct               `xml:"state"`
-}
-
-type paramsUserGroupListStruct struct {
-	GroupItem []paramsgroupItemStruct `xml:"groupItem"`
-}
-type paramsgroupItemStruct struct {
-	GroupID string `xml:"groupId"`
-	Type    string `xml:"type"`
-}
-
-type userObjectStruct struct {
-	UserID   string `xml:"h_user_id"`
-	UserName string `xml:"h_name"`
+	"CountryCode",
 }
 
 type xmlmcSiteListResponse struct {
-	MethodResult string               `xml:"status,attr"`
-	Params       paramsSiteListStruct `xml:"params"`
-	State        stateStruct          `xml:"state"`
+	Params struct {
+		RowsAffected int `json:"rowsAffected"`
+		LastInsertID int `json:"lastInsertId"`
+		RowData      struct {
+			Row []siteStruct `json:"row"`
+		} `json:"rowData"`
+		QueryExecTime    int `json:"queryExecTime"`
+		QueryResultsTime int `json:"queryResultsTime"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }
-type paramsSiteListStruct struct {
-	RowData paramsSiteRowDataListStruct `xml:"rowData"`
+type xmlmcUserListResponse struct {
+	Params struct {
+		RowData struct {
+			Row []userAccountStruct `json:"row"`
+		} `json:"rowData"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }
-type paramsSiteRowDataListStruct struct {
-	Row siteObjectStruct `xml:"row"`
+type siteStruct struct {
+	HID       string `json:"h_id"`
+	HSiteName string `json:"h_site_name"`
 }
-type siteObjectStruct struct {
-	SiteID      int    `xml:"h_id"`
-	SiteName    string `xml:"h_site_name"`
-	SiteCountry string `xml:"h_country"`
+type roleStruct struct {
+	HUserID string `json:"h_user_id"`
+	HRole   string `json:"h_role"`
+}
+type groupStruct struct {
+	HID   string `json:"h_id"`
+	HName string `json:"h_name"`
+}
+type userAccountStruct struct {
+	HUserID              string `json:"h_user_id"`
+	HName                string `json:"h_name"`
+	HFirstName           string `json:"h_first_name"`
+	HMiddleName          string `json:"h_middle_name"`
+	HLastName            string `json:"h_last_name"`
+	HPhone               string `json:"h_phone"`
+	HEmail               string `json:"h_email"`
+	HMobile              string `json:"h_mobile"`
+	HJobTitle            string `json:"h_job_title"`
+	HLoginCreds          string `json:"h_login_creds"`
+	HClass               string `json:"h_class"`
+	HAvailStatus         string `json:"h_avail_status"`
+	HAvailStatusMsg      string `json:"h_avail_status_msg"`
+	HTimezone            string `json:"h_timezone"`
+	HCountry             string `json:"h_country"`
+	HLanguage            string `json:"h_language"`
+	HDateTimeFormat      string `json:"h_date_time_format"`
+	HDateFormat          string `json:"h_date_format"`
+	HTimeFormat          string `json:"h_time_format"`
+	HCurrencySymbol      string `json:"h_currency_symbol"`
+	HLastLogon           string `json:"h_last_logon"`
+	HSnA                 string `json:"h_sn_a"`
+	HSnB                 string `json:"h_sn_b"`
+	HSnC                 string `json:"h_sn_c"`
+	HSnD                 string `json:"h_sn_d"`
+	HSnE                 string `json:"h_sn_e"`
+	HSnF                 string `json:"h_sn_f"`
+	HSnG                 string `json:"h_sn_g"`
+	HSnH                 string `json:"h_sn_h"`
+	HIconRef             string `json:"h_icon_ref"`
+	HIconChecksum        string `json:"h_icon_checksum"`
+	HDob                 string `json:"h_dob"`
+	HAccountStatus       string `json:"h_account_status"`
+	HFailedAttempts      string `json:"h_failed_attempts"`
+	HIdxRef              string `json:"h_idx_ref"`
+	HSite                string `json:"h_site"`
+	HManager             string `json:"h_manager"`
+	HSummary             string `json:"h_summary"`
+	HInterests           string `json:"h_interests"`
+	HQualifications      string `json:"h_qualifications"`
+	HPersonalInterests   string `json:"h_personal_interests"`
+	HSkills              string `json:"h_skills"`
+	HGender              string `json:"h_gender"`
+	HNationality         string `json:"h_nationality"`
+	HReligion            string `json:"h_religion"`
+	HHomeTelephoneNumber string `json:"h_home_telephone_number"`
+	HHomeAddress         string `json:"h_home_address"`
+	HBlog                string `json:"h_blog"`
+	HAttrib1             string `json:"h_attrib_1"`
+	HAttrib2             string `json:"h_attrib_2"`
+	HAttrib3             string `json:"h_attrib_3"`
+	HAttrib4             string `json:"h_attrib_4"`
+	HAttrib5             string `json:"h_attrib_5"`
+	HAttrib6             string `json:"h_attrib_6"`
+	HAttrib7             string `json:"h_attrib_7"`
+	HAttrib8             string `json:"h_attrib_8"`
+}
+type xmlmcUserRolesListResponse struct {
+	Params struct {
+		RowsAffected int `json:"rowsAffected"`
+		LastInsertID int `json:"lastInsertId"`
+		RowData      struct {
+			Row []roleStruct `json:"row"`
+		} `json:"rowData"`
+		QueryExecTime    int `json:"queryExecTime"`
+		QueryResultsTime int `json:"queryResultsTime"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
+}
+type xmlmcUserGroupListResponse struct {
+	Params struct {
+		RowsAffected int `json:"rowsAffected"`
+		LastInsertID int `json:"lastInsertId"`
+		RowData      struct {
+			Row []struct {
+				HUserID  string `json:"h_user_id"`
+				HGroupID string `json:"h_group_id"`
+			} `json:"row"`
+		} `json:"rowData"`
+		QueryExecTime    int `json:"queryExecTime"`
+		QueryResultsTime int `json:"queryResultsTime"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }
 
 type xmlmcGroupListResponse struct {
-	MethodResult string                `xml:"status,attr"`
-	Params       paramsGroupListStruct `xml:"params"`
-	State        stateStruct           `xml:"state"`
+	Params struct {
+		RowsAffected int `json:"rowsAffected"`
+		LastInsertID int `json:"lastInsertId"`
+		RowData      struct {
+			Row []groupStruct `json:"row"`
+		} `json:"rowData"`
+		QueryExecTime    int `json:"queryExecTime"`
+		QueryResultsTime int `json:"queryResultsTime"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }
-
-type paramsGroupListStruct struct {
-	RowData paramsGroupRowDataListStruct `xml:"rowData"`
+type xmlmcCountResponse struct {
+	Params struct {
+		RowData struct {
+			Row []struct {
+				Count string `json:"count"`
+			} `json:"row"`
+		} `json:"rowData"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }
-
-type paramsGroupRowDataListStruct struct {
-	Row groupObjectStruct `xml:"row"`
+type stateJSONStruct struct {
+	Code      string `json:"code"`
+	Service   string `json:"service"`
+	Operation string `json:"operation"`
+	Error     string `json:"error"`
 }
-
-type groupObjectStruct struct {
-	GroupID   string `xml:"h_id"`
-	GroupName string `xml:"h_name"`
+type xmlmcLogMessageResponse struct {
+	MethodResult string      `xml:"status,attr"`
+	State        stateStruct `xml:"state"`
 }
 type stateStruct struct {
 	Code     string `xml:"code"`
 	ErrorRet string `xml:"error"`
-}
-type paramsCheckUsersStruct struct {
-	RecordExist bool `xml:"recordExist"`
-}
-type paramsStruct struct {
-	SessionID string `xml:"sessionId"`
-}
-type imageLinkStruct struct {
-	Action             string
-	Enabled            bool
-	InsecureSkipVerify bool
-	UploadType         string
-	ImageType          string
-	URI                string
-}
-type xmlmcprofileSetImageResponse struct {
-	MethodResult string                `xml:"status,attr"`
-	Params       paramsGroupListStruct `xml:"params"`
-	State        stateStruct           `xml:"state"`
 }

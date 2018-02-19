@@ -8,31 +8,35 @@ import (
 )
 
 func connectLDAP() *ldap.LDAPConnection {
+
 	TLSconfig := &tls.Config{
-		ServerName:         ldapImportConf.LDAPServerConf.Server,
-		InsecureSkipVerify: ldapImportConf.LDAPServerConf.InsecureSkipVerify,
+		ServerName:         ldapImportConf.LDAP.Server.Host,
+		InsecureSkipVerify: ldapImportConf.LDAP.Server.InsecureSkipVerify,
 	}
 	//-- Based on Connection Type Normal | TLS | SSL
-	logger(1, "Attempting Connection to LDAP... \nServer: "+ldapImportConf.LDAPServerConf.Server+"\nPort: "+fmt.Sprintf("%d", ldapImportConf.LDAPServerConf.Port)+"\nType: "+ldapImportConf.LDAPServerConf.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAPServerConf.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAPServerConf.Debug), true)
-	t := ldapImportConf.LDAPServerConf.ConnectionType
+	if ldapImportConf.LDAP.Server.Debug {
+		logger(1, "Attempting Connection to LDAP... \nServer: "+ldapImportConf.LDAP.Server.Host+"\nPort: "+fmt.Sprintf("%d", ldapImportConf.LDAP.Server.Port)+"\nType: "+ldapImportConf.LDAP.Server.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAP.Server.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAP.Server.Debug), true)
+	}
+
+	t := ldapImportConf.LDAP.Server.ConnectionType
 	switch t {
 	case "":
 		//-- Normal
 		logger(1, "Creating LDAP Connection", false)
-		l := ldap.NewLDAPConnection(ldapImportConf.LDAPServerConf.Server, ldapImportConf.LDAPServerConf.Port)
-		l.Debug = ldapImportConf.LDAPServerConf.Debug
+		l := ldap.NewLDAPConnection(ldapImportConf.LDAP.Server.Host, ldapImportConf.LDAP.Server.Port)
+		l.Debug = ldapImportConf.LDAP.Server.Debug
 		return l
 	case "TLS":
 		//-- TLS
 		logger(1, "Creating LDAP Connection (TLS)", false)
-		l := ldap.NewLDAPTLSConnection(ldapImportConf.LDAPServerConf.Server, ldapImportConf.LDAPServerConf.Port, TLSconfig)
-		l.Debug = ldapImportConf.LDAPServerConf.Debug
+		l := ldap.NewLDAPTLSConnection(ldapImportConf.LDAP.Server.Host, ldapImportConf.LDAP.Server.Port, TLSconfig)
+		l.Debug = ldapImportConf.LDAP.Server.Debug
 		return l
 	case "SSL":
 		//-- SSL
 		logger(1, "Creating LDAP Connection (SSL)", false)
-		l := ldap.NewLDAPSSLConnection(ldapImportConf.LDAPServerConf.Server, ldapImportConf.LDAPServerConf.Port, TLSconfig)
-		l.Debug = ldapImportConf.LDAPServerConf.Debug
+		l := ldap.NewLDAPSSLConnection(ldapImportConf.LDAP.Server.Host, ldapImportConf.LDAP.Server.Port, TLSconfig)
+		l.Debug = ldapImportConf.LDAP.Server.Debug
 		return l
 	}
 
@@ -41,6 +45,7 @@ func connectLDAP() *ldap.LDAPConnection {
 
 //-- Query LDAP
 func queryLdap() bool {
+	logger(1, "Query LDAP For Users", true)
 	//-- Create LDAP Connection
 	l := connectLDAP()
 	conErr := l.Connect()
@@ -51,22 +56,24 @@ func queryLdap() bool {
 	defer l.Close()
 
 	//-- Bind
-	bindErr := l.Bind(ldapImportConf.LDAPServerConf.UserName, ldapImportConf.LDAPServerConf.Password)
+	bindErr := l.Bind(ldapImportConf.LDAP.Server.UserName, ldapImportConf.LDAP.Server.Password)
 	if bindErr != nil {
 		logger(4, "Bind Error: "+fmt.Sprintf("%v", bindErr), true)
 		return false
 	}
-	logger(1, "LDAP Search Query \n"+fmt.Sprintf("%+v", ldapImportConf.LDAPServerConf)+" ----", false)
+	if ldapImportConf.LDAP.Server.Debug {
+		logger(1, "LDAP Search Query \n"+fmt.Sprintf("%+v", ldapImportConf.LDAP.Query)+" ----", false)
+	}
 	//-- Build Search Request
 	searchRequest := ldap.NewSearchRequest(
-		ldapImportConf.LDAPServerConf.DSN,
-		ldapImportConf.LDAPServerConf.Scope,
-		ldapImportConf.LDAPServerConf.DerefAliases,
-		ldapImportConf.LDAPServerConf.SizeLimit,
-		ldapImportConf.LDAPServerConf.TimeLimit,
-		ldapImportConf.LDAPServerConf.TypesOnly,
-		ldapImportConf.LDAPServerConf.Filter,
-		ldapImportConf.LDAPAttributes,
+		ldapImportConf.LDAP.Query.DSN,
+		ldapImportConf.LDAP.Query.Scope,
+		ldapImportConf.LDAP.Query.DerefAliases,
+		ldapImportConf.LDAP.Query.SizeLimit,
+		ldapImportConf.LDAP.Query.TimeLimit,
+		ldapImportConf.LDAP.Query.TypesOnly,
+		ldapImportConf.LDAP.Query.Filter,
+		ldapImportConf.LDAP.Query.Attributes,
 		nil)
 
 	//-- Search Request with 1000 limit pagaing
@@ -76,7 +83,7 @@ func queryLdap() bool {
 		return false
 	}
 
-	logger(1, "LDAP Results: "+fmt.Sprintf("%d", len(results.Entries)), true)
+	logger(1, "LDAP Results: "+fmt.Sprintf("%d", len(results.Entries))+"\n", true)
 	//-- Catch zero results
 	if len(results.Entries) == 0 {
 		logger(4, "[LDAP] [SEARCH] No Users Found ", true)
