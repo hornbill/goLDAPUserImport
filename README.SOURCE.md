@@ -7,7 +7,7 @@
 - [Testing](testing)
 - [Scheduling](#scheduling)
 - [Logging](#logging)
-- [Error Codes](#Error Codes)
+- [Errors](#errors)
 
 # Installation
 
@@ -19,10 +19,10 @@
 * Change Directory to the folder with ldap_user_import.exe `C:\LDAP_Import\`
 * Run the command ldap_user_import.exe -dryrun true -instance $INSTANCEID -apikey $APIKEY
 
-# config
+# Config
 As of LDAP UserImport 3.0 All Configuration is now done in the Hornbill Administration Tool, [See Here](https://wiki.hornbill.com/index.php/LDAP_User_Import) for details on setting an LDAP User Import configuration
 
-# execute
+# Execute
 Command Line Parameters
 * config - Defaults to `` - Id of the Import Configuration to load from Hornbill
 * dryrun - Defaults to `false` - Set to True and the XMLMC for Create and Update users will not be called and instead the XML will be dumped to the log file, this is to aid in debugging the initial connection information.
@@ -43,10 +43,10 @@ You can schedule ldap_user_import.exe to run with any optional command line argu
 * Ensure the user account running the task has rights to ldap_import.exe and the containing folder.
 * Make sure the Start In parameter contains the folder where ldap_import.exe resides in otherwise it will not be able to pick up the correct path.
 
-# logging
+# Logging
 All Logging output is saved in the log directory in the same directory as the executable the file name contains the date and time the import was run 'LDAP_User_Import_2015-11-06T14-26-13Z.log'
 
-# Error Codes
+# Errors
 * `100` - Unable to create log File
 * `101` - Unable to create log folder
 * `103` - Unable to Load Configuration No Instance Id
