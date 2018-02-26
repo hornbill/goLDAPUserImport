@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"html"
 	"reflect"
@@ -54,4 +55,14 @@ func processComplexFeild(u *ldap.Entry, s string) string {
 
 	//-- Return Value
 	return s
+}
+
+//-- Generate Password String
+func generatePasswordString(n int) string {
+	var arbytes = make([]byte, n)
+	rand.Read(arbytes)
+	for i, b := range arbytes {
+		arbytes[i] = letterBytes[b%byte(len(letterBytes))]
+	}
+	return string(arbytes)
 }

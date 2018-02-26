@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/hornbill/ldap"
@@ -12,23 +11,14 @@ import (
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const version = "3.0.0"
 
-// Mutex List
-var Mutex struct {
-	Sites    sync.Mutex
-	Groups   sync.Mutex
-	Managers sync.Mutex
-	UsersDN  sync.Mutex
-	Counters sync.Mutex
-	Buffer   sync.Mutex
-}
-
 // Flags List
 var Flags struct {
-	configFileName  string
+	configId  string
 	configLogPrefix string
 	configDryRun    bool
 	configVersion   bool
-	configWorkers   int
+	configInstanceId string
+	configApiKey string
 }
 var siteListStrut struct {
 	ID   string
@@ -57,16 +47,26 @@ var HornbillCache struct {
 	Images map[string]imageStruct
 }
 
+type userImportJobs struct {
+	create        bool
+	update        bool
+	updateProfile bool
+	updateType    bool
+	updateSite    bool
+	updateImage   bool
+}
 type imageStruct struct {
 	imageBytes    []byte
 	imageCheckSum string
 }
 type userWorkingDataStruct struct {
-	Account AccountMappingStruct
-	Profile ProfileMappingStruct
-	LDAP    *ldap.Entry
-	Roles   []string
-	GroupID string
+	Account  AccountMappingStruct
+	Profile  ProfileMappingStruct
+	ImageURI string
+	LDAP     *ldap.Entry
+	Jobs     userImportJobs
+	Roles    []string
+	Groups   []string
 }
 
 // Time Struct
@@ -84,31 +84,50 @@ var client = http.Client{
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
+var LDAPServerAuth ldapServerConfAuthStruct
 var ldapUsers []*ldap.Entry
 var counters struct {
 	errors         uint16
 	updated        uint16
-	created        uint16
 	profileUpdated uint16
+	imageUpdated   uint16
+	groupUpdated   uint16
+	rolesUpdated   uint16
+
+	created uint16
+
 	updatedSkipped uint16
 	createskipped  uint16
 	profileSkipped uint16
 }
 
 //----- Structures -----
+type ldapServerConfAuthStruct struct {
+	Host             string
+	UserName           string
+	Password           string
+	Port               uint16
+}
+type ldapServerConfStruct struct {
+	KeySafeID          int
+	ConnectionType     string
+	InsecureSkipVerify bool
+	Scope              int
+	DerefAliases       int
+	SizeLimit          int
+	TimeLimit          int
+	TypesOnly          bool
+	Filter             string
+	DSN                string
+	Debug              bool
+}
+
+
 type ldapImportConfStruct struct {
 	APIKey     string `json:"APIKey"`
 	InstanceID string `json:"InstanceId"`
 	LDAP       struct {
-		Server struct {
-			Host               string `json:"Host"`
-			UserName           string `json:"UserName"`
-			Password           string `json:"Password"`
-			Port               uint16 `json:"Port"`
-			ConnectionType     string `json:"ConnectionType"`
-			InsecureSkipVerify bool   `json:"InsecureSkipVerify"`
-			Debug              bool   `json:"Debug"`
-		} `json:"Server"`
+		Server ldapServerConfStruct `json:"Server"`
 		Query struct {
 			Attributes   []string `json:"Attributes"`
 			Scope        int      `json:"Scope"`
@@ -161,10 +180,11 @@ type ldapImportConfStruct struct {
 			Action string `json:"Action"`
 			Value  string `json:"Value"`
 		} `json:"Site"`
-		Org struct {
-			Action  string `json:"Action"`
-			Value   string `json:"Value"`
-			Options struct {
+		Org []struct {
+			Action   string `json:"Action"`
+			Value    string `json:"Value"`
+			MemberOf string `json:"MemberOf"`
+			Options  struct {
 				Type                   int    `json:"Type"`
 				Membership             string `json:"Membership"`
 				TasksView              bool   `json:"TasksView"`
@@ -173,6 +193,10 @@ type ldapImportConfStruct struct {
 			} `json:"Options"`
 		} `json:"Org"`
 	} `json:"User"`
+	Advanced struct {
+		LogLevel int `json:"LogLevel"`
+		PageSize int `json:"PageSize"`
+	} `json:"Advanced"`
 }
 
 // AccountMappingStruct Used
@@ -231,134 +255,6 @@ type ProfileMappingStruct struct {
 	Attrib6           string `json:"Attrib6"`
 	Attrib7           string `json:"Attrib7"`
 	Attrib8           string `json:"Attrib8"`
-}
-
-//-- Maps
-var userProfileMappingMap = map[string]string{
-	"MiddleName":        "middleName",
-	"JobDescription":    "jobDescription",
-	"Manager":           "manager",
-	"WorkPhone":         "workPhone",
-	"Qualifications":    "qualifications",
-	"Interests":         "interests",
-	"Expertise":         "expertise",
-	"Gender":            "gender",
-	"Dob":               "dob",
-	"Nationality":       "nationality",
-	"Religion":          "religion",
-	"HomeTelephone":     "homeTelephone",
-	"SocialNetworkA":    "socialNetworkA",
-	"SocialNetworkB":    "socialNetworkB",
-	"SocialNetworkC":    "socialNetworkC",
-	"SocialNetworkD":    "socialNetworkD",
-	"SocialNetworkE":    "socialNetworkE",
-	"SocialNetworkF":    "socialNetworkF",
-	"SocialNetworkG":    "socialNetworkG",
-	"SocialNetworkH":    "socialNetworkH",
-	"PersonalInterests": "personalInterests",
-	"HomeAddress":       "homeAddress",
-	"PersonalBlog":      "personalBlog",
-	"Attrib1":           "attrib1",
-	"Attrib2":           "attrib2",
-	"Attrib3":           "attrib3",
-	"Attrib4":           "attrib4",
-	"Attrib5":           "attrib5",
-	"Attrib6":           "attrib6",
-	"Attrib7":           "attrib7",
-	"Attrib8":           "attrib8",
-}
-var userProfileArray = []string{
-	"MiddleName",
-	"JobDescription",
-	"Manager",
-	"WorkPhone",
-	"Qualifications",
-	"Interests",
-	"Expertise",
-	"Gender",
-	"Dob",
-	"Nationality",
-	"Religion",
-	"HomeTelephone",
-	"SocialNetworkA",
-	"SocialNetworkB",
-	"SocialNetworkC",
-	"SocialNetworkD",
-	"SocialNetworkE",
-	"SocialNetworkF",
-	"SocialNetworkG",
-	"SocialNetworkH",
-	"PersonalInterests",
-	"HomeAddress",
-	"PersonalBlog",
-	"Attrib1",
-	"Attrib2",
-	"Attrib3",
-	"Attrib4",
-	"Attrib5",
-	"Attrib6",
-	"Attrib7",
-	"Attrib8",
-}
-var userMappingMap = map[string]string{
-	"Name":           "name",
-	"Password":       "password",
-	"UserType":       "userType",
-	"FirstName":      "firstName",
-	"LastName":       "lastName",
-	"JobTitle":       "jobTitle",
-	"Site":           "site",
-	"Phone":          "phone",
-	"Email":          "email",
-	"Mobile":         "mobile",
-	"AbsenceMessage": "absenceMessage",
-	"TimeZone":       "timeZone",
-	"Language":       "language",
-	"DateTimeFormat": "dateTimeFormat",
-	"DateFormat":     "dateFormat",
-	"TimeFormat":     "timeFormat",
-	"CurrencySymbol": "currencySymbol",
-	"CountryCode":    "countryCode",
-}
-var userUpdateArray = []string{
-	"UserType",
-	"Name",
-	"Password",
-	"FirstName",
-	"LastName",
-	"JobTitle",
-	"Site",
-	"Phone",
-	"Email",
-	"Mobile",
-	"AbsenceMessage",
-	"TimeZone",
-	"Language",
-	"DateTimeFormat",
-	"DateFormat",
-	"TimeFormat",
-	"CurrencySymbol",
-	"CountryCode",
-}
-var userCreateArray = []string{
-	"Name",
-	"Password",
-	"UserType",
-	"FirstName",
-	"LastName",
-	"JobTitle",
-	"Site",
-	"Phone",
-	"Email",
-	"Mobile",
-	"AbsenceMessage",
-	"TimeZone",
-	"Language",
-	"DateTimeFormat",
-	"DateFormat",
-	"TimeFormat",
-	"CurrencySymbol",
-	"CountryCode",
 }
 
 type xmlmcSiteListResponse struct {
@@ -491,6 +387,36 @@ type xmlmcGroupListResponse struct {
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
+type xmlmcConfigLoadResponse struct {
+
+	Params struct {
+		PrimaryEntityData struct {
+			Entity string `json:"entity"`
+			Record struct {
+				HPkID         string `json:"h_pk_id"`
+				HName         string `json:"h_name"`
+				HType         string `json:"h_type"`
+				HDescription  string `json:"h_description"`
+				HCreatedOn    string `json:"h_created_on"`
+				HCreatedBy    string `json:"h_created_by"`
+				HUpdatedBy    string `json:"h_updated_by"`
+				HLastupdateOn string `json:"h_lastupdate_on"`
+				HDefinition   string `json:"h_definition"`
+			} `json:"record"`
+		} `json:"primaryEntityData"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
+}
+type xmlmcKeySafeResponse struct {
+	Status bool `json:"@status"`
+	Params struct {
+		Type   string `json:"type"`
+		Title  string `json:"title"`
+		Schema string `json:"schema"`
+		Data   string `json:"data"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
+}
 type xmlmcCountResponse struct {
 	Params struct {
 		RowData struct {
@@ -514,4 +440,8 @@ type xmlmcLogMessageResponse struct {
 type stateStruct struct {
 	Code     string `xml:"code"`
 	ErrorRet string `xml:"error"`
+}
+type xmlmcResponse struct {
+	MethodResult string          `json:"status,attr"`
+	State        stateJSONStruct `json:"state"`
 }

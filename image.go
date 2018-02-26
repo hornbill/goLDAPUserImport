@@ -10,11 +10,9 @@ import (
 	"strings"
 )
 
-func loadImageFromValue(importDate *userWorkingDataStruct) []byte {
+func loadImageFromValue(imageURI string) []byte {
 
-	//-- Work out the value of URI which may contain [] for LDAP attribute references or just a string
-	value := processComplexFeild(importDate.LDAP, ldapImportConf.User.Image.URI)
-	logger(1, "Image Lookup URI: "+fmt.Sprintf("%s", value), false)
+	logger(1, "Image Lookup URI: "+fmt.Sprintf("%s", imageURI), false)
 
 	if strings.ToUpper(ldapImportConf.User.Image.UploadType) != "URL" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
@@ -28,9 +26,9 @@ func loadImageFromValue(importDate *userWorkingDataStruct) []byte {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: ldapImportConf.User.Image.InsecureSkipVerify},
 			}
 			client := &http.Client{Transport: tr}
-			resp, err := client.Get(value)
+			resp, err := client.Get(imageURI)
 			if err != nil {
-				logger(4, "Unable to get image URI: "+value+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", err)+"]", false)
+				logger(4, "Unable to get image URI: "+imageURI+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", err)+"]", false)
 				return nil
 			}
 			defer resp.Body.Close()
@@ -41,9 +39,9 @@ func loadImageFromValue(importDate *userWorkingDataStruct) []byte {
 				return nil
 			}
 		case "AD":
-			imageB = []byte(value)
+			imageB = []byte(imageURI)
 		default:
-			imageB, Berr = hex.DecodeString(value[2:]) //stripping leading 0x
+			imageB, Berr = hex.DecodeString(imageURI[2:]) //stripping leading 0x
 			if Berr != nil {
 				logger(4, "Unsuccesful Decoding: "+fmt.Sprintf("%v", Berr), false)
 				return nil
@@ -70,13 +68,16 @@ func loadImageFromValue(importDate *userWorkingDataStruct) []byte {
 func getImage(importData *userWorkingDataStruct) imageStruct {
 	var image imageStruct
 	var imageBytes []byte
+
+	//-- Work out the value of URI which may contain [] for LDAP attribute references or just a string
+	importData.ImageURI = processComplexFeild(importData.LDAP, ldapImportConf.User.Image.URI)
 	//-- Try and Load from Cache
-	_, found := HornbillCache.Images[ldapImportConf.User.Image.URI]
+	_, found := HornbillCache.Images[importData.ImageURI]
 	if found {
-		image = HornbillCache.Images[ldapImportConf.User.Image.URI]
+		image = HornbillCache.Images[importData.ImageURI]
 	} else {
 		//- Load Image if we have one into bytes
-		imageBytes = loadImageFromValue(importData)
+		imageBytes = loadImageFromValue(importData.ImageURI)
 
 		//-- Validate Sha1 hex string against what we currently have
 		imageCheckSumHex := fmt.Sprintf("%x", sha1.Sum(imageBytes))
@@ -84,16 +85,7 @@ func getImage(importData *userWorkingDataStruct) imageStruct {
 		//-- Store in cache
 		image.imageBytes = imageBytes
 		image.imageCheckSum = imageCheckSumHex
-		HornbillCache.Images[ldapImportConf.User.Image.URI] = image
+		HornbillCache.Images[importData.ImageURI] = image
 	}
-
 	return image
-}
-
-// Write DN and User ID to Cache
-func writeImageToCache(URI string, image imageStruct) {
-	_, found := HornbillCache.Images[URI]
-	if !found {
-		HornbillCache.Images[URI] = image
-	}
 }

@@ -10,12 +10,12 @@ import (
 func connectLDAP() *ldap.LDAPConnection {
 
 	TLSconfig := &tls.Config{
-		ServerName:         ldapImportConf.LDAP.Server.Host,
+		ServerName:         LDAPServerAuth.Host,
 		InsecureSkipVerify: ldapImportConf.LDAP.Server.InsecureSkipVerify,
 	}
 	//-- Based on Connection Type Normal | TLS | SSL
 	if ldapImportConf.LDAP.Server.Debug {
-		logger(1, "Attempting Connection to LDAP... \nServer: "+ldapImportConf.LDAP.Server.Host+"\nPort: "+fmt.Sprintf("%d", ldapImportConf.LDAP.Server.Port)+"\nType: "+ldapImportConf.LDAP.Server.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAP.Server.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAP.Server.Debug), true)
+		logger(1, "Attempting Connection to LDAP... \nServer: "+LDAPServerAuth.Host+"\nPort: "+fmt.Sprintf("%d", LDAPServerAuth.Port)+"\nType: "+ldapImportConf.LDAP.Server.ConnectionType+"\nSkip Verify: "+fmt.Sprintf("%t", ldapImportConf.LDAP.Server.InsecureSkipVerify)+"\nDebug: "+fmt.Sprintf("%t", ldapImportConf.LDAP.Server.Debug), true)
 	}
 
 	t := ldapImportConf.LDAP.Server.ConnectionType
@@ -23,19 +23,19 @@ func connectLDAP() *ldap.LDAPConnection {
 	case "":
 		//-- Normal
 		logger(1, "Creating LDAP Connection", false)
-		l := ldap.NewLDAPConnection(ldapImportConf.LDAP.Server.Host, ldapImportConf.LDAP.Server.Port)
+		l := ldap.NewLDAPConnection(LDAPServerAuth.Host, LDAPServerAuth.Port)
 		l.Debug = ldapImportConf.LDAP.Server.Debug
 		return l
 	case "TLS":
 		//-- TLS
 		logger(1, "Creating LDAP Connection (TLS)", false)
-		l := ldap.NewLDAPTLSConnection(ldapImportConf.LDAP.Server.Host, ldapImportConf.LDAP.Server.Port, TLSconfig)
+		l := ldap.NewLDAPTLSConnection(LDAPServerAuth.Host, LDAPServerAuth.Port, TLSconfig)
 		l.Debug = ldapImportConf.LDAP.Server.Debug
 		return l
 	case "SSL":
 		//-- SSL
 		logger(1, "Creating LDAP Connection (SSL)", false)
-		l := ldap.NewLDAPSSLConnection(ldapImportConf.LDAP.Server.Host, ldapImportConf.LDAP.Server.Port, TLSconfig)
+		l := ldap.NewLDAPSSLConnection(LDAPServerAuth.Host, LDAPServerAuth.Port, TLSconfig)
 		l.Debug = ldapImportConf.LDAP.Server.Debug
 		return l
 	}
@@ -56,7 +56,7 @@ func queryLdap() bool {
 	defer l.Close()
 
 	//-- Bind
-	bindErr := l.Bind(ldapImportConf.LDAP.Server.UserName, ldapImportConf.LDAP.Server.Password)
+	bindErr := l.Bind(LDAPServerAuth.UserName, LDAPServerAuth.Password)
 	if bindErr != nil {
 		logger(4, "Bind Error: "+fmt.Sprintf("%v", bindErr), true)
 		return false

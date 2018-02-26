@@ -59,7 +59,7 @@ func main() {
 	//-- Check for Error
 	if configError != nil {
 		logger(4, fmt.Sprintf("%v", configError), true)
-		logger(4, "Please Check your Configuration File: "+Flags.configFileName, true)
+		logger(4, "Please Check your Configuration: "+Flags.configId, true)
 		return
 	}
 
@@ -97,6 +97,9 @@ func main() {
 	//-- (Create,Update,profileUpdate,Assign Role, Assign Group, Assign Site)
 	processData()
 
+	//-- Run Actions
+	finaliseData()
+
 	//-- End Ouput
 	outputEnd()
 }
@@ -104,49 +107,54 @@ func main() {
 //-- Process Input Flags
 func procFlags() {
 	//-- Grab Flags
-	flag.StringVar(&Flags.configFileName, "file", "conf.json", "Name of Configuration File To Load")
+	flag.StringVar(&Flags.configId, "config", "", "Id of Configuration To Load From Hornbill")
 	flag.StringVar(&Flags.configLogPrefix, "logprefix", "", "Add prefix to the logfile")
 	flag.BoolVar(&Flags.configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
 	flag.BoolVar(&Flags.configVersion, "version", false, "Output Version")
-	flag.IntVar(&Flags.configWorkers, "workers", 1, "Number of Worker threads to use")
+	flag.StringVar(&Flags.configInstanceId, "instanceid", "", "Id of the Hornbill Instance to connect to")
+	flag.StringVar(&Flags.configApiKey, "apikey", "", "API Key to use as Authentication when connecting to Hornbill Instance")
+	//flag.IntVar(&Flags.configWorkers, "workers", 1, "Number of Worker threads to use")
 
 	//-- Parse Flags
 	flag.Parse()
 
 	//-- Output config
 	if !Flags.configVersion {
-		logger(1, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
-		logger(1, "Flag - Config File "+Flags.configFileName, true)
-		logger(1, "Flag - Log Prefix "+Flags.configLogPrefix, true)
-		logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", Flags.configDryRun), true)
-		logger(1, "Flag - Workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
+		logger(2, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
+		logger(2, "Flag - Config Id "+Flags.configId, true)
+		logger(2, "Flag - Log Prefix "+Flags.configLogPrefix, true)
+		logger(2, "Flag - Dry Run "+fmt.Sprintf("%v", Flags.configDryRun), true)
+		logger(2, "Flag - instanceId "+Flags.configInstanceId, true)
+		logger(2, "Flag - apiKey "+Flags.configApiKey, true)
+		//logger(2, "Flag - Workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
 	}
 }
 
 //-- Generate Output
 func outputEnd() {
-	logger(1, "Import Complete", true)
+	logger(2, "Import Complete", true)
 	//-- End output
 	if counters.errors > 0 {
-		logger(4, "Error encountered please check the log file", true)
+		logger(4, "One or more errors encountered please check the log file", true)
 		logger(4, "Error Count: "+fmt.Sprintf("%d", counters.errors), true)
 		//logger(4, "Check Log File for Details", true)
 	}
-	logger(1, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
-	logger(1, "Updated Skipped: "+fmt.Sprintf("%d", counters.updatedSkipped), true)
+	logger(2, "Accounts Proccesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
+	logger(2, "Created: "+fmt.Sprintf("%d", counters.created), true)
+	logger(2, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
 
-	logger(1, "Created: "+fmt.Sprintf("%d", counters.created), true)
-	logger(1, "Created Skipped: "+fmt.Sprintf("%d", counters.createskipped), true)
+	logger(2, "Profiles Updated: "+fmt.Sprintf("%d", counters.profileUpdated), true)
 
-	logger(1, "Profiles Updated: "+fmt.Sprintf("%d", counters.profileUpdated), true)
-	logger(1, "Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), true)
+	logger(2, "Images Updated: "+fmt.Sprintf("%d", counters.imageUpdated), true)
+	logger(2, "Groups Updated: "+fmt.Sprintf("%d", counters.groupUpdated), true)
+	logger(2, "Roles Updated: "+fmt.Sprintf("%d", counters.rolesUpdated), true)
 
 	//-- Show Time Takens
 	Time.endTime = time.Since(Time.startTime).Round(time.Second)
-	logger(1, "Time Taken: "+fmt.Sprintf("%s", Time.endTime), true)
+	logger(2, "Time Taken: "+fmt.Sprintf("%s", Time.endTime), true)
 	//-- complete
 	complete()
-	logger(1, "---- XMLMC LDAP Import Complete ---- ", true)
+	logger(2, "---- XMLMC LDAP Import Complete ---- ", true)
 }
 
 //-- Check Latest
@@ -168,49 +176,87 @@ func checkVersion() {
 
 //-- Function to Load Configruation File
 func loadConfig() ldapImportConfStruct {
-	//-- Check Config File File Exists
-	cwd, _ := os.Getwd()
-	configurationFilePath := cwd + "/" + Flags.configFileName
-	logger(1, "Loading Config File: "+configurationFilePath, false)
-	if _, fileCheckErr := os.Stat(configurationFilePath); os.IsNotExist(fileCheckErr) {
-		logger(4, "No Configuration File", true)
-		os.Exit(102)
-	}
 
-	//-- Load Config File
-	file, fileError := os.Open(configurationFilePath)
-	//-- Check For Error Reading File
-	if fileError != nil {
-		logger(4, "Error Opening Configuration File: "+fmt.Sprintf("%v", fileError), true)
+	if Flags.configInstanceId == ""{
+		logger(4, "Config Error - No InstanceId Provided", true)
+		os.Exit(103)
 	}
-	//-- New Decoder
-	decoder := json.NewDecoder(file)
-	//-- New Var based on ldapImportConf
-	eldapConf := ldapImportConfStruct{}
+	if Flags.configApiKey == ""{
+		logger(4, "Config Error - No ApiKey Provided", true)
+		os.Exit(104)
+	}
+	if Flags.configId == ""{
+		logger(4, "Config Error - No ConfigId Provided", true)
+		os.Exit(105)
+	}
+	logger(1, "Loading Configuration Data: "+Flags.configId, true)
 
-	//-- Decode JSON
-	err := decoder.Decode(&eldapConf)
-	//-- Error Checking
+	mc := apiLib.NewXmlmcInstance(Flags.configInstanceId)
+	mc.SetAPIKey(Flags.configApiKey)
+	mc.SetTimeout(5)
+	mc.SetJSONResponse(true)
+
+	mc.SetParam("entity", "Imports")
+	mc.SetParam("keyValue", Flags.configId)
+
+	RespBody, xmlmcErr := mc.Invoke("data", "entityGetRecord")
+	var JSONResp xmlmcConfigLoadResponse
+	if xmlmcErr != nil {
+		logger(4, "Error Loading Configuration: "+fmt.Sprintf("%v", xmlmcErr), true)
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
-		logger(4, "Error Decoding Configuration File: "+fmt.Sprintf("%v", err), true)
+		logger(4, "Error Loading Configuration: "+fmt.Sprintf("%v", err), true)
+	}
+	if JSONResp.State.Error != "" {
+		logger(4, "Error Loading Configuration: "+fmt.Sprintf("%v", JSONResp.State.Error), true)
 	}
 
+	//-- UnMarshal Config Definition
+	var eldapConf ldapImportConfStruct
+
+	err = json.Unmarshal([]byte(JSONResp.Params.PrimaryEntityData.Record.HDefinition), &eldapConf)
+	if err != nil {
+		logger(4, "Error Decoding Configuration: "+fmt.Sprintf("%v", err), true)
+	}
+
+	if eldapConf.LDAP.Server.KeySafeID == 0 {
+		logger(4, "Config Error - No LDAP Credentials Missing KeySafe Id", true)
+		os.Exit(105)
+	}
+	//-- Load Authentication From KeySafe
+	logger(1, "Loading LDAP Authetication Data: "+fmt.Sprintf("%d",eldapConf.LDAP.Server.KeySafeID), true)
+
+	mc.SetParam("keyId", fmt.Sprintf("%d",eldapConf.LDAP.Server.KeySafeID))
+
+	mc.SetParam("wantKeyData", "true")
+
+	RespBody, xmlmcErr = mc.Invoke("admin", "keysafeGetKey")
+	var JSONKeyResp xmlmcKeySafeResponse
+	if xmlmcErr != nil {
+		logger(4, "Error LDAP Authentication: "+fmt.Sprintf("%v", xmlmcErr), true)
+	}
+	err = json.Unmarshal([]byte(RespBody), &JSONKeyResp)
+	if err != nil {
+		logger(4, "Error LDAP Authentication: "+fmt.Sprintf("%v", err), true)
+	}
+	if JSONKeyResp.State.Error != "" {
+		logger(4, "Error Loading LDAP Authentication: "+fmt.Sprintf("%v", JSONKeyResp.State.Error), true)
+	}
+
+	err = json.Unmarshal([]byte(JSONKeyResp.Params.Data), &LDAPServerAuth)
+	if err != nil {
+		logger(4, "Error Decoding LDAP Server Authentication: "+fmt.Sprintf("%v", err), true)
+	}
+
+	logger(0, "[MESSAGE] Log Level "+fmt.Sprintf("%d", eldapConf.Advanced.LogLevel)+"", true)
+	logger(0, "[MESSAGE] Page Size "+fmt.Sprintf("%d", eldapConf.Advanced.PageSize)+"\n", true)
 	//-- Return New Congfig
 	return eldapConf
 }
 
 func validateConf() error {
 
-	//-- Check for API Key
-	if ldapImportConf.APIKey == "" {
-		err := errors.New("API Key is not set")
-		return err
-	}
-	//-- Check for Instance ID
-	if ldapImportConf.InstanceID == "" {
-		err := errors.New("InstanceID is not set")
-		return err
-	}
 	//-- Check LDAP Sever Connection type
 	if ldapImportConf.LDAP.Server.ConnectionType != "" && ldapImportConf.LDAP.Server.ConnectionType != "SSL" && ldapImportConf.LDAP.Server.ConnectionType != "TLS" {
 		err := errors.New("Invalid ConnectionType: '" + ldapImportConf.LDAP.Server.ConnectionType + "' Should be either '' or 'TLS' or 'SSL'")
@@ -221,24 +267,6 @@ func validateConf() error {
 	return nil
 }
 
-func loggerGen(t int, s string) string {
-
-	var errorLogPrefix = ""
-	//-- Create Log Entry
-	switch t {
-	case 1:
-		errorLogPrefix = "[DEBUG] "
-	case 2:
-		errorLogPrefix = "[MESSAGE] "
-	case 3:
-		errorLogPrefix = "[WARN] "
-	case 4:
-		errorLogPrefix = "[ERROR] "
-	}
-	currentTime := time.Now().UTC()
-	time := currentTime.Format("2006/01/02 15:04:05")
-	return time + " " + errorLogPrefix + s + "\n"
-}
 func loggerWriteBuffer(s string) {
 	logger(0, s, false)
 }
@@ -246,6 +274,10 @@ func loggerWriteBuffer(s string) {
 //-- Loggin function
 func logger(t int, s string, outputtoCLI bool) {
 
+	//-- Ignore Logging level unless is 0
+	if t < ldapImportConf.Advanced.LogLevel && t != 0 {
+		return
+	}
 	mutexLog.Lock()
 	defer mutexLog.Unlock()
 
@@ -283,7 +315,6 @@ func logger(t int, s string, outputtoCLI bool) {
 	//-- Create Log Entry
 	switch t {
 	case 0:
-		errorLogPrefix = ""
 	case 1:
 		errorLogPrefix = "[DEBUG] "
 	case 2:
@@ -310,12 +341,21 @@ func logger(t int, s string, outputtoCLI bool) {
 func complete() {
 	//-- End output
 	espLogger("Errors: "+fmt.Sprintf("%d", counters.errors), "error")
-	espLogger("Updated: "+fmt.Sprintf("%d", counters.updated), "debug")
-	espLogger("Updated Skipped: "+fmt.Sprintf("%d", counters.updatedSkipped), "debug")
+
+	espLogger("Accounts Proccesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), "debug")
 	espLogger("Created: "+fmt.Sprintf("%d", counters.created), "debug")
-	espLogger("Created Skipped: "+fmt.Sprintf("%d", counters.createskipped), "debug")
+
+	espLogger("Updated: "+fmt.Sprintf("%d", counters.updated), "debug")
 	espLogger("Profiles Updated: "+fmt.Sprintf("%d", counters.profileUpdated), "debug")
-	espLogger("Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), "debug")
+	espLogger("Images Updated: "+fmt.Sprintf("%d", counters.imageUpdated), "debug")
+	espLogger("Groups Updated: "+fmt.Sprintf("%d", counters.groupUpdated), "debug")
+	espLogger("Roles Updated: "+fmt.Sprintf("%d", counters.rolesUpdated), "debug")
+	/*
+		espLogger("Updated Skipped: "+fmt.Sprintf("%d", counters.updatedSkipped), "debug")
+
+		espLogger("Created Skipped: "+fmt.Sprintf("%d", counters.createskipped), "debug")
+
+		espLogger("Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), "debug")*/
 	espLogger("Time Taken: "+fmt.Sprintf("%v", Time.endTime), "debug")
 	espLogger("---- XMLMC LDAP User Import Complete ---- ", "debug")
 }
@@ -331,8 +371,8 @@ func espLogger(message string, severity string) bool {
 	// This is reuse the connections rather than creating a pool each invocation
 	once.Do(func() {
 
-		loggerAPI = apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
-		loggerAPI.SetAPIKey(ldapImportConf.APIKey)
+		loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceId)
+		loggerAPI.SetAPIKey(Flags.configApiKey)
 		loggerAPI.SetTimeout(5)
 	})
 
@@ -361,8 +401,28 @@ func espLogger(message string, severity string) bool {
 }
 
 // CounterInc Generic Counter Increment
-func CounterInc(counter uint32) {
-	Mutex.Counters.Lock()
-	counter++
-	Mutex.Counters.Unlock()
+func CounterInc(counter int) {
+	switch counter {
+	case 1:
+		counters.created++
+		break
+	case 2:
+		counters.updated++
+		break
+	case 3:
+		counters.profileUpdated++
+		break
+	case 4:
+		counters.imageUpdated++
+		break
+	case 5:
+		counters.groupUpdated++
+		break
+	case 6:
+		counters.rolesUpdated++
+		break
+	case 7:
+		counters.errors++
+		break
+	}
 }

@@ -12,26 +12,34 @@ import (
 
 var (
 	hornbillImport *apiLib.XmlmcInstStruct
-	pageSize       uint64
+	pageSize       int
 )
 
 func initXMLMC() {
 
-	hornbillImport = apiLib.NewXmlmcInstance(ldapImportConf.InstanceID)
-	hornbillImport.SetAPIKey(ldapImportConf.APIKey)
+	hornbillImport = apiLib.NewXmlmcInstance(Flags.configInstanceId)
+	hornbillImport.SetAPIKey(Flags.configApiKey)
 	hornbillImport.SetTimeout(5)
 	hornbillImport.SetJSONResponse(true)
-	pageSize = 100
+
+	pageSize = ldapImportConf.Advanced.PageSize
+	fmt.Printf("%d", pageSize)
+	if pageSize == 0 {
+		pageSize = 100
+	} else if pageSize > 10000 {
+		pageSize = 100
+	}
+
 }
 func loadUsers() {
 	//-- Init One connection to Hornbill to load all data
 	initXMLMC()
-	logger(1, "Loading Users from Hornbill", true)
+	logger(1, "Loading Users from Hornbill", false)
 
 	count := getCount("getUserAccountsList")
 	getUserAccountList(count)
 
-	logger(1, "Users Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Users)), true)
+	logger(1, "Users Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Users)), false)
 }
 func loadUsersRoles() {
 	//-- Only Load if Enabled
@@ -40,12 +48,12 @@ func loadUsersRoles() {
 		return
 	}
 
-	logger(1, "Loading Users Roles from Hornbill", true)
+	logger(1, "Loading Users Roles from Hornbill", false)
 
 	count := getCount("getUserAccountsRolesList")
 	getUserAccountsRolesList(count)
 
-	logger(1, "Users Roles Loaded: "+fmt.Sprintf("%d", len(HornbillCache.UserRoles)), true)
+	logger(1, "Users Roles Loaded: "+fmt.Sprintf("%d", len(HornbillCache.UserRoles)), false)
 }
 
 func loadSites() {
@@ -55,40 +63,52 @@ func loadSites() {
 		return
 	}
 
-	logger(1, "Loading Sites from Hornbill", true)
+	logger(1, "Loading Sites from Hornbill", false)
 
 	count := getCount("getSitesList")
 	getSitesList(count)
 
-	logger(1, "Sites Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Sites)), true)
+	logger(1, "Sites Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Sites)), false)
 }
 func loadGroups() {
-	//-- Only Load if Enabled
-	if ldapImportConf.User.Org.Action != "Create" && ldapImportConf.User.Org.Action != "Update" && ldapImportConf.User.Org.Action != "Both" {
+	boolSkip := true
+	for index := range ldapImportConf.User.Org {
+		orgAction := ldapImportConf.User.Org[index]
+		if orgAction.Action == "Create" || orgAction.Action == "Update" || orgAction.Action == "Both" {
+			boolSkip = false
+		}
+	}
+	if boolSkip {
 		logger(1, "Skipping Loading Orgs Due to Config", false)
 		return
 	}
-
-	logger(1, "Loading Orgs from Hornbill", true)
+	//-- Only Load if Enabled
+	logger(1, "Loading Orgs from Hornbill", false)
 
 	count := getCount("getGroupsList")
 	getGroupsList(count)
 
-	logger(1, "Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Groups)), true)
+	logger(1, "Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Groups)), false)
 }
 func loadUserGroups() {
-	//-- Only Load if Enabled
-	if ldapImportConf.User.Org.Action != "Create" && ldapImportConf.User.Org.Action != "Update" && ldapImportConf.User.Org.Action != "Both" {
+	boolSkip := true
+	for index := range ldapImportConf.User.Org {
+		orgAction := ldapImportConf.User.Org[index]
+		if orgAction.Action == "Create" || orgAction.Action == "Update" || orgAction.Action == "Both" {
+			boolSkip = false
+		}
+	}
+	if boolSkip {
 		logger(1, "Skipping Loading User Orgs Due to Config", false)
 		return
 	}
-
-	logger(1, "Loading User Orgs from Hornbill", true)
+	//-- Only Load if Enabled
+	logger(1, "Loading User Orgs from Hornbill", false)
 
 	count := getCount("getUserAccountsGroupsList")
 	getUserAccountsGroupsList(count)
 
-	logger(1, "User Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.UserGroups))+"\n", true)
+	logger(1, "User Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.UserGroups))+"\n", false)
 }
 
 //-- Check so that only data that relates to users in the LDAP data set are stored in the working set
@@ -109,26 +129,26 @@ func getUserAccountsGroupsList(count uint64) {
 	bar := pb.StartNew(int(count))
 	//-- Load Results in pages of pageSize
 	for loopCount < count {
-		logger(1, "Loading User Accounts Groups List Offset: "+fmt.Sprintf("%d", loopCount), false)
+		logger(1, "Loading User Accounts Orgs List Offset: "+fmt.Sprintf("%d", loopCount), false)
 
 		hornbillImport.SetParam("application", "com.hornbill.core")
 		hornbillImport.SetParam("queryName", "getUserAccountsGroupsList")
 		hornbillImport.OpenElement("queryParams")
 		hornbillImport.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
-		hornbillImport.SetParam("limit", strconv.FormatUint(pageSize, 10))
+		hornbillImport.SetParam("limit", strconv.Itoa(pageSize))
 		hornbillImport.CloseElement("queryParams")
 		RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 		var JSONResp xmlmcUserGroupListResponse
 		if xmlmcErr != nil {
-			logger(4, "Unable to Query Accounts Groups List "+fmt.Sprintf("%s", xmlmcErr), true)
+			logger(4, "Unable to Query Accounts Orgs List "+fmt.Sprintf("%s", xmlmcErr), false)
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
-			logger(4, "Unable to Query Accounts Groups  List "+fmt.Sprintf("%s", err), true)
+			logger(4, "Unable to Query Accounts Orgs  List "+fmt.Sprintf("%s", err), false)
 		}
 		if JSONResp.State.Error != "" {
-			logger(4, "Unable to Query Accounts Groups  List "+JSONResp.State.Error, true)
+			logger(4, "Unable to Query Accounts Orgs  List "+JSONResp.State.Error, false)
 		}
 
 		//-- Push into Map of slices to userId = array of roles
@@ -138,10 +158,10 @@ func getUserAccountsGroupsList(count uint64) {
 			}
 		}
 		// Add 100
-		loopCount += pageSize
+		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
 	}
-	bar.FinishPrint("Acount Groups Loaded")
+	bar.FinishPrint("Account Orgs Loaded \n")
 
 }
 func getGroupsList(count uint64) {
@@ -157,20 +177,20 @@ func getGroupsList(count uint64) {
 		hornbillImport.SetParam("queryName", "getGroupsList")
 		hornbillImport.OpenElement("queryParams")
 		hornbillImport.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
-		hornbillImport.SetParam("limit", strconv.FormatUint(pageSize, 10))
+		hornbillImport.SetParam("limit", strconv.Itoa(pageSize))
 		hornbillImport.CloseElement("queryParams")
 		RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 		var JSONResp xmlmcGroupListResponse
 		if xmlmcErr != nil {
-			logger(4, "Unable to Query Orgs List "+fmt.Sprintf("%s", xmlmcErr), true)
+			logger(4, "Unable to Query Orgs List "+fmt.Sprintf("%s", xmlmcErr), false)
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
-			logger(4, "Unable to Query Orgs List "+fmt.Sprintf("%s", err), true)
+			logger(4, "Unable to Query Orgs List "+fmt.Sprintf("%s", err), false)
 		}
 		if JSONResp.State.Error != "" {
-			logger(4, "Unable to Query Orgs List "+JSONResp.State.Error, true)
+			logger(4, "Unable to Query Orgs List "+JSONResp.State.Error, false)
 		}
 
 		//-- Push into Map
@@ -178,10 +198,10 @@ func getGroupsList(count uint64) {
 			HornbillCache.Groups[strings.ToLower(JSONResp.Params.RowData.Row[index].HName)] = JSONResp.Params.RowData.Row[index].HID
 		}
 		// Add 100
-		loopCount += pageSize
+		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
 	}
-	bar.FinishPrint("Orgs Loaded")
+	bar.FinishPrint("Orgs Loaded  \n")
 }
 
 func getUserAccountsRolesList(count uint64) {
@@ -198,20 +218,20 @@ func getUserAccountsRolesList(count uint64) {
 		hornbillImport.SetParam("queryName", "getUserAccountsRolesList")
 		hornbillImport.OpenElement("queryParams")
 		hornbillImport.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
-		hornbillImport.SetParam("limit", strconv.FormatUint(pageSize, 10))
+		hornbillImport.SetParam("limit", strconv.Itoa(pageSize))
 		hornbillImport.CloseElement("queryParams")
 		RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 		var JSONResp xmlmcUserRolesListResponse
 		if xmlmcErr != nil {
-			logger(4, "Unable to Query Accounts Roles List "+fmt.Sprintf("%s", xmlmcErr), true)
+			logger(4, "Unable to Query Accounts Roles List "+fmt.Sprintf("%s", xmlmcErr), false)
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
-			logger(4, "Unable to Query Accounts Roles  List "+fmt.Sprintf("%s", err), true)
+			logger(4, "Unable to Query Accounts Roles  List "+fmt.Sprintf("%s", err), false)
 		}
 		if JSONResp.State.Error != "" {
-			logger(4, "Unable to Query Accounts Roles  List "+JSONResp.State.Error, true)
+			logger(4, "Unable to Query Accounts Roles  List "+JSONResp.State.Error, false)
 		}
 
 		//-- Push into Map of slices to userId = array of roles
@@ -221,10 +241,10 @@ func getUserAccountsRolesList(count uint64) {
 			}
 		}
 		// Add 100
-		loopCount += pageSize
+		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
 	}
-	bar.FinishPrint("Account Roles Loaded")
+	bar.FinishPrint("Account Roles Loaded  \n")
 }
 func getUserAccountList(count uint64) {
 	var loopCount uint64
@@ -239,20 +259,20 @@ func getUserAccountList(count uint64) {
 		hornbillImport.SetParam("queryName", "getUserAccountsList")
 		hornbillImport.OpenElement("queryParams")
 		hornbillImport.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
-		hornbillImport.SetParam("limit", strconv.FormatUint(pageSize, 10))
+		hornbillImport.SetParam("limit", strconv.Itoa(pageSize))
 		hornbillImport.CloseElement("queryParams")
 		RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 		var JSONResp xmlmcUserListResponse
 		if xmlmcErr != nil {
-			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", xmlmcErr), true)
+			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", xmlmcErr), false)
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
-			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", err), true)
+			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", err), false)
 		}
 		if JSONResp.State.Error != "" {
-			logger(4, "Unable to Query Accounts List "+JSONResp.State.Error, true)
+			logger(4, "Unable to Query Accounts List "+JSONResp.State.Error, false)
 		}
 		//-- Push into Map
 		for index := range JSONResp.Params.RowData.Row {
@@ -262,10 +282,10 @@ func getUserAccountList(count uint64) {
 		}
 
 		// Add 100
-		loopCount += pageSize
+		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
 	}
-	bar.FinishPrint("Accounts Loaded")
+	bar.FinishPrint("Accounts Loaded  \n")
 }
 func getSitesList(count uint64) {
 	var loopCount uint64
@@ -280,20 +300,20 @@ func getSitesList(count uint64) {
 		hornbillImport.SetParam("queryName", "getSitesList")
 		hornbillImport.OpenElement("queryParams")
 		hornbillImport.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
-		hornbillImport.SetParam("limit", strconv.FormatUint(pageSize, 10))
+		hornbillImport.SetParam("limit", strconv.Itoa(pageSize))
 		hornbillImport.CloseElement("queryParams")
 		RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 		var JSONResp xmlmcSiteListResponse
 		if xmlmcErr != nil {
-			logger(4, "Unable to Query Site List "+fmt.Sprintf("%s", xmlmcErr), true)
+			logger(4, "Unable to Query Site List "+fmt.Sprintf("%s", xmlmcErr), false)
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
-			logger(4, "Unable to Query Site List "+fmt.Sprintf("%s", err), true)
+			logger(4, "Unable to Query Site List "+fmt.Sprintf("%s", err), false)
 		}
 		if JSONResp.State.Error != "" {
-			logger(4, "Unable to Query Site List "+JSONResp.State.Error, true)
+			logger(4, "Unable to Query Site List "+JSONResp.State.Error, false)
 		}
 
 		//-- Push into Map
@@ -301,10 +321,10 @@ func getSitesList(count uint64) {
 			HornbillCache.Sites[strings.ToLower(JSONResp.Params.RowData.Row[index].HSiteName)] = JSONResp.Params.RowData.Row[index]
 		}
 		// Add 100
-		loopCount += pageSize
+		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
 	}
-	bar.FinishPrint("Sites Loaded")
+	bar.FinishPrint("Sites Loaded  \n")
 
 }
 func getCount(query string) uint64 {
@@ -319,16 +339,16 @@ func getCount(query string) uint64 {
 
 	var JSONResp xmlmcCountResponse
 	if xmlmcErr != nil {
-		logger(4, "Unable to run Query ["+query+"] "+fmt.Sprintf("%s", xmlmcErr), true)
+		logger(4, "Unable to run Query ["+query+"] "+fmt.Sprintf("%s", xmlmcErr), false)
 		return 0
 	}
 	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
-		logger(4, "Unable to run Query ["+query+"] "+fmt.Sprintf("%s", err), true)
+		logger(4, "Unable to run Query ["+query+"] "+fmt.Sprintf("%s", err), false)
 		return 0
 	}
 	if JSONResp.State.Error != "" {
-		logger(4, "Unable to run Query ["+query+"] "+JSONResp.State.Error, true)
+		logger(4, "Unable to run Query ["+query+"] "+JSONResp.State.Error, false)
 		return 0
 	}
 

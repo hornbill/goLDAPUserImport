@@ -1,8 +1,21 @@
+## 3.0.0 (N/A , 2018)
+
+Features:
+
+ADD: Ability to assign one or more Organisations to a user
+ADD: Ability to filter user Organisation assignment based on the memberof attribtute in LDAP "MemberOf" added to the Organisation configuration that should match the name of the AD a User should be in before the Organisation is assinged.
+ADD: LogLevel has been added which defaults to 2 (Message, Warning, Error), this can be changed to 1 (Debug, Message, Warning, Error) if additional debug logging is required
+ADD: Dry Run XML Output is now formatted better in the log file
+
+CHANGE: Import Configuration is now loaded from the Instance and not via a local JSON file, this is to provide a user freindly UI for generating the configuration.
+CHANGE: The tool has been completely rewritten to be more efficient this will have a drematic effect on the time taken for the tool to run (In a Postitve way)
+CHANGE: The log output has been updated to closer reflect how the tool is processing data the format is still (YYYY/MM/DD HH:MM:SS [LogLevel] Message)
+
 ## 2.4.2 (Feb 1 , 2018)
 
 Features:
 
-ADD: "SearchforManager" added to Manager Mapping configuration allowing you to disable the search for a managers userId if you already have the value from an LDAP Attribute. 
+ADD: "SearchforManager" added to Manager Mapping configuration allowing you to disable the search for a managers userId if you already have the value from an LDAP Attribute.
 
 ## 2.4.1 (Sep 20 , 2017)
 
