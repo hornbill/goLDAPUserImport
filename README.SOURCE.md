@@ -3,15 +3,11 @@
 ### Quick links
 - [Installation](#installation)
 - [Config](#config)
-    - [Instance Config](#InstanceConfig)
-    - [LDAP Config](#LDAPConfig)
-    - [LDAP Mapping](#LDAPMapping)
 - [Execute](#execute)
 - [Testing](testing)
 - [Scheduling](#scheduling)
 - [Logging](#logging)
-- [Error Codes](#error codes)
-- [Change Log](#change log)
+- [ErrorCodes](#error codes)
 
 # Installation
 
