@@ -7,7 +7,7 @@
 - [Testing](testing)
 - [Scheduling](#scheduling)
 - [Logging](#logging)
-- [ErrorCodes](#error codes)
+- [Error Codes](#Error Codes)
 
 # Installation
 
@@ -46,7 +46,7 @@ You can schedule ldap_user_import.exe to run with any optional command line argu
 # logging
 All Logging output is saved in the log directory in the same directory as the executable the file name contains the date and time the import was run 'LDAP_User_Import_2015-11-06T14-26-13Z.log'
 
-# ErrorCodes
+# Error Codes
 * `100` - Unable to create log File
 * `101` - Unable to create log folder
 * `103` - Unable to Load Configuration No Instance Id

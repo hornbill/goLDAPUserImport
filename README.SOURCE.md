@@ -7,7 +7,7 @@
 - [Testing](testing)
 - [Scheduling](#scheduling)
 - [Logging](#logging)
-- [ErrorCodes](#error codes)
+- [Error Codes](#Error Codes)
 
 # Installation
 
