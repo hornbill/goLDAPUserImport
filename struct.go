@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/hornbill/ldap"
@@ -11,14 +12,18 @@ import (
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const version = "3.0.0"
 
+var mutexCounters = &sync.Mutex{}
+var bufferMutex = &sync.Mutex{}
+
 // Flags List
 var Flags struct {
-	configId  string
-	configLogPrefix string
-	configDryRun    bool
-	configVersion   bool
-	configInstanceId string
-	configApiKey string
+	configID         string
+	configLogPrefix  string
+	configDryRun     bool
+	configVersion    bool
+	configInstanceID string
+	configAPIKey     string
+	configWorkers    int
 }
 var siteListStrut struct {
 	ID   string
@@ -35,10 +40,14 @@ var HornbillCache struct {
 	UserRoles map[string][]string
 	//-- User Id to Map of Group Ids
 	UserGroups map[string][]string
-	//-- Group Name to Group id
-	Groups map[string]string
+	//-- Group Name to Group Struct
+	Groups map[string]userGroupStruct
+	//-- Group ID to Group Struct
+	GroupsId map[string]userGroupStruct
 	//-- User Working Data
 	UsersWorking map[string]*userWorkingDataStruct
+	//-- User Working Data Index Based for Workers
+	UsersWorkingIndex map[int]*userWorkingDataStruct
 	//-- Map Manager Name to Id
 	Managers map[string]string
 	//-- Map DN to UserId
@@ -60,16 +69,17 @@ type imageStruct struct {
 	imageCheckSum string
 }
 type userWorkingDataStruct struct {
-	Account  AccountMappingStruct
-	Profile  ProfileMappingStruct
-	ImageURI string
-	LDAP     *ldap.Entry
-	Jobs     userImportJobs
-	Roles    []string
-	Groups   []userGroupStruct
+	Account        AccountMappingStruct
+	Profile        ProfileMappingStruct
+	ImageURI       string
+	LDAP           *ldap.Entry
+	Jobs           userImportJobs
+	Roles          []string
+	Groups         []userGroupStruct
+	GroupsToRemove []string
 }
 type userGroupStruct struct {
-	Id                     string
+	ID                     string
 	Name                   string
 	Type                   int
 	Membership             string
@@ -93,7 +103,7 @@ var client = http.Client{
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
-var LDAPServerAuth ldapServerConfAuthStruct
+var ldapServerAuth ldapServerConfAuthStruct
 var ldapUsers []*ldap.Entry
 var counters struct {
 	errors         uint16
@@ -101,6 +111,7 @@ var counters struct {
 	profileUpdated uint16
 	imageUpdated   uint16
 	groupUpdated   uint16
+	groupsRemoved  uint16
 	rolesUpdated   uint16
 
 	created uint16
@@ -108,14 +119,16 @@ var counters struct {
 	updatedSkipped uint16
 	createskipped  uint16
 	profileSkipped uint16
+
+	traffic uint64
 }
 
 //----- Structures -----
 type ldapServerConfAuthStruct struct {
-	Host             string
-	UserName           string
-	Password           string
-	Port               uint16
+	Host     string
+	UserName string
+	Password string
+	Port     uint16
 }
 type ldapServerConfStruct struct {
 	KeySafeID          int
@@ -131,13 +144,12 @@ type ldapServerConfStruct struct {
 	Debug              bool
 }
 
-
 type ldapImportConfStruct struct {
 	APIKey     string `json:"APIKey"`
 	InstanceID string `json:"InstanceId"`
 	LDAP       struct {
 		Server ldapServerConfStruct `json:"Server"`
-		Query struct {
+		Query  struct {
 			Attributes   []string `json:"Attributes"`
 			Scope        int      `json:"Scope"`
 			DerefAliases int      `json:"DerefAliases"`
@@ -297,6 +309,7 @@ type roleStruct struct {
 type groupStruct struct {
 	HID   string `json:"h_id"`
 	HName string `json:"h_name"`
+	HType string `json:"h_type"`
 }
 type userAccountStruct struct {
 	HUserID              string `json:"h_user_id"`
@@ -397,7 +410,6 @@ type xmlmcGroupListResponse struct {
 	State stateJSONStruct `json:"state"`
 }
 type xmlmcConfigLoadResponse struct {
-
 	Params struct {
 		PrimaryEntityData struct {
 			Entity string `json:"entity"`

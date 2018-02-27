@@ -17,13 +17,13 @@ var (
 
 func initXMLMC() {
 
-	hornbillImport = apiLib.NewXmlmcInstance(Flags.configInstanceId)
-	hornbillImport.SetAPIKey(Flags.configApiKey)
+	hornbillImport = apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	hornbillImport.SetAPIKey(Flags.configAPIKey)
 	hornbillImport.SetTimeout(5)
 	hornbillImport.SetJSONResponse(true)
 
 	pageSize = ldapImportConf.Advanced.PageSize
-	fmt.Printf("%d", pageSize)
+
 	if pageSize == 0 {
 		pageSize = 100
 	}
@@ -164,7 +164,8 @@ func getUserAccountsGroupsList(count uint64) {
 func getGroupsList(count uint64) {
 	var loopCount uint64
 	//-- Init Map
-	HornbillCache.Groups = make(map[string]string)
+	HornbillCache.Groups = make(map[string]userGroupStruct)
+	HornbillCache.GroupsId = make(map[string]userGroupStruct)
 	//-- Load Results in pages of pageSize
 	bar := pb.StartNew(int(count))
 	for loopCount < count {
@@ -191,8 +192,16 @@ func getGroupsList(count uint64) {
 		}
 
 		//-- Push into Map
-		for index := range JSONResp.Params.RowData.Row {
-			HornbillCache.Groups[strings.ToLower(JSONResp.Params.RowData.Row[index].HName)] = JSONResp.Params.RowData.Row[index].HID
+		for _, rec := range JSONResp.Params.RowData.Row {
+			var group userGroupStruct
+			group.ID = rec.HID
+			group.Name = rec.HName
+			group.Type, _ = strconv.Atoi(rec.HType)
+
+			//-- List of group names to group object for name to id lookup
+			HornbillCache.Groups[strings.ToLower(rec.HName)] = group
+			//-- List of group id to group objects for id to type lookup
+			HornbillCache.GroupsId[strings.ToLower(rec.HID)] = group
 		}
 		// Add 100
 		loopCount += uint64(pageSize)

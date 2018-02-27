@@ -58,6 +58,8 @@ func processData() {
 
 			checkUserNeedsOrgUpdate(currentUser, hornbillUserData)
 
+			checkUserNeedsOrgRemoving(currentUser, hornbillUserData)
+
 			checkUserNeedsRoleUpdate(currentUser, hornbillUserData)
 		} else {
 			//-- Check for Password
@@ -73,6 +75,22 @@ func processData() {
 		logger(1, "User: "+fmt.Sprintf("%s", userID)+" \n\tCreate: "+fmt.Sprintf("%t", currentUser.Jobs.create)+" \n\tUpdate: "+fmt.Sprintf("%t", currentUser.Jobs.update)+" \n\tUpdate Type: "+fmt.Sprintf("%t", currentUser.Jobs.updateType)+" \n\tUpdate Profile: "+fmt.Sprintf("%t", currentUser.Jobs.updateProfile)+" \n\tUpdate Site: "+fmt.Sprintf("%t", currentUser.Jobs.updateSite)+" \n\tRoles Count: "+fmt.Sprintf("%d", len(currentUser.Roles))+" \n\tUpdate Image: "+fmt.Sprintf("%t", currentUser.Jobs.updateImage)+" \n\tGroups: "+fmt.Sprintf("%d", len(currentUser.Groups))+"\n", false)
 	}
 	logger(1, "User Data Processed", true)
+}
+func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData userAccountStruct) {
+	for _, group := range importData.Groups {
+		if group.OnlyOneGroupAssignment {
+			var userExistingGroups = HornbillCache.UserGroups[strings.ToLower(importData.Account.UserID)]
+			for index := range userExistingGroups {
+				groupID := userExistingGroups[index]
+				cacheGroup := HornbillCache.GroupsId[strings.ToLower(groupID)]
+				//-- If not current group and its the same type then remove
+				if groupID != group.ID && group.Type == cacheGroup.Type {
+					//-- Push Group into list to remove
+					importData.GroupsToRemove = append(importData.GroupsToRemove, groupID)
+				}
+			}
+		}
+	}
 }
 func setUserPasswordValueForCreate(importData *userWorkingDataStruct) {
 	if importData.Account.Password == "" {
@@ -105,7 +123,7 @@ func checkUserNeedsOrgUpdate(importData *userWorkingDataStruct, currentData user
 						}
 					}
 					var group userGroupStruct
-					group.Id = GroupID
+					group.ID = GroupID
 					group.Name = orgAction.Value
 					group.Type = orgAction.Options.Type
 					group.Membership = orgAction.Options.Membership
@@ -133,7 +151,7 @@ func checkUserNeedsOrgCreate(importData *userWorkingDataStruct, currentData user
 					}
 				}
 				var group userGroupStruct
-				group.Id = GroupID
+				group.ID = GroupID
 				group.Name = orgAction.Value
 				group.Type = orgAction.Options.Type
 				group.Membership = orgAction.Options.Membership

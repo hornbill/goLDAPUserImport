@@ -1,13 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"crypto/tls"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/hornbill/goApiLib"
 )
 
 func loadImageFromValue(imageURI string) []byte {
@@ -88,4 +94,76 @@ func getImage(importData *userWorkingDataStruct) imageStruct {
 		HornbillCache.Images[importData.ImageURI] = image
 	}
 	return image
+}
+
+func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
+	//- Profile Images are already in cache as Bytes
+	buffer.WriteString(loggerGen(1, "User Proflile Image Set: "+user.Account.UserID))
+	//WebDAV upload
+	image := HornbillCache.Images[user.ImageURI]
+	value := ""
+	relLink := "session/" + user.Account.UserID + "." + ldapImportConf.User.Image.ImageType
+	strDAVurl := hIF.DavEndpoint + relLink
+
+	strContentType := "image/jpeg"
+	if ldapImportConf.User.Image.ImageType != "jpg" {
+		strContentType = "image/png"
+	}
+
+	buffer.WriteString(loggerGen(1, "DAV Upload URL: "+fmt.Sprintf("%s", strDAVurl)))
+
+	if Flags.configDryRun != true {
+
+		if len(image.imageBytes) > 0 {
+			putbody := bytes.NewReader(image.imageBytes)
+			req, Perr := http.NewRequest("PUT", strDAVurl, putbody)
+			if Perr != nil {
+				return false, Perr
+			}
+			req.Header.Set("Content-Type", strContentType)
+			req.Header.Add("Authorization", "ESP-APIKEY "+Flags.configAPIKey)
+			req.Header.Set("User-Agent", "Go-http-client/1.1")
+			response, Perr := client.Do(req)
+			if Perr != nil {
+				return false, Perr
+			}
+			defer response.Body.Close()
+			_, _ = io.Copy(ioutil.Discard, response.Body)
+			if response.StatusCode == 201 || response.StatusCode == 200 {
+				value = "/" + relLink
+			}
+		} else {
+			buffer.WriteString(loggerGen(1, "Unable to Uplaod Profile Image to Dav as its empty"))
+			return true, nil
+		}
+	}
+
+	buffer.WriteString(loggerGen(1, "Profile Set Image URL: "+fmt.Sprintf("%s", value)))
+	hIF.SetParam("objectRef", "urn:sys:user:"+user.Account.UserID)
+	hIF.SetParam("sourceImage", value)
+	var XMLSTRING = hIF.GetParam()
+
+	if Flags.configDryRun == true {
+		buffer.WriteString(loggerGen(1, "Profile Image Set XML "+XMLSTRING))
+		hIF.ClearParam()
+		return true, nil
+	}
+
+	RespBody, xmlmcErr := hIF.Invoke("activity", "profileImageSet")
+	var JSONResp xmlmcResponse
+	if xmlmcErr != nil {
+		buffer.WriteString(loggerGen(1, "Profile Image Set XML "+XMLSTRING))
+		return false, xmlmcErr
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
+	if err != nil {
+		buffer.WriteString(loggerGen(1, "Profile Image Set XML "+XMLSTRING))
+		return false, err
+	}
+	if JSONResp.State.Error != "" {
+		buffer.WriteString(loggerGen(1, "Profile Image Set XML "+XMLSTRING))
+		return false, errors.New(JSONResp.State.Error)
+	}
+	buffer.WriteString(loggerGen(1, "Image added to User: "+user.Account.UserID))
+	return true, nil
 }

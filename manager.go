@@ -118,7 +118,7 @@ func getNameFromLDAPString(feild string) string {
 	//-- Match $variables from String
 	re1, err := regexp.Compile(regex)
 	if err != nil {
-		fmt.Printf("%v \n", err)
+		logger(4, "Error Compiling Regex: "+regex+" Error: "+fmt.Sprintf("%v", err), false)
 
 	}
 	//-- Get Array of all Matched max 100

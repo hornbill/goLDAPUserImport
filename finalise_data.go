@@ -1,115 +1,163 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/hornbill/goApiLib"
 	"github.com/hornbill/pb"
 )
 
-var (
-	hIF *apiLib.XmlmcInstStruct
-)
+func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 
-//-- Second Connection here for finalising data not always used
-func initXMLMCFinalise() {
-	hIF = apiLib.NewXmlmcInstance(Flags.configInstanceId)
-	hIF.SetAPIKey(Flags.configApiKey)
+	hIF := apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	hIF.SetAPIKey(Flags.configAPIKey)
 	hIF.SetTimeout(5)
 	hIF.SetJSONResponse(true)
-}
-func finaliseData() {
-	logger(1, "Finalising User Data", true)
-	initXMLMCFinalise()
-	bar := pb.StartNew(len(HornbillCache.UsersWorking))
 
-	// This we could do in threads
-	for index := range HornbillCache.UsersWorking {
-		currentUser := HornbillCache.UsersWorking[index]
-
+	for index := range jobs {
+		//-- Load Current User
+		currentUser := HornbillCache.UsersWorkingIndex[index-1]
+		//-- Buffer for Logging
+		var buffer bytes.Buffer
 		if currentUser.Jobs.create {
-			createUser(currentUser)
+			createUser(hIF, currentUser, &buffer)
 		}
 
 		if currentUser.Jobs.update || currentUser.Jobs.updateType || currentUser.Jobs.updateSite {
-			updateUser(currentUser)
+			updateUser(hIF, currentUser, &buffer)
 		}
 		if currentUser.Jobs.updateProfile {
-			updateUserProfile(currentUser)
+			updateUserProfile(hIF, currentUser, &buffer)
 		}
 		if currentUser.Jobs.updateImage {
-			updateUserImage(currentUser)
+			updateUserImage(hIF, currentUser, &buffer)
+		}
+		if len(currentUser.GroupsToRemove) > 0 {
+			removeUserGroups(hIF, currentUser, &buffer)
 		}
 		if len(currentUser.Groups) > 0 {
-			updateUserGroups(currentUser)
+			updateUserGroups(hIF, currentUser, &buffer)
 		}
 		if len(currentUser.Roles) > 0 {
-			updateUserRoles(currentUser)
+			updateUserRoles(hIF, currentUser, &buffer)
 		}
 
 		bar.Increment()
+
+		bufferMutex.Lock()
+		loggerWriteBuffer(buffer.String())
+		bufferMutex.Unlock()
+		buffer.Reset()
+
+		//-- Results
+		results <- index * 2
 	}
 
+	mutexCounters.Lock()
+	counters.traffic += hIF.GetCount()
+	mutexCounters.Unlock()
+}
+
+func finaliseData() {
+	logger(1, "Finalising User Data", true)
+
+	//-- Current User data is in a map of userId to object we need to put this in an index based map
+	HornbillCache.UsersWorkingIndex = make(map[int]*userWorkingDataStruct)
+	var count int
+	for userID := range HornbillCache.UsersWorking {
+		HornbillCache.UsersWorkingIndex[count] = HornbillCache.UsersWorking[userID]
+		count++
+	}
+	//-- Total Users to Process
+	total := len(HornbillCache.UsersWorking)
+	//-- Progress Bar
+	bar := pb.StartNew(total)
+
+	jobs := make(chan int, total)
+	results := make(chan int, total)
+
+	for w := 1; w <= Flags.configWorkers; w++ {
+		go worker(w, jobs, results, bar)
+	}
+
+	for j := 1; j <= total; j++ {
+		jobs <- j
+	}
+	close(jobs)
+	//-- Finally we collect all the results of the work.
+	for a := 1; a <= total; a++ {
+		<-results
+	}
 	bar.FinishPrint("Finalising User Data Complete")
 }
 
-func createUser(currentUser *userWorkingDataStruct) {
-	b, err := userCreate(currentUser)
+func createUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userCreate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(1)
 	} else {
 		CounterInc(7)
-		logger(4, "Unable to Create User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
+		buffer.WriteString(loggerGen(4, "Unable to Create User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 
 }
 
-func updateUser(currentUser *userWorkingDataStruct) {
-	b, err := userUpdate(currentUser)
+func updateUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userUpdate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(2)
 	} else {
 		CounterInc(7)
-		logger(4, "Unable to Update User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
+		buffer.WriteString(loggerGen(4, "Unable to Update User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
-func updateUserProfile(currentUser *userWorkingDataStruct) {
-	b, err := userProfileUpdate(currentUser)
+func updateUserProfile(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userProfileUpdate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(3)
 	} else {
 		CounterInc(7)
-		logger(4, "Unable to Update User Profile: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
+		buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
-func updateUserImage(currentUser *userWorkingDataStruct) {
-	b, err := userImageUpdate(currentUser)
+func updateUserImage(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userImageUpdate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(4)
 	} else {
 		CounterInc(7)
-		logger(4, "Unable to Update User Image: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
+		buffer.WriteString(loggerGen(4, "Unable to Update User Image: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
-func updateUserGroups(currentUser *userWorkingDataStruct) {
-	b, err := userGroupsUpdate(currentUser)
+func removeUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userGroupsRemove(espXmlmc, currentUser, buffer)
+	if b {
+		CounterInc(8)
+	} else {
+		CounterInc(7)
+		buffer.WriteString(loggerGen(4, "Unable to Remove User Groups: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
+	}
+}
+func updateUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userGroupsUpdate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(5)
 	} else {
 		CounterInc(7)
-		logger(4, "Unable to Update User Groups: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
+		buffer.WriteString(loggerGen(4, "Unable to Update User Groups: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
-func updateUserRoles(currentUser *userWorkingDataStruct) {
-	b, err := userRolesUpdate(currentUser)
+func updateUserRoles(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userRolesUpdate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(6)
 	} else {
 		CounterInc(7)
-		logger(4, "Unable to Update User Roles: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
+		buffer.WriteString(loggerGen(4, "Unable to Update User Roles: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
