@@ -46,7 +46,7 @@ func processComplexFeild(u *ldap.Entry, s string) string {
 		var LDAPAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
 		//-- Check for Invalid Value
 		if LDAPAttributeValue == "" {
-			logger(3, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
+			//logger(3, "Unable to Load LDAP Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
 			return LDAPAttributeValue
 		}
 		//-- TK UnescapeString to HTML entities are replaced

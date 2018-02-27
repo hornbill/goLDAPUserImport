@@ -153,6 +153,14 @@ func outputEnd() {
 	Time.endTime = time.Since(Time.startTime).Round(time.Second)
 	logger(2, "Time Taken: "+fmt.Sprintf("%s", Time.endTime), true)
 	//-- complete
+
+	var count uint64 = 1
+	count += loggerAPI.GetCount()
+	count += hornbillImport.GetCount()
+	count += hIF.GetCount()
+
+	logger(2, "Total Traffic: "+fmt.Sprintf("%d", count), true)
+
 	complete()
 	logger(2, "---- XMLMC LDAP Import Complete ---- ", true)
 }
@@ -189,7 +197,7 @@ func loadConfig() ldapImportConfStruct {
 		logger(4, "Config Error - No ConfigId Provided", true)
 		os.Exit(105)
 	}
-	logger(1, "Loading Configuration Data: "+Flags.configId, true)
+	logger(2, "Loading Configuration Data: "+Flags.configId, true)
 
 	mc := apiLib.NewXmlmcInstance(Flags.configInstanceId)
 	mc.SetAPIKey(Flags.configApiKey)
@@ -225,7 +233,7 @@ func loadConfig() ldapImportConfStruct {
 		os.Exit(105)
 	}
 	//-- Load Authentication From KeySafe
-	logger(1, "Loading LDAP Authetication Data: "+fmt.Sprintf("%d",eldapConf.LDAP.Server.KeySafeID), true)
+	logger(2, "Loading LDAP Authetication Data: "+fmt.Sprintf("%d",eldapConf.LDAP.Server.KeySafeID), true)
 
 	mc.SetParam("keyId", fmt.Sprintf("%d",eldapConf.LDAP.Server.KeySafeID))
 

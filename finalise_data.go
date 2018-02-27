@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hornbill/goApiLib"
+	"github.com/hornbill/pb"
 )
 
 var (
@@ -20,7 +21,7 @@ func initXMLMCFinalise() {
 func finaliseData() {
 	logger(1, "Finalising User Data", true)
 	initXMLMCFinalise()
-	//bar := pb.StartNew(len(HornbillCache.UsersWorking))
+	bar := pb.StartNew(len(HornbillCache.UsersWorking))
 
 	// This we could do in threads
 	for index := range HornbillCache.UsersWorking {
@@ -46,10 +47,10 @@ func finaliseData() {
 			updateUserRoles(currentUser)
 		}
 
-		//bar.Increment()
+		bar.Increment()
 	}
 
-	//bar.FinishPrint("Finalising User Data Complete")
+	bar.FinishPrint("Finalising User Data Complete")
 }
 
 func createUser(currentUser *userWorkingDataStruct) {
@@ -58,7 +59,7 @@ func createUser(currentUser *userWorkingDataStruct) {
 		CounterInc(1)
 	} else {
 		CounterInc(7)
-		logger(1, "Unable to Create User: "+currentUser.Account.UserID+" Error:"+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to Create User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
 	}
 
 }
@@ -69,7 +70,7 @@ func updateUser(currentUser *userWorkingDataStruct) {
 		CounterInc(2)
 	} else {
 		CounterInc(7)
-		logger(1, "Unable to Update User: "+currentUser.Account.UserID+" Error:"+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to Update User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
 	}
 }
 
@@ -79,7 +80,7 @@ func updateUserProfile(currentUser *userWorkingDataStruct) {
 		CounterInc(3)
 	} else {
 		CounterInc(7)
-		logger(1, "Unable to Update User Profile: "+currentUser.Account.UserID+" Error:"+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to Update User Profile: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
 	}
 }
 
@@ -89,7 +90,7 @@ func updateUserImage(currentUser *userWorkingDataStruct) {
 		CounterInc(4)
 	} else {
 		CounterInc(7)
-		logger(1, "Unable to Update User Image: "+currentUser.Account.UserID+" Error:"+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to Update User Image: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
 	}
 }
 
@@ -99,7 +100,7 @@ func updateUserGroups(currentUser *userWorkingDataStruct) {
 		CounterInc(5)
 	} else {
 		CounterInc(7)
-		logger(1, "Unable to Update User Groups: "+currentUser.Account.UserID+" Error:"+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to Update User Groups: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
 	}
 }
 
@@ -109,6 +110,6 @@ func updateUserRoles(currentUser *userWorkingDataStruct) {
 		CounterInc(6)
 	} else {
 		CounterInc(7)
-		logger(1, "Unable to Update User Roles: "+currentUser.Account.UserID+" Error:"+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to Update User Roles: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err), false)
 	}
 }

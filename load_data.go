@@ -26,10 +26,7 @@ func initXMLMC() {
 	fmt.Printf("%d", pageSize)
 	if pageSize == 0 {
 		pageSize = 100
-	} else if pageSize > 10000 {
-		pageSize = 100
 	}
-
 }
 func loadUsers() {
 	//-- Init One connection to Hornbill to load all data
@@ -154,7 +151,7 @@ func getUserAccountsGroupsList(count uint64) {
 		//-- Push into Map of slices to userId = array of roles
 		for index := range JSONResp.Params.RowData.Row {
 			if userIDExistsInLDAP(JSONResp.Params.RowData.Row[index].HUserID) {
-				HornbillCache.UserGroups[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = append(HornbillCache.UserGroups[JSONResp.Params.RowData.Row[index].HUserID], JSONResp.Params.RowData.Row[index].HGroupID)
+				HornbillCache.UserGroups[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = append(HornbillCache.UserGroups[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)], JSONResp.Params.RowData.Row[index].HGroupID)
 			}
 		}
 		// Add 100
@@ -237,7 +234,9 @@ func getUserAccountsRolesList(count uint64) {
 		//-- Push into Map of slices to userId = array of roles
 		for index := range JSONResp.Params.RowData.Row {
 			if userIDExistsInLDAP(JSONResp.Params.RowData.Row[index].HUserID) {
-				HornbillCache.UserRoles[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = append(HornbillCache.UserRoles[JSONResp.Params.RowData.Row[index].HUserID], JSONResp.Params.RowData.Row[index].HRole)
+				HornbillCache.UserRoles[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = append(HornbillCache.UserRoles[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)], JSONResp.Params.RowData.Row[index].HRole)
+			} else {
+
 			}
 		}
 		// Add 100

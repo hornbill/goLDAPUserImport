@@ -66,7 +66,16 @@ type userWorkingDataStruct struct {
 	LDAP     *ldap.Entry
 	Jobs     userImportJobs
 	Roles    []string
-	Groups   []string
+	Groups   []userGroupStruct
+}
+type userGroupStruct struct {
+	Id                     string
+	Name                   string
+	Type                   int
+	Membership             string
+	TasksView              bool
+	TasksAction            bool
+	OnlyOneGroupAssignment bool
 }
 
 // Time Struct

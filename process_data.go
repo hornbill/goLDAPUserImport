@@ -37,7 +37,7 @@ func processData() {
 
 		currentUser := HornbillCache.UsersWorking[user]
 		//-- Current UserID
-		userID := currentUser.Account.UserID
+		userID := strings.ToLower(currentUser.Account.UserID)
 		hornbillUserData := HornbillCache.Users[userID]
 
 		if userID == "" {
@@ -89,11 +89,11 @@ func checkUserNeedsOrgUpdate(importData *userWorkingDataStruct, currentData user
 			orgAction := ldapImportConf.User.Org[orgIndex]
 			if orgAction.Action == "Both" || orgAction.Action == "Update" {
 				var GroupID = getOrgFromLookup(importData.LDAP, orgAction.Value)
-
+				var userExistingGroups = HornbillCache.UserGroups[strings.ToLower(importData.Account.UserID)]
 				//-- Is User Already a Memeber of the Group
 				boolUserInGroup := false
-				for index := range HornbillCache.UserGroups[importData.Account.UserID] {
-					if GroupID == HornbillCache.UserGroups[importData.Account.UserID][index] {
+				for index := range userExistingGroups {
+					if strings.ToLower(GroupID) == strings.ToLower(userExistingGroups[index]) {
 						boolUserInGroup = true
 					}
 				}
@@ -104,7 +104,16 @@ func checkUserNeedsOrgUpdate(importData *userWorkingDataStruct, currentData user
 							continue
 						}
 					}
-					importData.Groups = append(importData.Groups, GroupID)
+					var group userGroupStruct
+					group.Id = GroupID
+					group.Name = orgAction.Value
+					group.Type = orgAction.Options.Type
+					group.Membership = orgAction.Options.Membership
+					group.TasksView = orgAction.Options.TasksView
+					group.TasksAction = orgAction.Options.TasksAction
+					group.OnlyOneGroupAssignment = orgAction.Options.OnlyOneGroupAssignment
+
+					importData.Groups = append(importData.Groups, group)
 				}
 			}
 		}
@@ -123,8 +132,17 @@ func checkUserNeedsOrgCreate(importData *userWorkingDataStruct, currentData user
 						continue
 					}
 				}
+				var group userGroupStruct
+				group.Id = GroupID
+				group.Name = orgAction.Value
+				group.Type = orgAction.Options.Type
+				group.Membership = orgAction.Options.Membership
+				group.TasksView = orgAction.Options.TasksView
+				group.TasksAction = orgAction.Options.TasksAction
+				group.OnlyOneGroupAssignment = orgAction.Options.OnlyOneGroupAssignment
+
 				if GroupID != "" {
-					importData.Groups = append(importData.Groups, GroupID)
+					importData.Groups = append(importData.Groups, group)
 				}
 			}
 		}
@@ -142,8 +160,9 @@ func checkUserNeedsRoleUpdate(importData *userWorkingDataStruct, currentData use
 		for index := range ldapImportConf.User.Role.Roles {
 			roleName := ldapImportConf.User.Role.Roles[index]
 			foundRole := false
-			for index2 := range HornbillCache.UserRoles[importData.Account.UserID] {
-				if roleName == HornbillCache.UserRoles[importData.Account.UserID][index2] {
+			var userRoles = HornbillCache.UserRoles[strings.ToLower(importData.Account.UserID)]
+			for index2 := range userRoles {
+				if strings.ToLower(roleName) == strings.ToLower(userRoles[index2]) {
 					foundRole = true
 				}
 			}
@@ -218,7 +237,7 @@ func setUserSiteValueForCreate(importData *userWorkingDataStruct, currentData us
 	if ldapImportConf.User.Site.Action == "Both" || ldapImportConf.User.Site.Action == "Create" {
 		importData.Account.Site = getSiteFromLookup(importData.LDAP)
 	}
-	if importData.Account.Site != currentData.HSite {
+	if importData.Account.Site != "" && importData.Account.Site != currentData.HSite {
 		return true
 	}
 	return false
@@ -232,77 +251,77 @@ func checkUserNeedsSiteUpdate(importData *userWorkingDataStruct, currentData use
 		importData.Account.Site = currentData.HSite
 	}
 
-	if importData.Account.Site != currentData.HSite {
+	if importData.Account.Site != "" && importData.Account.Site != currentData.HSite {
 		return true
 	}
 	return false
 }
 func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
-	if importData.Account.Name != currentData.HName {
-		//logger(1, "Name: "+fmt.Sprintf("%s", importData.Account.Name)+" - "+fmt.Sprintf("%s", currentData.HName), true)
+	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
+		logger(1, "Name: "+fmt.Sprintf("%s", importData.Account.Name)+" - "+fmt.Sprintf("%s", currentData.HName), true)
 		return true
 	}
-	if importData.Account.FirstName != currentData.HFirstName {
-		//logger(1, "FirstName: "+fmt.Sprintf("%s", importData.Account.FirstName), true)
+	if importData.Account.FirstName != "" && importData.Account.FirstName != currentData.HFirstName {
+		logger(1, "FirstName: "+fmt.Sprintf("%s", importData.Account.FirstName)+" - "+fmt.Sprintf("%s", currentData.HFirstName), true)
 		return true
 	}
-	if importData.Account.LastName != currentData.HLastName {
-		//logger(1, "LastName: "+fmt.Sprintf("%s", importData.Account.LastName), true)
+	if importData.Account.LastName != "" && importData.Account.LastName != currentData.HLastName {
+		logger(1, "LastName: "+fmt.Sprintf("%s", importData.Account.LastName)+" - "+fmt.Sprintf("%s", currentData.HLastName), true)
 		return true
 	}
-	if importData.Account.JobTitle != currentData.HJobTitle {
-		//logger(1, "JobTitle: "+fmt.Sprintf("%s", importData.Account.JobTitle), true)
+	if importData.Account.JobTitle != "" && importData.Account.JobTitle != currentData.HJobTitle {
+		logger(1, "JobTitle: "+fmt.Sprintf("%s", importData.Account.JobTitle)+" - "+fmt.Sprintf("%s", currentData.HJobTitle), true)
 		return true
 	}
-	if importData.Account.Phone != currentData.HPhone {
-		//logger(1, "Phone: "+fmt.Sprintf("%s", importData.Account.Phone)+" - "+fmt.Sprintf("%s", currentData.HPhone), true)
+	if importData.Account.Phone != "" && importData.Account.Phone != currentData.HPhone {
+		logger(1, "Phone: "+fmt.Sprintf("%s", importData.Account.Phone)+" - "+fmt.Sprintf("%s", currentData.HPhone), true)
 		return true
 	}
-	if importData.Account.Email != currentData.HEmail {
-		//logger(1, "Email: "+fmt.Sprintf("%s", importData.Account.Email), true)
+	if importData.Account.Email != "" && importData.Account.Email != currentData.HEmail {
+		logger(1, "Email: "+fmt.Sprintf("%s", importData.Account.Email)+" - "+fmt.Sprintf("%s", currentData.HEmail), true)
 		return true
 	}
-	if importData.Account.Mobile != currentData.HMobile {
-		//logger(1, "Mobile: "+fmt.Sprintf("%s", importData.Account.Mobile), true)
+	if importData.Account.Mobile != "" && importData.Account.Mobile != currentData.HMobile {
+		logger(1, "Mobile: "+fmt.Sprintf("%s", importData.Account.Mobile)+" - "+fmt.Sprintf("%s", currentData.HMobile), true)
 		return true
 	}
-	if importData.Account.AbsenceMessage != currentData.HAvailStatusMsg {
-		//logger(1, "AbsenceMessage: "+fmt.Sprintf("%s", importData.Account.AbsenceMessage), true)
+	if importData.Account.AbsenceMessage != "" && importData.Account.AbsenceMessage != currentData.HAvailStatusMsg {
+		logger(1, "AbsenceMessage: "+fmt.Sprintf("%s", importData.Account.AbsenceMessage)+" - "+fmt.Sprintf("%s", currentData.HAvailStatusMsg), true)
 		return true
 	}
 	//-- If TimeZone mapping is empty then ignore as it defaults to a value
 	if importData.Account.TimeZone != "" && importData.Account.TimeZone != currentData.HTimezone {
-		//logger(1, "TimeZone: "+fmt.Sprintf("%s", importData.Account.TimeZone)+" - "+fmt.Sprintf("%s", currentData.HTimezone), true)
+		logger(1, "TimeZone: "+fmt.Sprintf("%s", importData.Account.TimeZone)+" - "+fmt.Sprintf("%s", currentData.HTimezone), true)
 		return true
 	}
 	//-- If Language mapping is empty then ignore as it defaults to a value
 	if importData.Account.Language != "" && importData.Account.Language != currentData.HLanguage {
-		//logger(1, "Language: "+fmt.Sprintf("%s", importData.Account.Language)+" - "+fmt.Sprintf("%s", currentData.HLanguage), true)
+		logger(1, "Language: "+fmt.Sprintf("%s", importData.Account.Language)+" - "+fmt.Sprintf("%s", currentData.HLanguage), true)
 		return true
 	}
 	//-- If DateTimeFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.DateTimeFormat != "" && importData.Account.DateTimeFormat != currentData.HDateTimeFormat {
-		//logger(1, "DateTimeFormat: "+fmt.Sprintf("%s", importData.Account.DateTimeFormat)+" - "+fmt.Sprintf("%s", currentData.HDateTimeFormat), true)
+		logger(1, "DateTimeFormat: "+fmt.Sprintf("%s", importData.Account.DateTimeFormat)+" - "+fmt.Sprintf("%s", currentData.HDateTimeFormat), true)
 		return true
 	}
 	//-- If DateFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.DateFormat != "" && importData.Account.DateFormat != currentData.HDateFormat {
-		//logger(1, "DateFormat: "+fmt.Sprintf("%s", importData.Account.DateFormat)+" - "+fmt.Sprintf("%s", currentData.HDateFormat), true)
+		logger(1, "DateFormat: "+fmt.Sprintf("%s", importData.Account.DateFormat)+" - "+fmt.Sprintf("%s", currentData.HDateFormat), true)
 		return true
 	}
 	//-- If TimeFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.TimeFormat != "" && importData.Account.TimeFormat != currentData.HTimeFormat {
-		//logger(1, "TimeFormat: "+fmt.Sprintf("%s", importData.Account.TimeFormat)+" - "+fmt.Sprintf("%s", currentData.HTimeFormat), true)
+		logger(1, "TimeFormat: "+fmt.Sprintf("%s", importData.Account.TimeFormat)+" - "+fmt.Sprintf("%s", currentData.HTimeFormat), true)
 		return true
 	}
 	//-- If CurrencySymbol mapping is empty then ignore as it defaults to a value
 	if importData.Account.CurrencySymbol != "" && importData.Account.CurrencySymbol != currentData.HCurrencySymbol {
-		//logger(1, "CurrencySymbol: "+fmt.Sprintf("%s", importData.Account.CurrencySymbol)+" - "+fmt.Sprintf("%s", currentData.HCurrencySymbol), true)
+		logger(1, "CurrencySymbol: "+fmt.Sprintf("%s", importData.Account.CurrencySymbol)+" - "+fmt.Sprintf("%s", currentData.HCurrencySymbol), true)
 		return true
 	}
 	//-- If CountryCode mapping is empty then ignore as it defaults to a value
 	if importData.Account.CountryCode != "" && importData.Account.CountryCode != currentData.HCountry {
-		//logger(1, "CountryCode: "+fmt.Sprintf("%s", importData.Account.CountryCode)+" - "+fmt.Sprintf("%s", currentData.HCountry), true)
+		logger(1, "CountryCode: "+fmt.Sprintf("%s", importData.Account.CountryCode)+" - "+fmt.Sprintf("%s", currentData.HCountry), true)
 		return true
 	}
 
@@ -310,13 +329,13 @@ func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAcc
 }
 func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
 
-	if importData.Profile.MiddleName != currentData.HMiddleName {
-		//logger(1, "MiddleName: "+fmt.Sprintf("%s", importData.Profile.MiddleName)+" - "+fmt.Sprintf("%s", currentData.HMiddleName), true)
+	if importData.Profile.MiddleName != "" && importData.Profile.MiddleName != currentData.HMiddleName {
+		logger(1, "MiddleName: "+fmt.Sprintf("%s", importData.Profile.MiddleName)+" - "+fmt.Sprintf("%s", currentData.HMiddleName), true)
 		return true
 	}
 
-	if importData.Profile.JobDescription != currentData.HSummary {
-		//logger(1, "JobDescription: "+fmt.Sprintf("%s", importData.Profile.JobDescription)+" - "+fmt.Sprintf("%s", currentData.HSummary), true)
+	if importData.Profile.JobDescription != "" && importData.Profile.JobDescription != currentData.HSummary {
+		logger(1, "JobDescription: "+fmt.Sprintf("%s", importData.Profile.JobDescription)+" - "+fmt.Sprintf("%s", currentData.HSummary), true)
 		return true
 	}
 	if ldapImportConf.User.Manager.Action == "Both" || ldapImportConf.User.Manager.Action == "Update" {
@@ -325,120 +344,120 @@ func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData 
 		//-- Use Current Value
 		importData.Profile.Manager = currentData.HManager
 	}
-	if importData.Profile.Manager != currentData.HManager {
-		//logger(1, "Manager: "+fmt.Sprintf("%s", importData.Profile.Manager)+" - "+fmt.Sprintf("%s", currentData.HManager), true)
+	if importData.Profile.Manager != "" && importData.Profile.Manager != currentData.HManager {
+		logger(1, "Manager: "+fmt.Sprintf("%s", importData.Profile.Manager)+" - "+fmt.Sprintf("%s", currentData.HManager), true)
 		return true
 	}
-	if importData.Profile.WorkPhone != currentData.HPhone {
-		//logger(1, "WorkPhone: "+fmt.Sprintf("%s", importData.Profile.WorkPhone)+" - "+fmt.Sprintf("%s", currentData.HPhone), true)
+	if importData.Profile.WorkPhone != "" && importData.Profile.WorkPhone != currentData.HPhone {
+		logger(1, "WorkPhone: "+fmt.Sprintf("%s", importData.Profile.WorkPhone)+" - "+fmt.Sprintf("%s", currentData.HPhone), true)
 		return true
 	}
-	if importData.Profile.Qualifications != currentData.HQualifications {
-		//logger(1, "Qualifications: "+fmt.Sprintf("%s", importData.Profile.Qualifications)+" - "+fmt.Sprintf("%s", currentData.HQualifications), true)
+	if importData.Profile.Qualifications != "" && importData.Profile.Qualifications != currentData.HQualifications {
+		logger(1, "Qualifications: "+fmt.Sprintf("%s", importData.Profile.Qualifications)+" - "+fmt.Sprintf("%s", currentData.HQualifications), true)
 		return true
 	}
-	if importData.Profile.Interests != currentData.HInterests {
-		//logger(1, "Interests: "+fmt.Sprintf("%s", importData.Profile.Interests)+" - "+fmt.Sprintf("%s", currentData.HInterests), true)
+	if importData.Profile.Interests != "" && importData.Profile.Interests != currentData.HInterests {
+		logger(1, "Interests: "+fmt.Sprintf("%s", importData.Profile.Interests)+" - "+fmt.Sprintf("%s", currentData.HInterests), true)
 		return true
 	}
-	if importData.Profile.Expertise != currentData.HSkills {
-		//logger(1, "Expertise: "+fmt.Sprintf("%s", importData.Profile.Expertise)+" - "+fmt.Sprintf("%s", currentData.HSkills), true)
+	if importData.Profile.Expertise != "" && importData.Profile.Expertise != currentData.HSkills {
+		logger(1, "Expertise: "+fmt.Sprintf("%s", importData.Profile.Expertise)+" - "+fmt.Sprintf("%s", currentData.HSkills), true)
 		return true
 	}
-	if importData.Profile.Gender != currentData.HGender {
-		//logger(1, "Gender: "+fmt.Sprintf("%s", importData.Profile.Gender)+" - "+fmt.Sprintf("%s", currentData.HGender), true)
+	if importData.Profile.Gender != "" && importData.Profile.Gender != currentData.HGender {
+		logger(1, "Gender: "+fmt.Sprintf("%s", importData.Profile.Gender)+" - "+fmt.Sprintf("%s", currentData.HGender), true)
 		return true
 	}
-	if importData.Profile.Dob != currentData.HDob {
-		//logger(1, "Dob: "+fmt.Sprintf("%s", importData.Profile.Dob)+" - "+fmt.Sprintf("%s", currentData.HDob), true)
+	if importData.Profile.Dob != "" && importData.Profile.Dob != currentData.HDob {
+		logger(1, "Dob: "+fmt.Sprintf("%s", importData.Profile.Dob)+" - "+fmt.Sprintf("%s", currentData.HDob), true)
 		return true
 	}
-	if importData.Profile.Nationality != currentData.HNationality {
-		//logger(1, "Nationality: "+fmt.Sprintf("%s", importData.Profile.Nationality)+" - "+fmt.Sprintf("%s", currentData.HNationality), true)
+	if importData.Profile.Nationality != "" && importData.Profile.Nationality != currentData.HNationality {
+		logger(1, "Nationality: "+fmt.Sprintf("%s", importData.Profile.Nationality)+" - "+fmt.Sprintf("%s", currentData.HNationality), true)
 		return true
 	}
-	if importData.Profile.Religion != currentData.HReligion {
-		//logger(1, "Religion: "+fmt.Sprintf("%s", importData.Profile.Religion)+" - "+fmt.Sprintf("%s", currentData.HReligion), true)
+	if importData.Profile.Religion != "" && importData.Profile.Religion != currentData.HReligion {
+		logger(1, "Religion: "+fmt.Sprintf("%s", importData.Profile.Religion)+" - "+fmt.Sprintf("%s", currentData.HReligion), true)
 		return true
 	}
-	if importData.Profile.HomeTelephone != currentData.HHomeTelephoneNumber {
-		//logger(1, "HomeTelephone: "+fmt.Sprintf("%s", importData.Profile.HomeTelephone)+" - "+fmt.Sprintf("%s", currentData.HHomeTelephoneNumber), true)
+	if importData.Profile.HomeTelephone != "" && importData.Profile.HomeTelephone != currentData.HHomeTelephoneNumber {
+		logger(1, "HomeTelephone: "+fmt.Sprintf("%s", importData.Profile.HomeTelephone)+" - "+fmt.Sprintf("%s", currentData.HHomeTelephoneNumber), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkA != currentData.HSnA {
-		//logger(1, "SocialNetworkA: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkA)+" - "+fmt.Sprintf("%s", currentData.HSnA), true)
+	if importData.Profile.SocialNetworkA != "" && importData.Profile.SocialNetworkA != currentData.HSnA {
+		logger(1, "SocialNetworkA: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkA)+" - "+fmt.Sprintf("%s", currentData.HSnA), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkB != currentData.HSnB {
-		//logger(1, "SocialNetworkB: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkB)+" - "+fmt.Sprintf("%s", currentData.HSnB), true)
+	if importData.Profile.SocialNetworkB != "" && importData.Profile.SocialNetworkB != currentData.HSnB {
+		logger(1, "SocialNetworkB: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkB)+" - "+fmt.Sprintf("%s", currentData.HSnB), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkC != currentData.HSnC {
-		//logger(1, "SocialNetworkC: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkC)+" - "+fmt.Sprintf("%s", currentData.HSnC), true)
+	if importData.Profile.SocialNetworkC != "" && importData.Profile.SocialNetworkC != currentData.HSnC {
+		logger(1, "SocialNetworkC: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkC)+" - "+fmt.Sprintf("%s", currentData.HSnC), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkD != currentData.HSnD {
-		//logger(1, "SocialNetworkD: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkD)+" - "+fmt.Sprintf("%s", currentData.HSnD), true)
+	if importData.Profile.SocialNetworkD != "" && importData.Profile.SocialNetworkD != currentData.HSnD {
+		logger(1, "SocialNetworkD: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkD)+" - "+fmt.Sprintf("%s", currentData.HSnD), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkE != currentData.HSnE {
-		//logger(1, "SocialNetworkE: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkE)+" - "+fmt.Sprintf("%s", currentData.HSnE), true)
+	if importData.Profile.SocialNetworkG != "" && importData.Profile.SocialNetworkG != currentData.HSnE {
+		logger(1, "SocialNetworkE: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkE)+" - "+fmt.Sprintf("%s", currentData.HSnE), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkF != currentData.HSnF {
-		//logger(1, "SocialNetworkF: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkF)+" - "+fmt.Sprintf("%s", currentData.HSnF), true)
+	if importData.Profile.SocialNetworkG != "" && importData.Profile.SocialNetworkG != currentData.HSnF {
+		logger(1, "SocialNetworkF: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkF)+" - "+fmt.Sprintf("%s", currentData.HSnF), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkG != currentData.HSnG {
-		//logger(1, "SocialNetworkG: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkG)+" - "+fmt.Sprintf("%s", currentData.HSnG), true)
+	if importData.Profile.SocialNetworkG != "" && importData.Profile.SocialNetworkG != currentData.HSnG {
+		logger(1, "SocialNetworkG: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkG)+" - "+fmt.Sprintf("%s", currentData.HSnG), true)
 		return true
 	}
-	if importData.Profile.SocialNetworkH != currentData.HSnH {
-		//logger(1, "SocialNetworkH: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkH)+" - "+fmt.Sprintf("%s", currentData.HSnH), true)
+	if importData.Profile.SocialNetworkH != "" && importData.Profile.SocialNetworkH != currentData.HSnH {
+		logger(1, "SocialNetworkH: "+fmt.Sprintf("%s", importData.Profile.SocialNetworkH)+" - "+fmt.Sprintf("%s", currentData.HSnH), true)
 		return true
 	}
-	if importData.Profile.PersonalInterests != currentData.HPersonalInterests {
-		//logger(1, "PersonalInterests: "+fmt.Sprintf("%s", importData.Profile.PersonalInterests)+" - "+fmt.Sprintf("%s", currentData.HPersonalInterests), true)
+	if importData.Profile.PersonalInterests != "" && importData.Profile.PersonalInterests != currentData.HPersonalInterests {
+		logger(1, "PersonalInterests: "+fmt.Sprintf("%s", importData.Profile.PersonalInterests)+" - "+fmt.Sprintf("%s", currentData.HPersonalInterests), true)
 		return true
 	}
-	if importData.Profile.HomeAddress != currentData.HHomeAddress {
-		//logger(1, "HomeAddress: "+fmt.Sprintf("%s", importData.Profile.HomeAddress)+" - "+fmt.Sprintf("%s", currentData.HHomeAddress), true)
+	if importData.Profile.HomeAddress != "" && importData.Profile.HomeAddress != currentData.HHomeAddress {
+		logger(1, "HomeAddress: "+fmt.Sprintf("%s", importData.Profile.HomeAddress)+" - "+fmt.Sprintf("%s", currentData.HHomeAddress), true)
 		return true
 	}
-	if importData.Profile.PersonalBlog != currentData.HBlog {
-		//logger(1, "PersonalBlog: "+fmt.Sprintf("%s", importData.Profile.PersonalBlog)+" - "+fmt.Sprintf("%s", currentData.HBlog), true)
+	if importData.Profile.PersonalBlog != "" && importData.Profile.PersonalBlog != currentData.HBlog {
+		logger(1, "PersonalBlog: "+fmt.Sprintf("%s", importData.Profile.PersonalBlog)+" - "+fmt.Sprintf("%s", currentData.HBlog), true)
 		return true
 	}
-	if importData.Profile.Attrib1 != currentData.HAttrib1 {
-		//logger(1, "Attrib1: "+fmt.Sprintf("%s", importData.Profile.Attrib1)+" - "+fmt.Sprintf("%s", currentData.HAttrib1), true)
+	if importData.Profile.Attrib1 != "" && importData.Profile.Attrib1 != currentData.HAttrib1 {
+		logger(1, "Attrib1: "+fmt.Sprintf("%s", importData.Profile.Attrib1)+" - "+fmt.Sprintf("%s", currentData.HAttrib1), true)
 		return true
 	}
-	if importData.Profile.Attrib2 != currentData.HAttrib2 {
-		//logger(1, "Attrib2: "+fmt.Sprintf("%s", importData.Profile.Attrib2)+" - "+fmt.Sprintf("%s", currentData.HAttrib2), true)
+	if importData.Profile.Attrib2 != "" && importData.Profile.Attrib2 != currentData.HAttrib2 {
+		logger(1, "Attrib2: "+fmt.Sprintf("%s", importData.Profile.Attrib2)+" - "+fmt.Sprintf("%s", currentData.HAttrib2), true)
 		return true
 	}
-	if importData.Profile.Attrib3 != currentData.HAttrib3 {
-		//logger(1, "Attrib3: "+fmt.Sprintf("%s", importData.Profile.Attrib3)+" - "+fmt.Sprintf("%s", currentData.HAttrib3), true)
+	if importData.Profile.Attrib3 != "" && importData.Profile.Attrib3 != currentData.HAttrib3 {
+		logger(1, "Attrib3: "+fmt.Sprintf("%s", importData.Profile.Attrib3)+" - "+fmt.Sprintf("%s", currentData.HAttrib3), true)
 		return true
 	}
-	if importData.Profile.Attrib4 != currentData.HAttrib4 {
-		//logger(1, "Attrib4: "+fmt.Sprintf("%s", importData.Profile.Attrib4)+" - "+fmt.Sprintf("%s", currentData.HAttrib4), true)
+	if importData.Profile.Attrib4 != "" && importData.Profile.Attrib4 != currentData.HAttrib4 {
+		logger(1, "Attrib4: "+fmt.Sprintf("%s", importData.Profile.Attrib4)+" - "+fmt.Sprintf("%s", currentData.HAttrib4), true)
 		return true
 	}
-	if importData.Profile.Attrib5 != currentData.HAttrib5 {
-		//logger(1, "Attrib5: "+fmt.Sprintf("%s", importData.Profile.Attrib5)+" - "+fmt.Sprintf("%s", currentData.HAttrib5), true)
+	if importData.Profile.Attrib5 != "" && importData.Profile.Attrib5 != currentData.HAttrib5 {
+		logger(1, "Attrib5: "+fmt.Sprintf("%s", importData.Profile.Attrib5)+" - "+fmt.Sprintf("%s", currentData.HAttrib5), true)
 		return true
 	}
-	if importData.Profile.Attrib6 != currentData.HAttrib6 {
-		//logger(1, "Attrib6: "+fmt.Sprintf("%s", importData.Profile.Attrib6)+" - "+fmt.Sprintf("%s", currentData.HAttrib6), true)
+	if importData.Profile.Attrib6 != "" && importData.Profile.Attrib6 != currentData.HAttrib6 {
+		logger(1, "Attrib6: "+fmt.Sprintf("%s", importData.Profile.Attrib6)+" - "+fmt.Sprintf("%s", currentData.HAttrib6), true)
 		return true
 	}
-	if importData.Profile.Attrib7 != currentData.HAttrib7 {
-		//logger(1, "Attrib7: "+fmt.Sprintf("%s", importData.Profile.Attrib7)+" - "+fmt.Sprintf("%s", currentData.HAttrib7), true)
+	if importData.Profile.Attrib7 != "" && importData.Profile.Attrib7 != currentData.HAttrib7 {
+		logger(1, "Attrib7: "+fmt.Sprintf("%s", importData.Profile.Attrib7)+" - "+fmt.Sprintf("%s", currentData.HAttrib7), true)
 		return true
 	}
-	if importData.Profile.Attrib8 != currentData.HAttrib8 {
-		//logger(1, "Attrib8: "+fmt.Sprintf("%s", importData.Profile.Attrib8)+" - "+fmt.Sprintf("%s", currentData.HAttrib8), true)
+	if importData.Profile.Attrib8 != "" && importData.Profile.Attrib8 != currentData.HAttrib8 {
+		logger(1, "Attrib8: "+fmt.Sprintf("%s", importData.Profile.Attrib8)+" - "+fmt.Sprintf("%s", currentData.HAttrib8), true)
 		return true
 	}
 	return false
