@@ -7,6 +7,7 @@ ADD: Ability to filter user Organisation assignment based on the memberof attrib
 ADD: LogLevel has been added which defaults to 2 (Message, Warning, Error), this can be changed to 1 (Debug, Message, Warning, Error) if additional debug logging is required
 ADD: Dry Run XML Output is now formatted better in the log file
 ADD: Log File Retention (Set to 0 By Default) Can be set to the maximum number of days to keep local log files for.
+ADD: Release Binarys are now built for Windows (x86 & x64), Linux (x86 & x64 & ARM), OSX (x86 & x64)
 
 CHANGE: Import Configuration is now loaded from the Instance and not via a local JSON file, this is to provide a user freindly UI for generating the configuration.
 CHANGE: The tool has been completely rewritten to be more efficient this will have a drematic effect on the time taken for the tool to run (In a Postitve way)

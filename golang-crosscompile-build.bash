@@ -12,7 +12,7 @@ version=${versiond//./_}
 version=${version// /}
 versiond=${versiond// /}
 #platforms="darwin/386 darwin/amd64 freebsd/386 freebsd/amd64 freebsd/arm linux/386 linux/amd64 linux/arm windows/386 windows/amd64"
-platforms="windows/386 windows/amd64"
+platforms="windows/386 windows/amd64 linux/386 linux/amd64 linux/arm darwin/386 darwin/amd64"
 printf " ---- Building LDAP User Import $versiond ---- \n"
 
 printf "Replace Version Variable\n"
@@ -55,6 +55,9 @@ do
 
     printf "Build Zip \n"
     cd "builds/$goos/$goarch/"
+    if [ $os == "darwin" ]; then
+        os="osx"
+    fi
     zip -r "${package}_${os}_${arch}_v${version}.zip" $output LICENSE.md README.md conf.json > /dev/null
     cp "${package}_${os}_${arch}_v${version}.zip" "../../../${package}_${os}_${arch}_v${version}.zip"
     cd "../../../"
