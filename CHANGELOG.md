@@ -6,10 +6,12 @@ ADD: Ability to assign one or more Organisations to a user
 ADD: Ability to filter user Organisation assignment based on the memberof attribtute in LDAP "MemberOf" added to the Organisation configuration that should match the name of the AD a User should be in before the Organisation is assinged.
 ADD: LogLevel has been added which defaults to 2 (Message, Warning, Error), this can be changed to 1 (Debug, Message, Warning, Error) if additional debug logging is required
 ADD: Dry Run XML Output is now formatted better in the log file
+ADD: Log File Retention (Set to 0 By Default) Can be set to the maximum number of days to keep local log files for.
 
 CHANGE: Import Configuration is now loaded from the Instance and not via a local JSON file, this is to provide a user freindly UI for generating the configuration.
 CHANGE: The tool has been completely rewritten to be more efficient this will have a drematic effect on the time taken for the tool to run (In a Postitve way)
 CHANGE: The log output has been updated to closer reflect how the tool is processing data the format is still (YYYY/MM/DD HH:MM:SS [LogLevel] Message)
+CHANGE: The tool no longer writea a log file to your hornbill instance instead a History Table is maintained linked to the Import Configuration so a history of the imports run can be seen in the Imports Configuration UI in the Hornbill Administration Tool.
 
 ## 2.4.2 (Feb 1 , 2018)
 

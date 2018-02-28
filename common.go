@@ -2,14 +2,17 @@ package main
 
 import (
 	"crypto/rand"
-	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	"html"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/hornbill/goApiLib"
@@ -101,6 +104,37 @@ func loggerWriteBuffer(s string) {
 		}
 	}
 }
+func deletefiles(path string, f os.FileInfo, err error) (e error) {
+	var cutoff = (24 * time.Hour)
+	cutoff = time.Duration(ldapImportConf.Advanced.LogRetention) * cutoff
+	now := time.Now()
+	// check each file if starts with prefix and our log name so other log files are not deleted and different imports can have differnt retentions
+	if strings.HasPrefix(f.Name(), Flags.configLogPrefix+"LDAP_User_Import_") {
+
+		if diff := now.Sub(f.ModTime()); diff > cutoff {
+			logger(1, "Removing Old Log File: "+fmt.Sprintf("%s", path), false)
+			os.Remove(path)
+		}
+
+	}
+	return
+
+}
+
+func runLogRetentionCheck() {
+	logger(1, "Processing Old Log Files Current Retention Set to: "+fmt.Sprintf("%d", ldapImportConf.Advanced.LogRetention), true)
+
+	if ldapImportConf.Advanced.LogRetention > 0 {
+		//-- Curreny WD
+		cwd, _ := os.Getwd()
+		//-- Log Folder
+		logPath := cwd + "/log"
+		// walk through the files in the given path and perform partialrename()
+		// function
+		filepath.Walk(logPath, deletefiles)
+	}
+
+}
 
 //-- Loggin function
 func logger(t int, s string, outputtoCLI bool) {
@@ -168,42 +202,98 @@ func logger(t int, s string, outputtoCLI bool) {
 	log.Println(errorLogPrefix + s)
 }
 
-//-- Log to ESP
-func espLogger(message string, severity string) bool {
-
-	// We lock the whole function so we dont reuse the same connection for multiple logging attempts
-	mutexLogger.Lock()
-	defer mutexLogger.Unlock()
-
+func startImportHistory() bool {
 	// We initilaise the connection pool the first time the function is called and reuse it
 	// This is reuse the connections rather than creating a pool each invocation
-	once.Do(func() {
+	loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	loggerAPI.SetAPIKey(Flags.configAPIKey)
+	loggerAPI.SetTimeout(5)
+	loggerAPI.SetJSONResponse(true)
 
-		loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
-		loggerAPI.SetAPIKey(Flags.configAPIKey)
-		loggerAPI.SetTimeout(5)
-	})
+	loggerAPI.SetParam("entity", "ImportsHistory")
+	loggerAPI.SetParam("returnModifiedData", "true")
+	loggerAPI.OpenElement("primaryEntityData")
+	loggerAPI.OpenElement("record")
+	loggerAPI.SetParam("h_import_id", Flags.configID)
+	loggerAPI.SetParam("h_status", "1")
+	loggerAPI.CloseElement("record")
+	loggerAPI.CloseElement("primaryEntityData")
 
-	loggerAPI.SetParam("fileName", "LDAP_User_Import")
-	loggerAPI.SetParam("group", "general")
-	loggerAPI.SetParam("severity", severity)
-	loggerAPI.SetParam("message", message)
-
-	XMLLogger, xmlmcErr := loggerAPI.Invoke("system", "logMessage")
-	var xmlRespon xmlmcLogMessageResponse
+	RespBody, xmlmcErr := loggerAPI.Invoke("data", "entityAddRecord")
+	var JSONResp xmlmcHistoryResponse
 	if xmlmcErr != nil {
-		logger(4, "Unable to write to log "+fmt.Sprintf("%s", xmlmcErr), true)
+		logger(4, "Unable to write Import History: "+fmt.Sprintf("%s", xmlmcErr), true)
 		return false
 	}
-	err := xml.Unmarshal([]byte(XMLLogger), &xmlRespon)
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
-		logger(4, "Unable to write to log "+fmt.Sprintf("%s", err), true)
+		logger(4, "Unable to write Import History: "+fmt.Sprintf("%s", err), true)
 		return false
 	}
-	if xmlRespon.MethodResult != "ok" {
-		logger(4, "Unable to write to log "+xmlRespon.State.ErrorRet, true)
+	if JSONResp.State.Error != "" {
+		logger(4, "Unable to write Import History: "+JSONResp.State.Error, true)
 		return false
 	}
+
+	//-- Store History ID for Later
+	importHistoryID = JSONResp.Params.PrimaryEntityData.Record.HPkID
+
+	return true
+}
+func completeImportHistory() bool {
+	loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	loggerAPI.SetAPIKey(Flags.configAPIKey)
+	loggerAPI.SetTimeout(5)
+	loggerAPI.SetJSONResponse(true)
+
+	strMessage := ""
+
+	strMessage += "=== XMLMC LDAP Import Utility V" + fmt.Sprintf("%v", version) + " ===\n\n"
+	strMessage += "'''Errors''': " + fmt.Sprintf("%d", counters.errors) + "\n"
+
+	strMessage += "'''Accounts Proccesed''': " + fmt.Sprintf("%d", len(HornbillCache.UsersWorking)) + "\n"
+	strMessage += "'''Created''': " + fmt.Sprintf("%d", counters.created) + "\n"
+	strMessage += "'''Updated''': " + fmt.Sprintf("%d", counters.updated) + "\n"
+	strMessage += "'''Profiles Updated''': " + fmt.Sprintf("%d", counters.profileUpdated) + "\n"
+	strMessage += "'''Images Updated''': " + fmt.Sprintf("%d", counters.imageUpdated) + "\n"
+	strMessage += "'''Groups Updated''': " + fmt.Sprintf("%d", counters.groupUpdated) + "\n"
+	strMessage += "'''Groups Removed''': " + fmt.Sprintf("%d", counters.groupsRemoved) + "\n"
+	strMessage += "'''Roles Updated''': " + fmt.Sprintf("%d", counters.rolesUpdated) + "\n"
+
+	loggerAPI.SetParam("entity", "ImportsHistory")
+	loggerAPI.SetParam("returnModifiedData", "true")
+	loggerAPI.OpenElement("primaryEntityData")
+	loggerAPI.OpenElement("record")
+	loggerAPI.SetParam("h_pk_id", importHistoryID)
+	loggerAPI.SetParam("h_import_id", Flags.configID)
+	if counters.errors > 0 {
+		loggerAPI.SetParam("h_status", "3")
+	} else {
+		loggerAPI.SetParam("h_status", "2")
+	}
+	loggerAPI.SetParam("h_time_taken", strconv.FormatInt(int64(Time.endTime/time.Second), 10))
+	loggerAPI.SetParam("h_message", strMessage)
+	loggerAPI.CloseElement("record")
+	loggerAPI.CloseElement("primaryEntityData")
+
+	RespBody, xmlmcErr := loggerAPI.Invoke("data", "entityUpdateRecord")
+	var JSONResp xmlmcHistoryResponse
+	if xmlmcErr != nil {
+		logger(4, "Unable to write Import History: "+fmt.Sprintf("%s", xmlmcErr), true)
+		return false
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
+	if err != nil {
+		logger(4, "Unable to write Import History: "+fmt.Sprintf("%s", err), true)
+		return false
+	}
+	if JSONResp.State.Error != "" {
+		logger(4, "Unable to write Import History: "+JSONResp.State.Error, true)
+		return false
+	}
+
+	//-- Store History ID for Later
+	importHistoryID = JSONResp.Params.PrimaryEntityData.Record.HPkID
 
 	return true
 }

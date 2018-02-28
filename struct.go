@@ -14,6 +14,7 @@ const version = "3.0.0"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
+var importHistoryID string
 
 // Flags List
 var Flags struct {
@@ -215,8 +216,9 @@ type ldapImportConfStruct struct {
 		} `json:"Org"`
 	} `json:"User"`
 	Advanced struct {
-		LogLevel int `json:"LogLevel"`
-		PageSize int `json:"PageSize"`
+		LogLevel     int `json:"LogLevel"`
+		LogRetention int `json:"LogRetention"`
+		PageSize     int `json:"PageSize"`
 	} `json:"Advanced"`
 }
 
@@ -445,6 +447,20 @@ type xmlmcCountResponse struct {
 				Count string `json:"count"`
 			} `json:"row"`
 		} `json:"rowData"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
+}
+type xmlmcHistoryResponse struct {
+	Params struct {
+		PrimaryEntityData struct {
+			Record struct {
+				HPkID      string `json:"h_pk_id"`
+				HImportID  string `json:"h_import_id"`
+				HStatus    string `json:"h_status"`
+				HCreatedOn string `json:"h_created_on"`
+				HCreatedBy string `json:"h_created_by"`
+			} `json:"record"`
+		} `json:"primaryEntityData"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }

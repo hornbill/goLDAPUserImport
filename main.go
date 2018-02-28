@@ -60,15 +60,17 @@ func main() {
 		logger(4, "Please Check your Configuration: "+Flags.configID, true)
 		return
 	}
-
-	//-- Once we have loaded the config write to hornbill log file
-	logged := espLogger("---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", "debug")
+	logged := startImportHistory()
 
 	//-- Check for Connections
 	if !logged {
 		logger(4, "Unable to Connect to Instance", true)
 		return
 	}
+
+	//-- Clear Old Log Files
+	runLogRetentionCheck()
+
 	//-- Query LDAP
 	queryLdap()
 
@@ -159,7 +161,7 @@ func outputEnd() {
 
 	logger(2, "Total Traffic: "+fmt.Sprintf("%d", counters.traffic), true)
 
-	complete()
+	completeImportHistory()
 	logger(2, "---- XMLMC LDAP Import Complete ---- ", true)
 }
 
@@ -271,25 +273,6 @@ func validateConf() error {
 	//-- Process Config File
 
 	return nil
-}
-
-//-- complete
-func complete() {
-	//-- End output
-	espLogger("Errors: "+fmt.Sprintf("%d", counters.errors), "error")
-
-	espLogger("Accounts Proccesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), "debug")
-	espLogger("Created: "+fmt.Sprintf("%d", counters.created), "debug")
-
-	espLogger("Updated: "+fmt.Sprintf("%d", counters.updated), "debug")
-	espLogger("Profiles Updated: "+fmt.Sprintf("%d", counters.profileUpdated), "debug")
-	espLogger("Images Updated: "+fmt.Sprintf("%d", counters.imageUpdated), "debug")
-	espLogger("Groups Updated: "+fmt.Sprintf("%d", counters.groupUpdated), "debug")
-	espLogger("Groups Removed: "+fmt.Sprintf("%d", counters.groupsRemoved), "debug")
-	espLogger("Roles Updated: "+fmt.Sprintf("%d", counters.rolesUpdated), "debug")
-
-	espLogger("Time Taken: "+fmt.Sprintf("%v", Time.endTime), "debug")
-	espLogger("---- XMLMC LDAP User Import Complete ---- ", "debug")
 }
 
 // CounterInc Generic Counter Increment
