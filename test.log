@@ -1,0 +1,30 @@
+[MESSAGE] ---- XMLMC LDAP Import Utility V3.0.0 ----
+[MESSAGE] Flag - Config Id hornbill-ad-import
+[MESSAGE] Flag - Log Prefix 
+[MESSAGE] Flag - Dry Run false
+[MESSAGE] Flag - instanceId trevork
+[MESSAGE] Flag - apiKey 6352ebe64456463c8d155b7e45dca0f0
+[MESSAGE] Flag - Workers 1
+
+[MESSAGE] Loading Configuration Data: hornbill-ad-import
+[MESSAGE] Loading LDAP Authetication Data: 247
+[MESSAGE] Log Level 2
+[MESSAGE] Page Size 1000
+
+0 / 364 [--------------------------------------------------------------] 0.00 % 364 / 364 [========================================================] 100.00 % 0s
+Accounts Loaded  
+
+0 / 96 [---------------------------------------------------------------] 0.00 % 96 / 96 [==========================================================] 100.00 % 0s
+Finalising User Data Complete
+[MESSAGE] Import Complete
+[MESSAGE] Accounts Proccesed: 96
+[MESSAGE] Created: 0
+[MESSAGE] Updated: 1
+[MESSAGE] Profiles Updated: 0
+[MESSAGE] Images Updated: 0
+[MESSAGE] Groups Added: 0
+[MESSAGE] Groups Removed: 0
+[MESSAGE] Roles Added: 0
+[MESSAGE] Time Taken: 1s
+[MESSAGE] Total Traffic: 4
+[MESSAGE] ---- XMLMC LDAP Import Complete ---- 

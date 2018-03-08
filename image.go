@@ -18,8 +18,10 @@ import (
 
 func loadImageFromValue(imageURI string) []byte {
 
-	logger(1, "Image Lookup URI: "+fmt.Sprintf("%s", imageURI), false)
-
+	//-- AD Looking the image URI is binary file so dont try and write that to the log
+	if ldapImportConf.User.Image.UploadType != "AD" {
+		logger(1, "Image Lookup URI: "+fmt.Sprintf("%s", imageURI), false)
+	}
 	if strings.ToUpper(ldapImportConf.User.Image.UploadType) != "URL" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
 		var imageB []byte
