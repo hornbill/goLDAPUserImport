@@ -1,41 +1,41 @@
-## 3.0.0 (N/A , 2018)
+## 3.0.0 (Mar 11 , 2018)
 
 Features:
 
-ADD: Ability to assign one or more Organisations to a user
-ADD: Ability to filter user Organisation assignment based on the memberof attribtute in LDAP "MemberOf" added to the Organisation configuration that should match the name of the AD a User should be in before the Organisation is assinged.
-ADD: LogLevel has been added which defaults to 2 (Message, Warning, Error), this can be changed to 1 (Debug, Message, Warning, Error) if additional debug logging is required
-ADD: Dry Run XML Output is now formatted better in the log file
-ADD: Log File Retention (Set to 0 By Default) Can be set to the maximum number of days to keep local log files for.
-ADD: Release Binarys are now built for Windows (x86 & x64), Linux (x86 & x64 & ARM), OSX (x86 & x64)
+- ADD: Ability to assign one or more Organisations to a user
+- ADD: Ability to filter user Organisation assignment based on the memberof attribtute in LDAP "MemberOf" added to the Organisation configuration that should match the name of the AD a User should be in before the Organisation is assinged.
+- ADD: LogLevel has been added which defaults to 2 (Message, Warning, Error), this can be changed to 1 (Debug, Message, Warning, Error) if additional debug logging is required
+- ADD: Dry Run XML Output is now formatted better in the log file
+- ADD: Log File Retention (Set to 0 By Default) Can be set to the maximum number of days to keep local log files for.
+- ADD: Release Binarys are now built for Windows (x86 & x64), Linux (x86 & x64 & ARM), OSX (x86 & x64)
 
-CHANGE: Import Configuration is now loaded from the Instance and not via a local JSON file, this is to provide a user freindly UI for generating the configuration.
-CHANGE: The tool has been completely rewritten to be more efficient this will have a drematic effect on the time taken for the tool to run (In a Postitve way)
-CHANGE: The log output has been updated to closer reflect how the tool is processing data the format is still (YYYY/MM/DD HH:MM:SS [LogLevel] Message)
-CHANGE: The tool no longer writea a log file to your hornbill instance instead a History Table is maintained linked to the Import Configuration so a history of the imports run can be seen in the Imports Configuration UI in the Hornbill Administration Tool.
+- CHANGE: Import Configuration is now loaded from the Instance and not via a local JSON file, this is to provide a user freindly UI for generating the configuration.
+- CHANGE: The tool has been completely rewritten to be more efficient this will have a drematic effect on the time taken for the tool to run (In a Postitve way)
+- CHANGE: The log output has been updated to closer reflect how the tool is processing data the format is still (YYYY/MM/DD HH:MM:SS [LogLevel] Message)
+- CHANGE: The tool no longer writea a log file to your hornbill instance instead a History Table is maintained linked to the Import Configuration so a history of the imports run can be seen in the Imports Configuration UI in the Hornbill Administration Tool.
 
 ## 2.4.2 (Feb 1 , 2018)
 
 Features:
 
-ADD: "SearchforManager" added to Manager Mapping configuration allowing you to disable the search for a managers userId if you already have the value from an LDAP Attribute.
+- ADD: "SearchforManager" added to Manager Mapping configuration allowing you to disable the search for a managers userId if you already have the value from an LDAP Attribute.
 
 ## 2.4.1 (Sep 20 , 2017)
 
 Bug Fixes:
 
-FIX: Error setting User Status and Import Status following previous change
+- FIX: Error setting User Status and Import Status following previous change
 
 
 ## 2.4.0 (Sep 11 , 2017)
 
 Features:
 
-ADD: It is now possible to overwrite group assignments to a user based on a specific type i.e users can only be assigned to one department and existing associations that do not match the updated associate that is to be made will be removed.
+- ADD: It is now possible to overwrite group assignments to a user based on a specific type i.e users can only be assigned to one department and existing associations that do not match the updated associate that is to be made will be removed.
 
 Bug Fixes:
 
-FIX: Concurrency issue when assigning users to a group
+- FIX: Concurrency issue when assigning users to a group
 
 ## 2.3.1 (Sep 11 , 2017)
 
