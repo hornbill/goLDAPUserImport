@@ -207,7 +207,7 @@ func startImportHistory() bool {
 	// This is reuse the connections rather than creating a pool each invocation
 	loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
 	loggerAPI.SetAPIKey(Flags.configAPIKey)
-	loggerAPI.SetTimeout(5)
+	loggerAPI.SetTimeout(Flags.configAPITimeout)
 	loggerAPI.SetJSONResponse(true)
 
 	loggerAPI.SetParam("entity", "ImportsHistory")
@@ -243,7 +243,7 @@ func startImportHistory() bool {
 func completeImportHistory() bool {
 	loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
 	loggerAPI.SetAPIKey(Flags.configAPIKey)
-	loggerAPI.SetTimeout(5)
+	loggerAPI.SetTimeout(Flags.configAPITimeout)
 	loggerAPI.SetJSONResponse(true)
 
 	strMessage := ""

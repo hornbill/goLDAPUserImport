@@ -12,7 +12,7 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 
 	hIF := apiLib.NewXmlmcInstance(Flags.configInstanceID)
 	hIF.SetAPIKey(Flags.configAPIKey)
-	hIF.SetTimeout(5)
+	hIF.SetTimeout(Flags.configAPITimeout)
 	hIF.SetJSONResponse(true)
 
 	for index := range jobs {

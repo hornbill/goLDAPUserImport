@@ -1,3 +1,8 @@
+## 3.0.1 (Apr 3 , 2018)
+
+Features:
+- ADD: Ability to set the HTTP Connection timeout on any Hornbill API Call (Default 60 Seconds)
+
 ## 3.0.0 (Mar 11 , 2018)
 
 Features:

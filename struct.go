@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "3.0.0"
+const version = "3.0.1"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
@@ -25,6 +25,7 @@ var Flags struct {
 	configInstanceID string
 	configAPIKey     string
 	configWorkers    int
+	configAPITimeout int
 }
 var siteListStrut struct {
 	ID   string

@@ -19,7 +19,7 @@ func initXMLMC() {
 
 	hornbillImport = apiLib.NewXmlmcInstance(Flags.configInstanceID)
 	hornbillImport.SetAPIKey(Flags.configAPIKey)
-	hornbillImport.SetTimeout(5)
+	hornbillImport.SetTimeout(Flags.configAPITimeout)
 	hornbillImport.SetJSONResponse(true)
 
 	pageSize = ldapImportConf.Advanced.PageSize

@@ -113,6 +113,7 @@ func procFlags() {
 	flag.BoolVar(&Flags.configVersion, "version", false, "Output Version")
 	flag.StringVar(&Flags.configInstanceID, "instanceid", "", "Id of the Hornbill Instance to connect to")
 	flag.StringVar(&Flags.configAPIKey, "apikey", "", "API Key to use as Authentication when connecting to Hornbill Instance")
+	flag.IntVar(&Flags.configAPITimeout, "apitimeout", 60, "Number of Seconds to Timeout an API Connection")
 	flag.IntVar(&Flags.configWorkers, "workers", 1, "Number of Worker threads to use")
 
 	//-- Parse Flags
@@ -121,12 +122,13 @@ func procFlags() {
 	//-- Output config
 	if !Flags.configVersion {
 		logger(2, "---- XMLMC LDAP Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
-		logger(2, "Flag - Config Id "+Flags.configID, true)
-		logger(2, "Flag - Log Prefix "+Flags.configLogPrefix, true)
-		logger(2, "Flag - Dry Run "+fmt.Sprintf("%v", Flags.configDryRun), true)
-		logger(2, "Flag - instanceId "+Flags.configInstanceID, true)
-		logger(2, "Flag - apiKey "+Flags.configAPIKey, true)
-		logger(2, "Flag - Workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
+		logger(2, "Flag - config "+Flags.configID, true)
+		logger(2, "Flag - logprefix "+Flags.configLogPrefix, true)
+		logger(2, "Flag - dryrun "+fmt.Sprintf("%v", Flags.configDryRun), true)
+		logger(2, "Flag - instanceid "+Flags.configInstanceID, true)
+		logger(2, "Flag - apikey "+Flags.configAPIKey, true)
+		logger(2, "Flag - apitimeout "+fmt.Sprintf("%v", Flags.configAPITimeout), true)
+		logger(2, "Flag - workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
 	}
 }
 
@@ -201,7 +203,7 @@ func loadConfig() ldapImportConfStruct {
 
 	mc := apiLib.NewXmlmcInstance(Flags.configInstanceID)
 	mc.SetAPIKey(Flags.configAPIKey)
-	mc.SetTimeout(5)
+	mc.SetTimeout(Flags.configAPITimeout)
 	mc.SetJSONResponse(true)
 
 	mc.SetParam("entity", "Imports")
@@ -211,13 +213,16 @@ func loadConfig() ldapImportConfStruct {
 	var JSONResp xmlmcConfigLoadResponse
 	if xmlmcErr != nil {
 		logger(4, "Error Loading Configuration: "+fmt.Sprintf("%v", xmlmcErr), true)
+		os.Exit(107)
 	}
 	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
 		logger(4, "Error Loading Configuration: "+fmt.Sprintf("%v", err), true)
+		os.Exit(107)
 	}
 	if JSONResp.State.Error != "" {
 		logger(4, "Error Loading Configuration: "+fmt.Sprintf("%v", JSONResp.State.Error), true)
+		os.Exit(107)
 	}
 
 	//-- UnMarshal Config Definition
@@ -226,6 +231,7 @@ func loadConfig() ldapImportConfStruct {
 	err = json.Unmarshal([]byte(JSONResp.Params.PrimaryEntityData.Record.HDefinition), &eldapConf)
 	if err != nil {
 		logger(4, "Error Decoding Configuration: "+fmt.Sprintf("%v", err), true)
+		os.Exit(106)
 	}
 
 	if eldapConf.LDAP.Server.KeySafeID == 0 {

@@ -12,7 +12,7 @@
 # Installation
 
 #### Windows
-* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v3.0.0/ldap_user_import_win_x64_v3_0_0.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v3.0.0/ldap_user_import_win_x86_v3_0_0.zip)
+* Download the [x64 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v3.0.1/ldap_user_import_win_x64_v3_0_1.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v3.0.1/ldap_user_import_win_x86_v3_0_1.zip)
 * Extract zip into a folder you would like the application to run from e.g. `C:\LDAP_Import\`
 * Configure the Import in Hornbill Administration Tool [See Here](https://wiki.hornbill.com/index.php/LDAP_User_Import)
 * Open Command Line Prompt as Administrator
@@ -29,6 +29,7 @@ Command Line Parameters
 * logprefix - Default to `` - Allows you to define a string to prepend to the name of the log file generated
 * instanceid - Default to `` - Id of the Hornbill Instance to Connect to 
 * apikey - Default to `` - API Key used to Authenticate against Hornbill
+* apitimeout - Default to `60` - Number of Seconds to timeout any API Connection
 
 # Testing
 If you run the application with the argument dryrun=true then no users will be created or updated, the XML used to create or update will be saved in the log file so you can ensure the LDAP mappings are correct before running the import.
@@ -53,3 +54,4 @@ All Logging output is saved in the log directory in the same directory as the ex
 * `104` - Unable to Load Configuration No Api Key
 * `105` - Unable to Load Configuration No Configuration Id
 * `106` - Unable to Decode Configuration
+* `107` - Unable to Load Configuration
