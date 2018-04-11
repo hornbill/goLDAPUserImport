@@ -145,6 +145,8 @@ func outputEnd() {
 	logger(2, "Created: "+fmt.Sprintf("%d", counters.created), true)
 	logger(2, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
 
+	logger(2, "Status Updates: "+fmt.Sprintf("%d", counters.statusUpdated), true)
+
 	logger(2, "Profiles Updated: "+fmt.Sprintf("%d", counters.profileUpdated), true)
 
 	logger(2, "Images Updated: "+fmt.Sprintf("%d", counters.imageUpdated), true)
@@ -309,6 +311,8 @@ func CounterInc(counter int) {
 	case 8:
 		counters.groupsRemoved++
 		break
+	case 9:
+		counters.statusUpdated++
 	}
 	mutexCounters.Unlock()
 }

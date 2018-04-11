@@ -352,3 +352,34 @@ func userRolesUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 	buffer.WriteString(loggerGen(1, "Role added to User: "+user.Account.UserID))
 	return true, nil
 }
+
+func userStatusUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
+
+	hIF.SetParam("userId", user.Account.UserID)
+	hIF.SetParam("accountStatus", ldapImportConf.User.Status.Value)
+
+	var XMLSTRING = hIF.GetParam()
+	if Flags.configDryRun == true {
+		buffer.WriteString(loggerGen(1, "User Set Status XML "+XMLSTRING))
+		hIF.ClearParam()
+		return true, nil
+	}
+
+	RespBody, xmlmcErr := hIF.Invoke("admin", "userSetAccountStatus")
+	var JSONResp xmlmcResponse
+	if xmlmcErr != nil {
+		buffer.WriteString(loggerGen(1, "User Set Status XML "+XMLSTRING))
+		return false, xmlmcErr
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
+	if err != nil {
+		buffer.WriteString(loggerGen(1, "User Set Status XML "+XMLSTRING))
+		return false, err
+	}
+	if JSONResp.State.Error != "" {
+		buffer.WriteString(loggerGen(1, "User Set Status XML "+XMLSTRING))
+		return false, errors.New(JSONResp.State.Error)
+	}
+	buffer.WriteString(loggerGen(1, "User Status Updated: "+user.Account.UserID))
+	return true, nil
+}

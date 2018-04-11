@@ -63,6 +63,8 @@ func processData() {
 			checkUserNeedsOrgRemoving(currentUser, hornbillUserData)
 
 			checkUserNeedsRoleUpdate(currentUser, hornbillUserData)
+
+			currentUser.Jobs.updateStatus = checkUserNeedsStatusUpdate(currentUser, hornbillUserData)
 		} else {
 			//-- Check for Password
 			setUserPasswordValueForCreate(currentUser)
@@ -71,13 +73,37 @@ func processData() {
 			setUserRolesalueForCreate(currentUser, hornbillUserData)
 			currentUser.Jobs.updateImage = checkUserNeedsImageCreate(currentUser, hornbillUserData)
 			checkUserNeedsOrgCreate(currentUser, hornbillUserData)
+			currentUser.Jobs.updateStatus = checkUserNeedsStatusCreate(currentUser, hornbillUserData)
 			currentUser.Jobs.create = true
 		}
 
-		logger(1, "User: "+fmt.Sprintf("%s", userID)+" \n\tCreate: "+fmt.Sprintf("%t", currentUser.Jobs.create)+" \n\tUpdate: "+fmt.Sprintf("%t", currentUser.Jobs.update)+" \n\tUpdate Type: "+fmt.Sprintf("%t", currentUser.Jobs.updateType)+" \n\tUpdate Profile: "+fmt.Sprintf("%t", currentUser.Jobs.updateProfile)+" \n\tUpdate Site: "+fmt.Sprintf("%t", currentUser.Jobs.updateSite)+" \n\tRoles Count: "+fmt.Sprintf("%d", len(currentUser.Roles))+" \n\tUpdate Image: "+fmt.Sprintf("%t", currentUser.Jobs.updateImage)+" \n\tGroups: "+fmt.Sprintf("%d", len(currentUser.Groups))+"\n", false)
+		logger(1, "User: "+fmt.Sprintf("%s", userID)+"\n\tCreate: "+fmt.Sprintf("%t", currentUser.Jobs.create)+" \n\tUpdate: "+fmt.Sprintf("%t", currentUser.Jobs.update)+" \n\tUpdate Type: "+fmt.Sprintf("%t", currentUser.Jobs.updateType)+" \n\tUpdate Profile: "+fmt.Sprintf("%t", currentUser.Jobs.updateProfile)+" \n\tUpdate Site: "+fmt.Sprintf("%t", currentUser.Jobs.updateSite)+"\n\tUpdate Status: "+fmt.Sprintf("%t", currentUser.Jobs.updateStatus)+" \n\tRoles Count: "+fmt.Sprintf("%d", len(currentUser.Roles))+" \n\tUpdate Image: "+fmt.Sprintf("%t", currentUser.Jobs.updateImage)+" \n\tGroups: "+fmt.Sprintf("%d", len(currentUser.Groups))+"\n", false)
 	}
 	logger(1, "User Data Processed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking))+"", true)
 }
+
+func checkUserNeedsStatusCreate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
+
+	if ldapImportConf.User.Role.Action == "Both" || ldapImportConf.User.Role.Action == "Create" {
+		//-- By default they are created active so if we need to change the status it should be done if not active
+		if ldapImportConf.User.Status.Value != "active" {
+			return true
+		}
+	}
+
+	return false
+}
+func checkUserNeedsStatusUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
+
+	if ldapImportConf.User.Status.Action == "Both" || ldapImportConf.User.Status.Action == "Update" {
+		//-- Check current status != config status
+		if HornbillUserStatusMap[currentData.HAccountStatus] != ldapImportConf.User.Status.Value {
+			return true
+		}
+	}
+	return false
+}
+
 func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData userAccountStruct) {
 	for _, group := range importData.Groups {
 		if group.OnlyOneGroupAssignment {

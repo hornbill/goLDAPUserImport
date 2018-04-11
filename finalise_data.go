@@ -42,7 +42,9 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 		if len(currentUser.Roles) > 0 {
 			updateUserRoles(hIF, currentUser, &buffer)
 		}
-
+		if currentUser.Jobs.updateStatus {
+			updateUserStatus(hIF, currentUser, &buffer)
+		}
 		bar.Increment()
 
 		bufferMutex.Lock()
@@ -159,5 +161,14 @@ func updateUserRoles(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingD
 	} else {
 		CounterInc(7)
 		buffer.WriteString(loggerGen(4, "Unable to Update User Roles: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
+	}
+}
+func updateUserStatus(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+	b, err := userStatusUpdate(espXmlmc, currentUser, buffer)
+	if b {
+		CounterInc(9)
+	} else {
+		CounterInc(7)
+		buffer.WriteString(loggerGen(4, "Unable to Update User Status: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }

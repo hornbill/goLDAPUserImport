@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "3.0.1"
+const version = "3.0.3"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
@@ -44,7 +44,7 @@ var HornbillCache struct {
 	UserGroups map[string][]string
 	//-- Group Name to Group Struct
 	Groups map[string]userGroupStruct
-	//-- Group ID to Group Struct
+	//-- GroupsId ID to Group Struct
 	GroupsId map[string]userGroupStruct
 	//-- User Working Data
 	UsersWorking map[string]*userWorkingDataStruct
@@ -58,6 +58,13 @@ var HornbillCache struct {
 	Images map[string]imageStruct
 }
 
+// HornbillUserStatusMap Map
+var HornbillUserStatusMap = map[string]string{
+	"0": "active",
+	"1": "suspended",
+	"2": "archived",
+}
+
 type userImportJobs struct {
 	create        bool
 	update        bool
@@ -65,6 +72,7 @@ type userImportJobs struct {
 	updateType    bool
 	updateSite    bool
 	updateImage   bool
+	updateStatus  bool
 }
 type imageStruct struct {
 	imageBytes    []byte
@@ -115,6 +123,8 @@ var counters struct {
 	groupUpdated   uint16
 	groupsRemoved  uint16
 	rolesUpdated   uint16
+
+	statusUpdated uint16
 
 	created uint16
 

@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hornbill/goApiLib"
 )
@@ -33,7 +34,8 @@ func loadImageFromValue(imageURI string) []byte {
 			tr := &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: ldapImportConf.User.Image.InsecureSkipVerify},
 			}
-			client := &http.Client{Transport: tr}
+			duration := time.Second * time.Duration(Flags.configAPITimeout)
+			client := &http.Client{Transport: tr, Timeout: duration}
 			resp, err := client.Get(imageURI)
 			if err != nil {
 				logger(4, "Unable to get image URI: "+imageURI+" ("+fmt.Sprintf("%v", http.StatusInternalServerError)+") ["+fmt.Sprintf("%v", err)+"]", false)
@@ -125,6 +127,10 @@ func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 			req.Header.Set("Content-Type", strContentType)
 			req.Header.Add("Authorization", "ESP-APIKEY "+Flags.configAPIKey)
 			req.Header.Set("User-Agent", "Go-http-client/1.1")
+
+			duration := time.Second * time.Duration(Flags.configAPITimeout)
+			client := &http.Client{Timeout: duration}
+
 			response, Perr := client.Do(req)
 			if Perr != nil {
 				return false, Perr
