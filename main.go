@@ -241,7 +241,7 @@ func loadConfig() ldapImportConfStruct {
 		os.Exit(105)
 	}
 	//-- Load Authentication From KeySafe
-	logger(2, "Loading LDAP Authetication Data: "+fmt.Sprintf("%d", eldapConf.LDAP.Server.KeySafeID), true)
+	logger(2, "Loading LDAP Authentication Data: "+fmt.Sprintf("%d", eldapConf.LDAP.Server.KeySafeID), true)
 
 	mc.SetParam("keyId", fmt.Sprintf("%d", eldapConf.LDAP.Server.KeySafeID))
 
