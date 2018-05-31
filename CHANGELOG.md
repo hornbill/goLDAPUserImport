@@ -1,16 +1,16 @@
 ## 3.0.4 (May 31 , 2018)
 
-Features:
+Bug Fixes:
 - FIX: LDAP Users with prefixed or trailing white spaces were not handled correctly
 
 ## 3.0.3 (Apr 11 , 2018)
 
-Features:
+Bug Fixes:
 - FIX: Ability to set User Account Status was none functional
 
 ## 3.0.2 (Apr 10 , 2018)
 
-Features:
+Bug Fixes:
 - FIX: Ability to set the HTTP Connection timeout was missed when Uploading Images
 
 ## 3.0.1 (Apr 3 , 2018)

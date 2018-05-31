@@ -45,7 +45,7 @@ var HornbillCache struct {
 	//-- Group Name to Group Struct
 	Groups map[string]userGroupStruct
 	//-- GroupsId ID to Group Struct
-	GroupsId map[string]userGroupStruct
+	GroupsID map[string]userGroupStruct
 	//-- User Working Data
 	UsersWorking map[string]*userWorkingDataStruct
 	//-- User Working Data Index Based for Workers

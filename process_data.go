@@ -114,7 +114,7 @@ func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData us
 			var userExistingGroups = HornbillCache.UserGroups[strings.ToLower(importData.Account.UserID)]
 			for index := range userExistingGroups {
 				groupID := userExistingGroups[index]
-				cacheGroup := HornbillCache.GroupsId[strings.ToLower(groupID)]
+				cacheGroup := HornbillCache.GroupsID[strings.ToLower(groupID)]
 				//-- If not current group and its the same type then remove
 				if groupID != group.ID && group.Type == cacheGroup.Type {
 					//-- Push Group into list to remove

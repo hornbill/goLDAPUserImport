@@ -165,7 +165,7 @@ func getGroupsList(count uint64) {
 	var loopCount uint64
 	//-- Init Map
 	HornbillCache.Groups = make(map[string]userGroupStruct)
-	HornbillCache.GroupsId = make(map[string]userGroupStruct)
+	HornbillCache.GroupsID = make(map[string]userGroupStruct)
 	//-- Load Results in pages of pageSize
 	bar := pb.StartNew(int(count))
 	for loopCount < count {
@@ -201,7 +201,7 @@ func getGroupsList(count uint64) {
 			//-- List of group names to group object for name to id lookup
 			HornbillCache.Groups[strings.ToLower(rec.HName)] = group
 			//-- List of group id to group objects for id to type lookup
-			HornbillCache.GroupsId[strings.ToLower(rec.HID)] = group
+			HornbillCache.GroupsID[strings.ToLower(rec.HID)] = group
 		}
 		// Add 100
 		loopCount += uint64(pageSize)
