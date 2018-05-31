@@ -59,6 +59,9 @@ func processComplexFeild(u *ldap.Entry, s string) string {
 		}
 		//-- TK UnescapeString to HTML entities are replaced
 		s = html.UnescapeString(strings.Replace(s, v, LDAPAttributeValue, 1))
+
+		//-- TK Remote Any White space leading and trailing a string
+		s = strings.TrimSpace(s)
 	}
 
 	//-- Return Value

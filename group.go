@@ -31,13 +31,24 @@ func getOrgFromLookup(l *ldap.Entry, orgValue string) string {
 	return ""
 }
 func isUserAMember(l *ldap.Entry, memberOf string) bool {
+	logger(1, "Checking if user is a memeber of Ad Group: "+memberOf, false)
+
+	//-- Load LDAP memberof
 	userAdGroups := l.GetAttributeValues("memberof")
+	if len(userAdGroups) == 0 {
+		logger(1, "User is not a Member of any Ad Groups ", false)
+		return false
+	}
+
+	//-- Range over
 	for index := range userAdGroups {
+		logger(1, "Checking Ad Group: "+userAdGroups[index], false)
 		if userAdGroups[index] == memberOf {
 			logger(1, "User is a Member of Ad Group: "+memberOf, false)
 			return true
 		}
 	}
+
 	logger(1, "User is not a Member of Ad Group: "+memberOf, false)
 	return false
 }

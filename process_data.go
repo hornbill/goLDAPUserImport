@@ -38,11 +38,15 @@ func processData() {
 		currentUser := HornbillCache.UsersWorking[user]
 		//-- Current UserID
 		userID := strings.ToLower(currentUser.Account.UserID)
+
+		//-- Extra Debugging
+		logger(1, "LDAP User ID: '"+fmt.Sprintf("%s", userID)+"'\n", false)
+
 		hornbillUserData := HornbillCache.Users[userID]
 
 		if userID == "" {
 			CounterInc(7)
-			logger(4, "LDAP Record Has no User ID: "+fmt.Sprintf("%+v", currentUser.LDAP)+"\n", false)
+			logger(4, "LDAP Record Has no User ID: '"+fmt.Sprintf("%+v", currentUser.LDAP)+"'\n", false)
 			continue
 		}
 		//-- Check Map no need to loop
@@ -77,7 +81,7 @@ func processData() {
 			currentUser.Jobs.create = true
 		}
 
-		logger(1, "User: "+fmt.Sprintf("%s", userID)+"\n\tCreate: "+fmt.Sprintf("%t", currentUser.Jobs.create)+" \n\tUpdate: "+fmt.Sprintf("%t", currentUser.Jobs.update)+" \n\tUpdate Type: "+fmt.Sprintf("%t", currentUser.Jobs.updateType)+" \n\tUpdate Profile: "+fmt.Sprintf("%t", currentUser.Jobs.updateProfile)+" \n\tUpdate Site: "+fmt.Sprintf("%t", currentUser.Jobs.updateSite)+"\n\tUpdate Status: "+fmt.Sprintf("%t", currentUser.Jobs.updateStatus)+" \n\tRoles Count: "+fmt.Sprintf("%d", len(currentUser.Roles))+" \n\tUpdate Image: "+fmt.Sprintf("%t", currentUser.Jobs.updateImage)+" \n\tGroups: "+fmt.Sprintf("%d", len(currentUser.Groups))+"\n", false)
+		logger(1, "User: '"+fmt.Sprintf("%s", userID)+"'\n\tCreate: "+fmt.Sprintf("%t", currentUser.Jobs.create)+" \n\tUpdate: "+fmt.Sprintf("%t", currentUser.Jobs.update)+" \n\tUpdate Type: "+fmt.Sprintf("%t", currentUser.Jobs.updateType)+" \n\tUpdate Profile: "+fmt.Sprintf("%t", currentUser.Jobs.updateProfile)+" \n\tUpdate Site: "+fmt.Sprintf("%t", currentUser.Jobs.updateSite)+"\n\tUpdate Status: "+fmt.Sprintf("%t", currentUser.Jobs.updateStatus)+" \n\tRoles Count: "+fmt.Sprintf("%d", len(currentUser.Roles))+" \n\tUpdate Image: "+fmt.Sprintf("%t", currentUser.Jobs.updateImage)+" \n\tGroups: "+fmt.Sprintf("%d", len(currentUser.Groups))+"\n", false)
 	}
 	logger(1, "User Data Processed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking))+"", true)
 }

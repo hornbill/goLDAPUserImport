@@ -1,3 +1,8 @@
+## 3.0.4 (May 31 , 2018)
+
+Features:
+- FIX: LDAP Users with prefixed or trailing white spaces were not handled correctly
+
 ## 3.0.3 (Apr 11 , 2018)
 
 Features:

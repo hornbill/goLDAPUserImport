@@ -261,7 +261,7 @@ func getUserAccountList(count uint64) {
 	//-- Load Results in pages of pageSize
 	bar := pb.StartNew(int(count))
 	for loopCount < count {
-		logger(1, "Loading User Accounts List Offset: "+fmt.Sprintf("%d", loopCount), false)
+		logger(1, "Loading User Accounts List Offset: "+fmt.Sprintf("%d", loopCount)+"\n", false)
 
 		hornbillImport.SetParam("application", "com.hornbill.core")
 		hornbillImport.SetParam("queryName", "getUserAccountsList")
