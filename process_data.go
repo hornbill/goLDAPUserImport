@@ -107,23 +107,6 @@ func checkUserNeedsStatusUpdate(importData *userWorkingDataStruct, currentData u
 	}
 	return false
 }
-
-func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData userAccountStruct) {
-	for _, group := range importData.Groups {
-		if group.OnlyOneGroupAssignment {
-			var userExistingGroups = HornbillCache.UserGroups[strings.ToLower(importData.Account.UserID)]
-			for index := range userExistingGroups {
-				groupID := userExistingGroups[index]
-				cacheGroup := HornbillCache.GroupsID[strings.ToLower(groupID)]
-				//-- If not current group and its the same type then remove
-				if groupID != group.ID && group.Type == cacheGroup.Type {
-					//-- Push Group into list to remove
-					importData.GroupsToRemove = append(importData.GroupsToRemove, groupID)
-				}
-			}
-		}
-	}
-}
 func setUserPasswordValueForCreate(importData *userWorkingDataStruct) {
 	if importData.Account.Password == "" {
 		//-- Generate Password
@@ -133,6 +116,51 @@ func setUserPasswordValueForCreate(importData *userWorkingDataStruct) {
 	//-- Base64 Encode
 	importData.Account.Password = base64.StdEncoding.EncodeToString([]byte(importData.Account.Password))
 }
+func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData userAccountStruct) {
+	//-- Only if we have some config for groups
+	if len(ldapImportConf.User.Org) > 0 {
+
+		//-- List of Existing Groups
+		var userExistingGroups = HornbillCache.UserGroups[strings.ToLower(importData.Account.UserID)]
+
+		for index := range userExistingGroups {
+			ExistingGroupId := userExistingGroups[index]
+			ExistingGroup := HornbillCache.GroupsID[strings.ToLower(ExistingGroupId)]
+			boolGroupNeedsRemoving := false
+
+			//-- Loop Config Orgs and Check each one
+			for orgIndex := range ldapImportConf.User.Org {
+
+				//-- Get Group from Index
+				importOrg := ldapImportConf.User.Org[orgIndex]
+
+				//-- Only if Actions is correct
+				if importOrg.Action == "Both" || importOrg.Action == "Update" {
+					//-- Evaluate the Id
+					var GroupID = getOrgFromLookup(importData.LDAP, importOrg.Value)
+					fmt.Printf("Group %s - %s \n", ExistingGroup.ID, GroupID)
+					//-- If already a member of import group then ignore
+					if GroupID == ExistingGroup.ID {
+						//-- exit for loop
+						continue
+					}
+
+					//-- If group we are a memember of matches the Type of a group we have set up on the import and its set to one Assignment
+					if importOrg.Options.Type == ExistingGroup.Type && importOrg.Options.OnlyOneGroupAssignment {
+						fmt.Printf("Type %d Type %d Assignemnt %t \n", importOrg.Options.Type, ExistingGroup.Type, importOrg.Options.OnlyOneGroupAssignment)
+						boolGroupNeedsRemoving = true
+					}
+				}
+			}
+			//-- If group is not part of import and its set to remove
+			if boolGroupNeedsRemoving {
+				fmt.Printf("Group to Remove %s \n", ExistingGroupId)
+				importData.GroupsToRemove = append(importData.GroupsToRemove, ExistingGroupId)
+			}
+		}
+	}
+}
+
 func checkUserNeedsOrgUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) {
 	if len(ldapImportConf.User.Org) > 0 {
 		for orgIndex := range ldapImportConf.User.Org {

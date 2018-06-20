@@ -1,3 +1,8 @@
+## 3.0.5 (Jun 21 , 2018)
+
+Bug Fixes:
+- FIX: OnlyOneGroupAssignment property was not correctly being processed causing groups to be removed from users randomly when this setting was enabled. This now allows you define against a group that only one group of the defined type will be assigned to a user, any groups found to be assigned to the user of the same type will be removed leaving only the group set with OnlyOneGroupAssignment on the import configuration. Groups of a different type will not be removed.
+
 ## 3.0.4 (May 31 , 2018)
 
 Bug Fixes:
