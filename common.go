@@ -300,3 +300,43 @@ func completeImportHistory() bool {
 
 	return true
 }
+func getLastHistory() {
+	loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	loggerAPI.SetAPIKey(Flags.configAPIKey)
+	loggerAPI.SetTimeout(Flags.configAPITimeout)
+	loggerAPI.SetJSONResponse(true)
+
+	loggerAPI.SetParam("application", "com.hornbill.core")
+	loggerAPI.SetParam("queryName", "getImportHistoryList")
+	loggerAPI.SetParam("formatValues", "false")
+	loggerAPI.SetParam("returnFoundRowCount", "false")
+	loggerAPI.OpenElement("queryParams")
+	loggerAPI.SetParam("import", Flags.configID)
+	loggerAPI.SetParam("rowstart", "0")
+	loggerAPI.SetParam("limit", "1")
+	loggerAPI.SetParam("orderByWay", "descending")
+	loggerAPI.SetParam("orderByField", "h_pk_id")
+	loggerAPI.CloseElement("queryParams")
+
+	RespBody, xmlmcErr := loggerAPI.Invoke("data", "queryExec")
+	var JSONResp xmlmcHistoryItemResponse
+	if xmlmcErr != nil {
+		logger(4, "Unable to Query Import History: "+fmt.Sprintf("%s", xmlmcErr), true)
+		return
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
+	if err != nil {
+		logger(4, "Unable to Query Import History: "+fmt.Sprintf("%s", err), true)
+		return
+	}
+	if JSONResp.State.Error != "" {
+		logger(4, "Unable to Query Import History: "+JSONResp.State.Error, true)
+		return
+	}
+
+	//-- Disable running multiple imports at once unless flagged as otherwise
+	if JSONResp.Params.RowData.Row[0].HStatus == "1" && !Flags.configForceRun {
+		logger(4, "Unable to run import, a provious import is still running", true)
+		os.Exit(108)
+	}
+}

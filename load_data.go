@@ -157,6 +157,10 @@ func getUserAccountsGroupsList(count uint64) {
 		// Add 100
 		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
+		//-- Check for empty result set
+		if len(JSONResp.Params.RowData.Row) == 0 {
+			break
+		}
 	}
 	bar.FinishPrint("Account Orgs Loaded \n")
 
@@ -206,6 +210,10 @@ func getGroupsList(count uint64) {
 		// Add 100
 		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
+		//-- Check for empty result set
+		if len(JSONResp.Params.RowData.Row) == 0 {
+			break
+		}
 	}
 	bar.FinishPrint("Orgs Loaded  \n")
 }
@@ -251,6 +259,10 @@ func getUserAccountsRolesList(count uint64) {
 		// Add 100
 		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
+		//-- Check for empty result set
+		if len(JSONResp.Params.RowData.Row) == 0 {
+			break
+		}
 	}
 	bar.FinishPrint("Account Roles Loaded  \n")
 }
@@ -292,6 +304,10 @@ func getUserAccountList(count uint64) {
 		// Add 100
 		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
+		//-- Check for empty result set
+		if len(JSONResp.Params.RowData.Row) == 0 {
+			break
+		}
 	}
 	bar.FinishPrint("Accounts Loaded  \n")
 }
@@ -331,6 +347,10 @@ func getSitesList(count uint64) {
 		// Add 100
 		loopCount += uint64(pageSize)
 		bar.Add(len(JSONResp.Params.RowData.Row))
+		//-- Check for empty result set
+		if len(JSONResp.Params.RowData.Row) == 0 {
+			break
+		}
 	}
 	bar.FinishPrint("Sites Loaded  \n")
 

@@ -60,6 +60,10 @@ func main() {
 		logger(4, "Please Check your Configuration: "+Flags.configID, true)
 		return
 	}
+	//-- Check import not already running
+	getLastHistory()
+
+	//-- Start Import
 	logged := startImportHistory()
 
 	//-- Check for Connections
@@ -115,6 +119,7 @@ func procFlags() {
 	flag.StringVar(&Flags.configAPIKey, "apikey", "", "API Key to use as Authentication when connecting to Hornbill Instance")
 	flag.IntVar(&Flags.configAPITimeout, "apitimeout", 60, "Number of Seconds to Timeout an API Connection")
 	flag.IntVar(&Flags.configWorkers, "workers", 1, "Number of Worker threads to use")
+	flag.BoolVar(&Flags.configForceRun, "forcerun", false, "Bypass check on existing running import")
 
 	//-- Parse Flags
 	flag.Parse()
@@ -129,6 +134,7 @@ func procFlags() {
 		logger(2, "Flag - apikey "+Flags.configAPIKey, true)
 		logger(2, "Flag - apitimeout "+fmt.Sprintf("%v", Flags.configAPITimeout), true)
 		logger(2, "Flag - workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
+		logger(2, "Flag - forcerun "+fmt.Sprintf("%v", Flags.configForceRun), true)
 	}
 }
 

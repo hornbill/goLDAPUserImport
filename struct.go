@@ -26,6 +26,7 @@ var Flags struct {
 	configAPIKey     string
 	configWorkers    int
 	configAPITimeout int
+	configForceRun   bool
 }
 var siteListStrut struct {
 	ID   string
@@ -458,6 +459,28 @@ type xmlmcCountResponse struct {
 				Count string `json:"count"`
 			} `json:"row"`
 		} `json:"rowData"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
+}
+type xmlmcHistoryItemResponse struct {
+	Params struct {
+		RowsAffected int `json:"rowsAffected"`
+		LastInsertID int `json:"lastInsertId"`
+		RowData      struct {
+			Row []struct {
+				HPkID         string `json:"h_pk_id"`
+				HImportID     string `json:"h_import_id"`
+				HStatus       string `json:"h_status"`
+				HTimeTaken    string `json:"h_time_taken"`
+				HCreatedOn    string `json:"h_created_on"`
+				HCreatedBy    string `json:"h_created_by"`
+				HLastupdateOn string `json:"h_lastupdate_on"`
+				HMessage      string `json:"h_message"`
+			} `json:"row"`
+		} `json:"rowData"`
+		FoundRows        string `json:"foundRows"`
+		QueryExecTime    int    `json:"queryExecTime"`
+		QueryResultsTime int    `json:"queryResultsTime"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
