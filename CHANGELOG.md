@@ -1,9 +1,14 @@
+## 3.0.7 (Jul 2 , 2018)
+
+Bug Fixes:
+- FIX: In the event a Load Data count could not be returned log the error and return 0
+- FIX: In debug log each count from Load Data
+
 ## 3.0.6 (Jul 1 , 2018)
 
 Bug Fixes:
 - FIX: Issue where loading pages of data could exceed the total data count and continue for ever, added handeling for breaking out of the loop when no data is returned from a paged query.
 - FIX: Prevent an import running if an existing import of the same configuration is in progress, input flag added to over ride the behviour if needed (e.g when a server loses connection mid import and can not update its status to complete or failed)
-
 
 ## 3.0.5 (Jun 21 , 2018)
 

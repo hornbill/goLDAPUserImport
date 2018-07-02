@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "3.0.6"
+const version = "3.0.7"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}

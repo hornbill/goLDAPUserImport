@@ -34,6 +34,7 @@ func loadUsers() {
 	logger(1, "Loading Users from Hornbill", false)
 
 	count := getCount("getUserAccountsList")
+	logger(1, "getUserAccountsList Count: "+fmt.Sprintf("%d", count), false)
 	getUserAccountList(count)
 
 	logger(1, "Users Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Users)), false)
@@ -48,6 +49,7 @@ func loadUsersRoles() {
 	logger(1, "Loading Users Roles from Hornbill", false)
 
 	count := getCount("getUserAccountsRolesList")
+	logger(1, "getUserAccountsRolesList Count: "+fmt.Sprintf("%d", count), false)
 	getUserAccountsRolesList(count)
 
 	logger(1, "Users Roles Loaded: "+fmt.Sprintf("%d", len(HornbillCache.UserRoles)), false)
@@ -63,6 +65,7 @@ func loadSites() {
 	logger(1, "Loading Sites from Hornbill", false)
 
 	count := getCount("getSitesList")
+	logger(1, "getSitesList Count: "+fmt.Sprintf("%d", count), false)
 	getSitesList(count)
 
 	logger(1, "Sites Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Sites)), false)
@@ -83,6 +86,7 @@ func loadGroups() {
 	logger(1, "Loading Orgs from Hornbill", false)
 
 	count := getCount("getGroupsList")
+	logger(1, "getGroupsList Count: "+fmt.Sprintf("%d", count), false)
 	getGroupsList(count)
 
 	logger(1, "Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Groups)), false)
@@ -139,13 +143,16 @@ func getUserAccountsGroupsList(count uint64) {
 		var JSONResp xmlmcUserGroupListResponse
 		if xmlmcErr != nil {
 			logger(4, "Unable to Query Accounts Orgs List "+fmt.Sprintf("%s", xmlmcErr), false)
+			break
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
 			logger(4, "Unable to Query Accounts Orgs  List "+fmt.Sprintf("%s", err), false)
+			break
 		}
 		if JSONResp.State.Error != "" {
 			logger(4, "Unable to Query Accounts Orgs  List "+JSONResp.State.Error, false)
+			break
 		}
 
 		//-- Push into Map of slices to userId = array of roles
@@ -186,13 +193,16 @@ func getGroupsList(count uint64) {
 		var JSONResp xmlmcGroupListResponse
 		if xmlmcErr != nil {
 			logger(4, "Unable to Query Orgs List "+fmt.Sprintf("%s", xmlmcErr), false)
+			break
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
 			logger(4, "Unable to Query Orgs List "+fmt.Sprintf("%s", err), false)
+			break
 		}
 		if JSONResp.State.Error != "" {
 			logger(4, "Unable to Query Orgs List "+JSONResp.State.Error, false)
+			break
 		}
 
 		//-- Push into Map
@@ -239,21 +249,22 @@ func getUserAccountsRolesList(count uint64) {
 		var JSONResp xmlmcUserRolesListResponse
 		if xmlmcErr != nil {
 			logger(4, "Unable to Query Accounts Roles List "+fmt.Sprintf("%s", xmlmcErr), false)
+			break
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
 			logger(4, "Unable to Query Accounts Roles  List "+fmt.Sprintf("%s", err), false)
+			break
 		}
 		if JSONResp.State.Error != "" {
 			logger(4, "Unable to Query Accounts Roles  List "+JSONResp.State.Error, false)
+			break
 		}
 
 		//-- Push into Map of slices to userId = array of roles
 		for index := range JSONResp.Params.RowData.Row {
 			if userIDExistsInLDAP(JSONResp.Params.RowData.Row[index].HUserID) {
 				HornbillCache.UserRoles[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = append(HornbillCache.UserRoles[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)], JSONResp.Params.RowData.Row[index].HRole)
-			} else {
-
 			}
 		}
 		// Add 100
@@ -286,13 +297,16 @@ func getUserAccountList(count uint64) {
 		var JSONResp xmlmcUserListResponse
 		if xmlmcErr != nil {
 			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", xmlmcErr), false)
+			break
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
 			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", err), false)
+			break
 		}
 		if JSONResp.State.Error != "" {
 			logger(4, "Unable to Query Accounts List "+JSONResp.State.Error, false)
+			break
 		}
 		//-- Push into Map
 		for index := range JSONResp.Params.RowData.Row {
@@ -331,13 +345,16 @@ func getSitesList(count uint64) {
 		var JSONResp xmlmcSiteListResponse
 		if xmlmcErr != nil {
 			logger(4, "Unable to Query Site List "+fmt.Sprintf("%s", xmlmcErr), false)
+			break
 		}
 		err := json.Unmarshal([]byte(RespBody), &JSONResp)
 		if err != nil {
 			logger(4, "Unable to Query Site List "+fmt.Sprintf("%s", err), false)
+			break
 		}
 		if JSONResp.State.Error != "" {
 			logger(4, "Unable to Query Site List "+JSONResp.State.Error, false)
+			break
 		}
 
 		//-- Push into Map
@@ -381,6 +398,11 @@ func getCount(query string) uint64 {
 	}
 
 	//-- return Count
-	count, _ := strconv.ParseUint(JSONResp.Params.RowData.Row[0].Count, 10, 16)
+	count, errC := strconv.ParseUint(JSONResp.Params.RowData.Row[0].Count, 10, 16)
+	//-- Check for Error
+	if errC != nil {
+		logger(4, "Unable to get Count for Query ["+query+"] "+fmt.Sprintf("%s", err), false)
+		return 0
+	}
 	return count
 }
