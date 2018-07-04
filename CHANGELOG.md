@@ -1,3 +1,8 @@
+## 3.0.8 (Jul 4 , 2018)
+
+Bug Fixes:
+- FIX: Panic when loading previous import history for the first time.
+
 ## 3.0.7 (Jul 2 , 2018)
 
 Bug Fixes:
