@@ -30,7 +30,7 @@ Command Line Parameters
 * instanceid - Default to `` - Id of the Hornbill Instance to Connect to
 * apikey - Default to `` - API Key used to Authenticate against Hornbill
 * apitimeout - Default to `60` - Number of Seconds to timeout any API Connection
-* forcerun - fedault to `false` - If a previous run did not successfully complete you can force the next run to bypass the existing running job check
+* forcerun - Default to `false` - If a previous run did not successfully complete you can force the next run to bypass the existing running job check
 
 # Testing
 If you run the application with the argument dryrun=true then no users will be created or updated, the XML used to create or update will be saved in the log file so you can ensure the LDAP mappings are correct before running the import.
