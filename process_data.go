@@ -19,6 +19,8 @@ func processLDAPUsers() {
 	HornbillCache.Images = make(map[string]imageStruct)
 	//-- Loop LDAP Users
 	for user := range ldapUsers {
+		// Process Pre Import Actions
+		processImportActions(ldapUsers[user])
 		// Process Params and return userId
 		var userID = processUserParams(ldapUsers[user])
 		if userID != "" {
@@ -539,6 +541,14 @@ func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData 
 		return true
 	}
 	return false
+}
+
+//-- For Each Import Actions process the data
+func processImportActions(l *ldap.Entry) {
+	//-- Loop Matches
+	for _, action := range ldapImportConf.Actions {
+		fmt.Printf("Action %v \n", action)
+	}
 }
 
 //-- For Each LDAP User Process Account And Mappings

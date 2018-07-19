@@ -232,6 +232,14 @@ type ldapImportConfStruct struct {
 		LogRetention int `json:"LogRetention"`
 		PageSize     int `json:"PageSize"`
 	} `json:"Advanced"`
+	Actions []struct {
+		Action  string `json:"Action"`
+		Value   string `json:"Value"`
+		Output  string `json:"Output"`
+		Options struct {
+			RegexValue string `json:"regexValue"`
+		} `json:"Options"`
+	} `json:"Actions"`
 }
 
 // AccountMappingStruct Used
