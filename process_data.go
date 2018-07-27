@@ -20,9 +20,9 @@ func processLDAPUsers() {
 	//-- Loop LDAP Users
 	for user := range ldapUsers {
 		// Process Pre Import Actions
-		processImportActions(ldapUsers[user])
+		var userID = processImportActions(ldapUsers[user])
 		// Process Params and return userId
-		var userID = processUserParams(ldapUsers[user])
+		processUserParams(ldapUsers[user], userID)
 		if userID != "" {
 			var userDN = processComplexFeild(ldapUsers[user], ldapImportConf.User.UserDN)
 			//-- Write to Cache
@@ -139,7 +139,7 @@ func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData us
 				//-- Only if Actions is correct
 				if importOrg.Action == "Both" || importOrg.Action == "Update" {
 					//-- Evaluate the Id
-					var GroupID = getOrgFromLookup(importData.LDAP, importOrg.Value)
+					var GroupID = getOrgFromLookup(importData, importOrg.Value)
 					fmt.Printf("Group %s - %s \n", ExistingGroup.ID, GroupID)
 					//-- If already a member of import group then ignore
 					if GroupID == ExistingGroup.ID {
@@ -168,7 +168,7 @@ func checkUserNeedsOrgUpdate(importData *userWorkingDataStruct, currentData user
 		for orgIndex := range ldapImportConf.User.Org {
 			orgAction := ldapImportConf.User.Org[orgIndex]
 			if orgAction.Action == "Both" || orgAction.Action == "Update" {
-				var GroupID = getOrgFromLookup(importData.LDAP, orgAction.Value)
+				var GroupID = getOrgFromLookup(importData, orgAction.Value)
 				var userExistingGroups = HornbillCache.UserGroups[strings.ToLower(importData.Account.UserID)]
 				//-- Is User Already a Memeber of the Group
 				boolUserInGroup := false
@@ -205,7 +205,7 @@ func checkUserNeedsOrgCreate(importData *userWorkingDataStruct, currentData user
 			orgAction := ldapImportConf.User.Org[orgIndex]
 			if orgAction.Action == "Both" || orgAction.Action == "Create" {
 
-				var GroupID = getOrgFromLookup(importData.LDAP, orgAction.Value)
+				var GroupID = getOrgFromLookup(importData, orgAction.Value)
 
 				if GroupID != "" && orgAction.MemberOf != "" {
 					if !isUserAMember(importData.LDAP, orgAction.MemberOf) {
@@ -315,7 +315,7 @@ func checkUserNeedsTypeUpdate(importData *userWorkingDataStruct, currentData use
 func setUserSiteValueForCreate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
 	//-- Is Site Enables for Update or both
 	if ldapImportConf.User.Site.Action == "Both" || ldapImportConf.User.Site.Action == "Create" {
-		importData.Account.Site = getSiteFromLookup(importData.LDAP)
+		importData.Account.Site = getSiteFromLookup(importData)
 	}
 	if importData.Account.Site != "" && importData.Account.Site != currentData.HSite {
 		return true
@@ -325,7 +325,7 @@ func setUserSiteValueForCreate(importData *userWorkingDataStruct, currentData us
 func checkUserNeedsSiteUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
 	//-- Is Site Enables for Update or both
 	if ldapImportConf.User.Site.Action == "Both" || ldapImportConf.User.Site.Action == "Update" {
-		importData.Account.Site = getSiteFromLookup(importData.LDAP)
+		importData.Account.Site = getSiteFromLookup(importData)
 	} else {
 		//-- Else Default to current value
 		importData.Account.Site = currentData.HSite
@@ -544,76 +544,107 @@ func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData 
 }
 
 //-- For Each Import Actions process the data
-func processImportActions(l *ldap.Entry) {
-	//-- Loop Matches
-	for _, action := range ldapImportConf.Actions {
-		fmt.Printf("Action %v \n", action)
-	}
-}
-
-//-- For Each LDAP User Process Account And Mappings
-func processUserParams(l *ldap.Entry) string {
+func processImportActions(l *ldap.Entry) string {
 
 	//-- Set User Account Attributes
 	var data = new(userWorkingDataStruct)
 	data.LDAP = l
-	data.Account.UserID = getUserFeildValue(l, "UserID")
-	data.Account.UserType = getUserFeildValue(l, "UserType")
-	data.Account.Name = getUserFeildValue(l, "Name")
-	data.Account.Password = getUserFeildValue(l, "Password")
-	data.Account.FirstName = getUserFeildValue(l, "FirstName")
-	data.Account.LastName = getUserFeildValue(l, "LastName")
-	data.Account.JobTitle = getUserFeildValue(l, "JobTitle")
-	data.Account.Site = getUserFeildValue(l, "Site")
-	data.Account.Phone = getUserFeildValue(l, "Phone")
-	data.Account.Email = getUserFeildValue(l, "Email")
-	data.Account.Mobile = getUserFeildValue(l, "Mobile")
-	data.Account.AbsenceMessage = getUserFeildValue(l, "AbsenceMessage")
-	data.Account.TimeZone = getUserFeildValue(l, "TimeZone")
-	data.Account.Language = getUserFeildValue(l, "Language")
-	data.Account.DateTimeFormat = getUserFeildValue(l, "DateTimeFormat")
-	data.Account.DateFormat = getUserFeildValue(l, "DateFormat")
-	data.Account.TimeFormat = getUserFeildValue(l, "TimeFormat")
-	data.Account.CurrencySymbol = getUserFeildValue(l, "CurrencySymbol")
-	data.Account.CountryCode = getUserFeildValue(l, "CountryCode")
+	//-- init map
+	data.Custom = make(map[string]string)
+	data.Account.UserID = getUserFeildValue(l, "UserID", data.Custom)
 
-	data.Profile.MiddleName = getProfileFeildValue(l, "MiddleName")
-	data.Profile.JobDescription = getProfileFeildValue(l, "JobDescription")
-	data.Profile.Manager = getProfileFeildValue(l, "Manager")
-	data.Profile.WorkPhone = getProfileFeildValue(l, "WorkPhone")
-	data.Profile.Qualifications = getProfileFeildValue(l, "Qualifications")
-	data.Profile.Interests = getProfileFeildValue(l, "Interests")
-	data.Profile.Expertise = getProfileFeildValue(l, "Expertise")
-	data.Profile.Gender = getProfileFeildValue(l, "Gender")
-	data.Profile.Dob = getProfileFeildValue(l, "Dob")
-	data.Profile.Nationality = getProfileFeildValue(l, "Nationality")
-	data.Profile.Religion = getProfileFeildValue(l, "Religion")
-	data.Profile.HomeTelephone = getProfileFeildValue(l, "HomeTelephone")
-	data.Profile.SocialNetworkA = getProfileFeildValue(l, "SocialNetworkA")
-	data.Profile.SocialNetworkB = getProfileFeildValue(l, "SocialNetworkB")
-	data.Profile.SocialNetworkC = getProfileFeildValue(l, "SocialNetworkC")
-	data.Profile.SocialNetworkD = getProfileFeildValue(l, "SocialNetworkD")
-	data.Profile.SocialNetworkE = getProfileFeildValue(l, "SocialNetworkE")
-	data.Profile.SocialNetworkF = getProfileFeildValue(l, "SocialNetworkF")
-	data.Profile.SocialNetworkG = getProfileFeildValue(l, "SocialNetworkG")
-	data.Profile.SocialNetworkH = getProfileFeildValue(l, "SocialNetworkH")
-	data.Profile.PersonalInterests = getProfileFeildValue(l, "PersonalInterests")
-	data.Profile.HomeAddress = getProfileFeildValue(l, "HomeAddress")
-	data.Profile.PersonalBlog = getProfileFeildValue(l, "PersonalBlog")
-	data.Profile.Attrib1 = getProfileFeildValue(l, "Attrib1")
-	data.Profile.Attrib2 = getProfileFeildValue(l, "Attrib2")
-	data.Profile.Attrib3 = getProfileFeildValue(l, "Attrib3")
-	data.Profile.Attrib4 = getProfileFeildValue(l, "Attrib4")
-	data.Profile.Attrib5 = getProfileFeildValue(l, "Attrib5")
-	data.Profile.Attrib6 = getProfileFeildValue(l, "Attrib6")
-	data.Profile.Attrib7 = getProfileFeildValue(l, "Attrib7")
-	data.Profile.Attrib8 = getProfileFeildValue(l, "Attrib8")
-
+	//-- Loop Matches
+	for _, action := range ldapImportConf.Actions {
+		switch action.Action {
+		case "Regex":
+			//-- Grab value from LDAP
+			Outcome := processComplexFeild(l, action.Value)
+			//-- Grab Value from Existing Custom Feild
+			Outcome = processImportAction(data.Custom, Outcome)
+			//-- Process Regex
+			Outcome = processRegexOnString(action.Options.RegexValue, Outcome)
+			//-- Store
+			data.Custom["{"+action.Output+"}"] = Outcome
+			break
+		case "Replace":
+			//-- Grab value from LDAP
+			Outcome := processComplexFeild(l, action.Value)
+			//-- Grab Value from Existing Custom Feild
+			Outcome = processImportAction(data.Custom, Outcome)
+			//-- Run Replace
+			Outcome = strings.Replace(Outcome, action.Options.ReplaceFrom, action.Options.ReplaceWith, -1)
+			//-- Store
+			data.Custom["{"+action.Output+"}"] = Outcome
+			break
+		case "None":
+			//-- Grab value
+			Outcome := processComplexFeild(l, action.Value)
+			//-- Grab Value from Existing Custom Feild
+			Outcome = processImportAction(data.Custom, Outcome)
+			//-- Store
+			data.Custom["{"+action.Output+"}"] = Outcome
+			break
+		}
+	}
 	//-- Store Result in map of userid
 	var userID = strings.ToLower(data.Account.UserID)
 	HornbillCache.UsersWorking[userID] = data
-
-	//-- Return User Id
 	return userID
+}
 
+//-- For Each LDAP User Process Account And Mappings
+func processUserParams(l *ldap.Entry, userID string) {
+
+	data := HornbillCache.UsersWorking[userID]
+
+	data.Account.UserType = getUserFeildValue(l, "UserType", data.Custom)
+	data.Account.Name = getUserFeildValue(l, "Name", data.Custom)
+	data.Account.Password = getUserFeildValue(l, "Password", data.Custom)
+	data.Account.FirstName = getUserFeildValue(l, "FirstName", data.Custom)
+	data.Account.LastName = getUserFeildValue(l, "LastName", data.Custom)
+	data.Account.JobTitle = getUserFeildValue(l, "JobTitle", data.Custom)
+	data.Account.Site = getUserFeildValue(l, "Site", data.Custom)
+	data.Account.Phone = getUserFeildValue(l, "Phone", data.Custom)
+	data.Account.Email = getUserFeildValue(l, "Email", data.Custom)
+	data.Account.Mobile = getUserFeildValue(l, "Mobile", data.Custom)
+	data.Account.AbsenceMessage = getUserFeildValue(l, "AbsenceMessage", data.Custom)
+	data.Account.TimeZone = getUserFeildValue(l, "TimeZone", data.Custom)
+	data.Account.Language = getUserFeildValue(l, "Language", data.Custom)
+	data.Account.DateTimeFormat = getUserFeildValue(l, "DateTimeFormat", data.Custom)
+	data.Account.DateFormat = getUserFeildValue(l, "DateFormat", data.Custom)
+	data.Account.TimeFormat = getUserFeildValue(l, "TimeFormat", data.Custom)
+	data.Account.CurrencySymbol = getUserFeildValue(l, "CurrencySymbol", data.Custom)
+	data.Account.CountryCode = getUserFeildValue(l, "CountryCode", data.Custom)
+
+	data.Profile.MiddleName = getProfileFeildValue(l, "MiddleName", data.Custom)
+	data.Profile.JobDescription = getProfileFeildValue(l, "JobDescription", data.Custom)
+	data.Profile.Manager = getProfileFeildValue(l, "Manager", data.Custom)
+	data.Profile.WorkPhone = getProfileFeildValue(l, "WorkPhone", data.Custom)
+	data.Profile.Qualifications = getProfileFeildValue(l, "Qualifications", data.Custom)
+	data.Profile.Interests = getProfileFeildValue(l, "Interests", data.Custom)
+	data.Profile.Expertise = getProfileFeildValue(l, "Expertise", data.Custom)
+	data.Profile.Gender = getProfileFeildValue(l, "Gender", data.Custom)
+	data.Profile.Dob = getProfileFeildValue(l, "Dob", data.Custom)
+	data.Profile.Nationality = getProfileFeildValue(l, "Nationality", data.Custom)
+	data.Profile.Religion = getProfileFeildValue(l, "Religion", data.Custom)
+	data.Profile.HomeTelephone = getProfileFeildValue(l, "HomeTelephone", data.Custom)
+	data.Profile.SocialNetworkA = getProfileFeildValue(l, "SocialNetworkA", data.Custom)
+	data.Profile.SocialNetworkB = getProfileFeildValue(l, "SocialNetworkB", data.Custom)
+	data.Profile.SocialNetworkC = getProfileFeildValue(l, "SocialNetworkC", data.Custom)
+	data.Profile.SocialNetworkD = getProfileFeildValue(l, "SocialNetworkD", data.Custom)
+	data.Profile.SocialNetworkE = getProfileFeildValue(l, "SocialNetworkE", data.Custom)
+	data.Profile.SocialNetworkF = getProfileFeildValue(l, "SocialNetworkF", data.Custom)
+	data.Profile.SocialNetworkG = getProfileFeildValue(l, "SocialNetworkG", data.Custom)
+	data.Profile.SocialNetworkH = getProfileFeildValue(l, "SocialNetworkH", data.Custom)
+	data.Profile.PersonalInterests = getProfileFeildValue(l, "PersonalInterests", data.Custom)
+	data.Profile.HomeAddress = getProfileFeildValue(l, "HomeAddress", data.Custom)
+	data.Profile.PersonalBlog = getProfileFeildValue(l, "PersonalBlog", data.Custom)
+	data.Profile.Attrib1 = getProfileFeildValue(l, "Attrib1", data.Custom)
+	data.Profile.Attrib2 = getProfileFeildValue(l, "Attrib2", data.Custom)
+	data.Profile.Attrib3 = getProfileFeildValue(l, "Attrib3", data.Custom)
+	data.Profile.Attrib4 = getProfileFeildValue(l, "Attrib4", data.Custom)
+	data.Profile.Attrib5 = getProfileFeildValue(l, "Attrib5", data.Custom)
+	data.Profile.Attrib6 = getProfileFeildValue(l, "Attrib6", data.Custom)
+	data.Profile.Attrib7 = getProfileFeildValue(l, "Attrib7", data.Custom)
+	data.Profile.Attrib8 = getProfileFeildValue(l, "Attrib8", data.Custom)
 }

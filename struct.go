@@ -10,7 +10,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "3.0.8"
+const version = "3.1.1"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
@@ -84,6 +84,7 @@ type userWorkingDataStruct struct {
 	Profile        ProfileMappingStruct
 	ImageURI       string
 	LDAP           *ldap.Entry
+	Custom         map[string]string
 	Jobs           userImportJobs
 	Roles          []string
 	Groups         []userGroupStruct
@@ -237,7 +238,9 @@ type ldapImportConfStruct struct {
 		Value   string `json:"Value"`
 		Output  string `json:"Output"`
 		Options struct {
-			RegexValue string `json:"regexValue"`
+			RegexValue  string `json:"regexValue"`
+			ReplaceFrom string `json:"replaceFrom"`
+			ReplaceWith string `json:"replaceWith"`
 		} `json:"Options"`
 	} `json:"Actions"`
 }

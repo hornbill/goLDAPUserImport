@@ -2,12 +2,10 @@ package main
 
 import (
 	"strings"
-
-	"github.com/hornbill/ldap"
 )
 
 //-- Function to search for site
-func getSiteFromLookup(u *ldap.Entry) string {
+func getSiteFromLookup(importData *userWorkingDataStruct) string {
 	//-- Check if Site Attribute is set
 	if ldapImportConf.User.Site.Value == "" {
 		logger(4, "Site Lookup is Enabled but Attribute is not Defined", false)
@@ -17,7 +15,8 @@ func getSiteFromLookup(u *ldap.Entry) string {
 	logger(1, "LDAP Attribute for Site Lookup: "+ldapImportConf.User.Site.Value, false)
 
 	//-- Get Value of Attribute
-	siteAttributeName := processComplexFeild(u, ldapImportConf.User.Site.Value)
+	siteAttributeName := processComplexFeild(importData.LDAP, ldapImportConf.User.Site.Value)
+	siteAttributeName = processImportAction(importData.Custom, siteAttributeName)
 	logger(1, "Looking Up Site "+siteAttributeName, false)
 	siteIsInCache, SiteIDCache := siteInCache(siteAttributeName)
 	//-- Check if we have Chached the site already

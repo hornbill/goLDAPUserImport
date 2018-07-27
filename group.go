@@ -11,7 +11,7 @@ import (
 	"github.com/hornbill/ldap"
 )
 
-func getOrgFromLookup(l *ldap.Entry, orgValue string) string {
+func getOrgFromLookup(l *userWorkingDataStruct, orgValue string) string {
 
 	//-- Check if Site Attribute is set
 	if orgValue == "" {
@@ -20,7 +20,8 @@ func getOrgFromLookup(l *ldap.Entry, orgValue string) string {
 	}
 	//-- Get Value of Attribute
 	logger(1, "LDAP Attribute for Org Lookup: "+orgValue, false)
-	orgAttributeName := processComplexFeild(l, orgValue)
+	orgAttributeName := processComplexFeild(l.LDAP, orgValue)
+	orgAttributeName = processImportAction(l.Custom, orgAttributeName)
 	logger(1, "Looking Up Org "+orgAttributeName, false)
 	_, found := HornbillCache.Groups[strings.ToLower(orgAttributeName)]
 	if found {

@@ -1,3 +1,15 @@
+
+## 3.1.1 (Jul 27 , 2018)
+
+Bug Fixes:
+- FIX: Regex match will now return the first match with a result as apposed to the last match if one or more matches are found.
+
+## 3.1.0 (Jul 19 , 2018)
+
+Features:
+
+- ADD: It's now possible to define Pre Import Actions on a value or LDAP Attribute or the output of a previous Pre Import Actions, these allow Regex matches and string replaces to performed on a given value and stored for use anyway in the Import Configuration.
+
 ## 3.0.8 (Jul 4 , 2018)
 
 Bug Fixes:

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func getManager(importDate *userWorkingDataStruct, currentData userAccountStruct) string {
+func getManager(importData *userWorkingDataStruct, currentData userAccountStruct) string {
 	//-- Check if Manager Attribute is set
 	if ldapImportConf.User.Manager.Value == "" {
 		logger(4, "Manager Lookup is Enabled but Attribute is not Defined", false)
@@ -17,8 +17,8 @@ func getManager(importDate *userWorkingDataStruct, currentData userAccountStruct
 	logger(1, "LDAP Attribute for Manager Lookup: "+ldapImportConf.User.Manager.Value, false)
 
 	//-- Get Value of Attribute
-	ManagerAttributeName := processComplexFeild(importDate.LDAP, ldapImportConf.User.Manager.Value)
-
+	ManagerAttributeName := processComplexFeild(importData.LDAP, ldapImportConf.User.Manager.Value)
+	ManagerAttributeName = processImportAction(importData.Custom, ManagerAttributeName)
 	if ldapImportConf.User.Manager.Options.MatchAgainstDistinguishedName {
 		logger(1, "Searching Distinguished Name Cache for: "+ManagerAttributeName, false)
 		managerID := getUserFromDNCache(ManagerAttributeName)

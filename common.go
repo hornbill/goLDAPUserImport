@@ -19,17 +19,39 @@ import (
 	"github.com/hornbill/ldap"
 )
 
-func getUserFeildValue(u *ldap.Entry, s string) string {
+func processRegexOnString(reg string, input string) string {
+	re1, err := regexp.Compile(reg)
+	if err != nil {
+		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
+	}
+	//-- Get Array of all Matched max 100
+	result := re1.FindAllString(input, 100)
+	strReturn := ""
+	//-- Loop Matches
+	for _, match := range result {
+		//fmt.Printf("match: %s \n", match)
+		strReturn = match
+
+		if strReturn != "" {
+			return strReturn
+		}
+	}
+
+	return strReturn
+}
+func getUserFeildValue(u *ldap.Entry, s string, custom map[string]string) string {
 	//-- Dyniamicly Grab Mapped Value
 	r := reflect.ValueOf(ldapImportConf.User.AccountMapping)
 	f := reflect.Indirect(r).FieldByName(s)
 	//-- Get Mapped Value
 	var UserMapping = f.String()
-	return processComplexFeild(u, UserMapping)
+	var stringToReturn = processComplexFeild(u, UserMapping)
+	stringToReturn = processImportAction(custom, stringToReturn)
+	return stringToReturn
 }
 
 //-- Get XMLMC Feild from mapping via profile Object
-func getProfileFeildValue(u *ldap.Entry, s string) string {
+func getProfileFeildValue(u *ldap.Entry, s string, custom map[string]string) string {
 	//-- Dyniamicly Grab Mapped Value
 	r := reflect.ValueOf(ldapImportConf.User.ProfileMapping)
 
@@ -37,8 +59,12 @@ func getProfileFeildValue(u *ldap.Entry, s string) string {
 
 	//-- Get Mapped Value
 	var UserProfileMapping = f.String()
-	return processComplexFeild(u, UserProfileMapping)
+	var stringToReturn = processComplexFeild(u, UserProfileMapping)
+	stringToReturn = processImportAction(custom, stringToReturn)
+	return stringToReturn
 }
+
+//-- Match any value wrapped in [] and get its LDAP Attribute Value
 func processComplexFeild(u *ldap.Entry, s string) string {
 	//-- Match $variables from String
 	re1, err := regexp.Compile(`\[(.*?)\]`)
@@ -62,6 +88,41 @@ func processComplexFeild(u *ldap.Entry, s string) string {
 
 		//-- TK Remote Any White space leading and trailing a string
 		s = strings.TrimSpace(s)
+	}
+
+	//-- Return Value
+	return s
+}
+
+//-- Match Any value wrapped in {} and get its Import Action Value
+func processImportAction(u map[string]string, s string) string {
+	//-- Match $variables from String
+	re1, err := regexp.Compile(`\{(.*?)\}`)
+	if err != nil {
+		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
+	}
+	//-- Get Array of all Matched max 100
+	result := re1.FindAllString(s, 100)
+
+	//-- Loop Matches
+	for _, v := range result {
+		//-- Grab LDAP Mapping value from result set
+		var LDAPAttributeValue = u[v]
+		//-- Check for Invalid Value
+		if LDAPAttributeValue == "" {
+			return LDAPAttributeValue
+		}
+		//-- TK UnescapeString to HTML entities are replaced
+		s = html.UnescapeString(strings.Replace(s, v, LDAPAttributeValue, 1))
+
+		//-- TK Remote Any White space leading and trailing a string
+		s = strings.TrimSpace(s)
+
+		if s != "" {
+			//-- Return Value
+			return s
+		}
+
 	}
 
 	//-- Return Value
