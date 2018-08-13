@@ -586,6 +586,7 @@ func processImportActions(l *ldap.Entry) string {
 			break
 		}
 	}
+	fmt.Printf("%+v", data.Custom)
 	//-- Store Result in map of userid
 	var userID = strings.ToLower(data.Account.UserID)
 	HornbillCache.UsersWorking[userID] = data

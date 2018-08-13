@@ -23,6 +23,7 @@ func processRegexOnString(reg string, input string) string {
 	re1, err := regexp.Compile(reg)
 	if err != nil {
 		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
+		return ""
 	}
 	//-- Get Array of all Matched max 100
 	result := re1.FindAllString(input, 100)
@@ -70,6 +71,7 @@ func processComplexFeild(u *ldap.Entry, s string) string {
 	re1, err := regexp.Compile(`\[(.*?)\]`)
 	if err != nil {
 		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
+		return ""
 	}
 	//-- Get Array of all Matched max 100
 	result := re1.FindAllString(s, 100)
@@ -100,6 +102,7 @@ func processImportAction(u map[string]string, s string) string {
 	re1, err := regexp.Compile(`\{(.*?)\}`)
 	if err != nil {
 		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
+		return ""
 	}
 	//-- Get Array of all Matched max 100
 	result := re1.FindAllString(s, 100)

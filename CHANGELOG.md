@@ -1,4 +1,9 @@
 
+## 3.1.2 (Aug 13 , 2018)
+
+Bug Fixes:
+- FIX: Invalid Regex would cause a crash on the import, now any invalid regex matches are thrown as Errors in the log.
+
 ## 3.1.1 (Jul 27 , 2018)
 
 Bug Fixes:
