@@ -140,7 +140,6 @@ func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData us
 				if importOrg.Action == "Both" || importOrg.Action == "Update" {
 					//-- Evaluate the Id
 					var GroupID = getOrgFromLookup(importData, importOrg.Value)
-					fmt.Printf("Group %s - %s \n", ExistingGroup.ID, GroupID)
 					//-- If already a member of import group then ignore
 					if GroupID == ExistingGroup.ID {
 						//-- exit for loop
@@ -149,14 +148,12 @@ func checkUserNeedsOrgRemoving(importData *userWorkingDataStruct, currentData us
 
 					//-- If group we are a memember of matches the Type of a group we have set up on the import and its set to one Assignment
 					if importOrg.Options.Type == ExistingGroup.Type && importOrg.Options.OnlyOneGroupAssignment {
-						fmt.Printf("Type %d Type %d Assignemnt %t \n", importOrg.Options.Type, ExistingGroup.Type, importOrg.Options.OnlyOneGroupAssignment)
 						boolGroupNeedsRemoving = true
 					}
 				}
 			}
 			//-- If group is not part of import and its set to remove
 			if boolGroupNeedsRemoving {
-				fmt.Printf("Group to Remove %s \n", ExistingGroupId)
 				importData.GroupsToRemove = append(importData.GroupsToRemove, ExistingGroupId)
 			}
 		}
@@ -553,6 +550,7 @@ func processImportActions(l *ldap.Entry) string {
 	data.Custom = make(map[string]string)
 	data.Account.UserID = getUserFeildValue(l, "UserID", data.Custom)
 
+	logger(1, "Post Import Actions for: "+fmt.Sprintf("%s", data.Account.UserID), false)
 	//-- Loop Matches
 	for _, action := range ldapImportConf.Actions {
 		switch action.Action {
@@ -565,6 +563,8 @@ func processImportActions(l *ldap.Entry) string {
 			Outcome = processRegexOnString(action.Options.RegexValue, Outcome)
 			//-- Store
 			data.Custom["{"+action.Output+"}"] = Outcome
+
+			logger(1, "Regex Output: "+fmt.Sprintf("%s", Outcome), false)
 			break
 		case "Replace":
 			//-- Grab value from LDAP
@@ -575,7 +575,23 @@ func processImportActions(l *ldap.Entry) string {
 			Outcome = strings.Replace(Outcome, action.Options.ReplaceFrom, action.Options.ReplaceWith, -1)
 			//-- Store
 			data.Custom["{"+action.Output+"}"] = Outcome
+
+			logger(1, "Replace Output: "+fmt.Sprintf("%s", Outcome), false)
 			break
+		case "Trim":
+			//-- Grab value from LDAP
+			Outcome := processComplexFeild(l, action.Value)
+			//-- Grab Value from Existing Custom Feild
+			Outcome = processImportAction(data.Custom, Outcome)
+			//-- Run Replace
+			Outcome = strings.TrimSpace(action.Value)
+			Outcome = strings.Replace(Outcome, "\n", "", -1)
+			Outcome = strings.Replace(Outcome, "\r", "", -1)
+			Outcome = strings.Replace(Outcome, "\r\n", "", -1)
+			//-- Store
+			data.Custom["{"+action.Output+"}"] = Outcome
+
+			logger(1, "Trim Output: "+fmt.Sprintf("%s", Outcome), false)
 		case "None":
 			//-- Grab value
 			Outcome := processComplexFeild(l, action.Value)
@@ -583,10 +599,15 @@ func processImportActions(l *ldap.Entry) string {
 			Outcome = processImportAction(data.Custom, Outcome)
 			//-- Store
 			data.Custom["{"+action.Output+"}"] = Outcome
+
+			logger(1, "Copy Output: "+fmt.Sprintf("%s", Outcome), false)
+			break
+
+		default:
+			logger(1, "Unknown Action: "+fmt.Sprintf("%s", action.Action), false)
 			break
 		}
 	}
-	fmt.Printf("%+v", data.Custom)
 	//-- Store Result in map of userid
 	var userID = strings.ToLower(data.Account.UserID)
 	HornbillCache.UsersWorking[userID] = data

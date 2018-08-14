@@ -1,12 +1,20 @@
 
+## 3.1.3 (Aug 14 , 2018)
+
+Features:
+
+- ADD: Pre Import Actions now support 'Trim' which removes white space arround the string and any new lines
+
 ## 3.1.2 (Aug 13 , 2018)
 
 Bug Fixes:
+
 - FIX: Invalid Regex would cause a crash on the import, now any invalid regex matches are thrown as Errors in the log.
 
 ## 3.1.1 (Jul 27 , 2018)
 
 Bug Fixes:
+
 - FIX: Regex match will now return the first match with a result as apposed to the last match if one or more matches are found.
 
 ## 3.1.0 (Jul 19 , 2018)
@@ -18,43 +26,51 @@ Features:
 ## 3.0.8 (Jul 4 , 2018)
 
 Bug Fixes:
+
 - FIX: Panic when loading previous import history for the first time.
 
 ## 3.0.7 (Jul 2 , 2018)
 
 Bug Fixes:
+
 - FIX: In the event a Load Data count could not be returned log the error and return 0
 - FIX: In debug log each count from Load Data
 
 ## 3.0.6 (Jul 1 , 2018)
 
 Bug Fixes:
+
 - FIX: Issue where loading pages of data could exceed the total data count and continue for ever, added handeling for breaking out of the loop when no data is returned from a paged query.
 - FIX: Prevent an import running if an existing import of the same configuration is in progress, input flag added to over ride the behviour if needed (e.g when a server loses connection mid import and can not update its status to complete or failed)
 
 ## 3.0.5 (Jun 21 , 2018)
 
 Bug Fixes:
+
 - FIX: OnlyOneGroupAssignment property was not correctly being processed causing groups to be removed from users randomly when this setting was enabled. This now allows you define against a group that only one group of the defined type will be assigned to a user, any groups found to be assigned to the user of the same type will be removed leaving only the group set with OnlyOneGroupAssignment on the import configuration. Groups of a different type will not be removed.
 
 ## 3.0.4 (May 31 , 2018)
 
 Bug Fixes:
+
 - FIX: LDAP Users with prefixed or trailing white spaces were not handled correctly
 
 ## 3.0.3 (Apr 11 , 2018)
 
 Bug Fixes:
+
 - FIX: Ability to set User Account Status was none functional
 
 ## 3.0.2 (Apr 10 , 2018)
 
 Bug Fixes:
+
 - FIX: Ability to set the HTTP Connection timeout was missed when Uploading Images
 
 ## 3.0.1 (Apr 3 , 2018)
 
 Features:
+
 - ADD: Ability to set the HTTP Connection timeout on any Hornbill API Call (Default 60 Seconds)
 
 ## 3.0.0 (Mar 11 , 2018)
