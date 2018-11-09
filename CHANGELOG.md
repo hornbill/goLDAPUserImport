@@ -1,3 +1,8 @@
+## 3.1.4 (Nov 9th, 2018)
+
+Bug Fix:
+
+- FIX: Tool would not import images from AD source
 
 ## 3.1.3 (Aug 14 , 2018)
 
