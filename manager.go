@@ -17,7 +17,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 	logger(1, "LDAP Attribute for Manager Lookup: "+ldapImportConf.User.Manager.Value, false)
 
 	//-- Get Value of Attribute
-	ManagerAttributeName := processComplexFeild(importData.LDAP, ldapImportConf.User.Manager.Value)
+	ManagerAttributeName := processComplexField(importData.LDAP, ldapImportConf.User.Manager.Value)
 	ManagerAttributeName = processImportAction(importData.Custom, ManagerAttributeName)
 	if ldapImportConf.User.Manager.Options.MatchAgainstDistinguishedName {
 		logger(1, "Searching Distinguished Name Cache for: "+ManagerAttributeName, false)
@@ -81,11 +81,11 @@ func searchManager(managerName string) (bool, string) {
 		strSearchField = ldapImportConf.User.Manager.Options.Search.SearchField
 	}
 
-	logger(1, "Manager Search: "+fmt.Sprintf("%s", strSearchField)+" - "+fmt.Sprintf("%s", managerName), false)
+	logger(1, "Manager Search: "+strSearchField+" - "+managerName, false)
 
 	//-- Check User Cache for Manager
 	for _, v := range HornbillCache.Users {
-		if strings.ToLower(v.HName) == strings.ToLower(managerName) {
+		if strings.EqualFold(v.HName, managerName) {
 			//-- If not already in cache push to cache
 			_, found := HornbillCache.Managers[strings.ToLower(managerName)]
 			if !found {

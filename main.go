@@ -12,19 +12,18 @@ import (
 	"time"
 
 	//-- CLI Colour
-	"github.com/hornbill/goApiLib"
+
 	//-- Hornbill Clone of "github.com/mavricknz/ldap"
 	//--Hornbil Clone of "github.com/cheggaaa/pb"
+	apiLib "github.com/hornbill/goApiLib"
 	"github.com/tcnksm/go-latest" //-- For Version checking
 )
 
 var (
-	once        sync.Once
-	onceLog     sync.Once
-	mutexLogger = &sync.Mutex{}
-	loggerAPI   *apiLib.XmlmcInstStruct
-	mutexLog    = &sync.Mutex{}
-	f           *os.File
+	onceLog   sync.Once
+	loggerAPI *apiLib.XmlmcInstStruct
+	mutexLog  = &sync.Mutex{}
+	f         *os.File
 )
 
 // Main
@@ -162,7 +161,7 @@ func outputEnd() {
 
 	//-- Show Time Takens
 	Time.endTime = time.Since(Time.startTime).Round(time.Second)
-	logger(2, "Time Taken: "+fmt.Sprintf("%s", Time.endTime), true)
+	logger(2, "Time Taken: "+Time.endTime.String(), true)
 	//-- complete
 	mutexCounters.Lock()
 	counters.traffic += loggerAPI.GetCount()
@@ -295,28 +294,20 @@ func CounterInc(counter int) {
 	switch counter {
 	case 1:
 		counters.created++
-		break
 	case 2:
 		counters.updated++
-		break
 	case 3:
 		counters.profileUpdated++
-		break
 	case 4:
 		counters.imageUpdated++
-		break
 	case 5:
 		counters.groupUpdated++
-		break
 	case 6:
 		counters.rolesUpdated++
-		break
 	case 7:
 		counters.errors++
-		break
 	case 8:
 		counters.groupsRemoved++
-		break
 	case 9:
 		counters.statusUpdated++
 	}

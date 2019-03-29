@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 )
 
 // Write DN and User ID to Cache
@@ -83,7 +83,7 @@ func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	//hIF.SetParam("notifyTextMessage", "")
 
 	//-- Dry Run
-	if Flags.configDryRun == true {
+	if Flags.configDryRun {
 		var XMLSTRING = hIF.GetParam()
 
 		buffer.WriteString(loggerGen(1, "User Create XML "+XMLSTRING))
@@ -165,7 +165,7 @@ func userUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	//hIF.SetParam("notifyTextMessage", "")
 	var XMLSTRING = hIF.GetParam()
 	//-- Dry Run
-	if Flags.configDryRun == true {
+	if Flags.configDryRun {
 		buffer.WriteString(loggerGen(1, "User Update XML "+XMLSTRING))
 		hIF.ClearParam()
 		return true, nil
@@ -294,7 +294,7 @@ func userProfileUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct,
 	hIF.CloseElement("profileData")
 	var XMLSTRING = hIF.GetParam()
 	//-- Dry Run
-	if Flags.configDryRun == true {
+	if Flags.configDryRun {
 		buffer.WriteString(loggerGen(1, "User Update Profile XML "+XMLSTRING))
 		hIF.ClearParam()
 		return true, nil
@@ -328,7 +328,7 @@ func userRolesUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 		hIF.SetParam("role", role)
 	}
 	var XMLSTRING = hIF.GetParam()
-	if Flags.configDryRun == true {
+	if Flags.configDryRun {
 		buffer.WriteString(loggerGen(1, "User Add Role XML "+XMLSTRING))
 		hIF.ClearParam()
 		return true, nil
@@ -359,7 +359,7 @@ func userStatusUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 	hIF.SetParam("accountStatus", ldapImportConf.User.Status.Value)
 
 	var XMLSTRING = hIF.GetParam()
-	if Flags.configDryRun == true {
+	if Flags.configDryRun {
 		buffer.WriteString(loggerGen(1, "User Set Status XML "+XMLSTRING))
 		hIF.ClearParam()
 		return true, nil

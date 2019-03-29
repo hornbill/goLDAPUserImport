@@ -1,3 +1,18 @@
+# CHANGELOG
+
+## 3.1.5 (Mar 29, 2019)
+
+Bug Fixes:
+
+- Group mapping incorrect when there are groups of different types with the same display name
+- Issue with incorrect status type returned while retrieving LDAP key
+- Outcome issue with `Trim` pre-import action
+
+Changes:
+
+- Removed unnecessary vars and structs
+- Added code to remove image file from ESP session once attached
+
 ## 3.1.4 (Nov 9th, 2018)
 
 Bug Fix:
@@ -106,7 +121,6 @@ Bug Fixes:
 
 - FIX: Error setting User Status and Import Status following previous change
 
-
 ## 2.4.0 (Sep 11 , 2017)
 
 Features:
@@ -198,7 +212,6 @@ Features:
 Bug Fixes:
 
 - Fix: Hardcoded number of records that would be processed to 100, removed total is now taken from results from LDAP
-
 
 ## 2.0.2 (May 18 , 2016)
 
@@ -297,7 +310,7 @@ Features:
 
 Bug Fixes:
 
-- Prevent "<invalid Value>" from being used as a value when an LDAP Attribute cannot be found and instead a Error in the log is written.
+- Prevent `<invalid Value>` from being used as a value when an LDAP Attribute cannot be found and instead a Error in the log is written.
 - Errors while create / Updating users are no loner output to the console breaking the progress bar and instead an error count is output at
 the end of the process and will refer the user to the Log File.
 Notes:
@@ -318,44 +331,44 @@ Bug Fixes:
 
 Features:
 
-  - Released to GitHub
+- Released to GitHub
 
 ## 1.4.0 (December 08, 2015)
 
 Features:
 
-  - Ability to prevent userType from being updated
+- Ability to prevent userType from being updated
 
 ## 1.3.0 (December 07, 2015)
 
 Features:
 
-  - Updated External Library (ApiLib)
-  - Added Debugging for LDAP Returned Data
+- Updated External Library (ApiLib)
+- Added Debugging for LDAP Returned Data
 
 Bug Fixes:
 
- - Phone Attribute on User Create/Update was not being set
+- Phone Attribute on User Create/Update was not being set
 
 ## 1.2.0 (February 17, 2010)
 
 Features:
 
-  - ESP Logging to Aid Support
-  - Ability to Lookup Site
+- ESP Logging to Aid Support
+- Ability to Lookup Site
 
 Bug Fixes:
 
-  - Unable to Load Configuration from -file flag
+- Unable to Load Configuration from -file flag
 
 ## 1.1.0 (November 9, 2015)
 
 Features:
 
-  - Assigning Roles when a user is created
+- Assigning Roles when a user is created
 
 ## 1.0.0 (November 9, 2015)
 
 Features:
 
-  - Initial Release
+- Initial Release

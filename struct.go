@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"sync"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 
 //----- Constants -----
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "3.1.4"
+const version = "3.1.5"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
@@ -27,10 +26,6 @@ var Flags struct {
 	configWorkers    int
 	configAPITimeout int
 	configForceRun   bool
-}
-var siteListStrut struct {
-	ID   string
-	Name string
 }
 
 // HornbillCache Struct
@@ -106,12 +101,6 @@ var Time struct {
 	startTime time.Time
 	endTime   time.Duration
 }
-var client = http.Client{
-	Transport: &http.Transport{
-		MaxIdleConnsPerHost: 1,
-	},
-	Timeout: time.Duration(10 * time.Second),
-}
 
 //----- Variables -----
 var ldapImportConf ldapImportConfStruct
@@ -129,10 +118,6 @@ var counters struct {
 	statusUpdated uint16
 
 	created uint16
-
-	updatedSkipped uint16
-	createskipped  uint16
-	profileSkipped uint16
 
 	traffic uint64
 }
@@ -305,13 +290,9 @@ type ProfileMappingStruct struct {
 
 type xmlmcSiteListResponse struct {
 	Params struct {
-		RowsAffected int `json:"rowsAffected"`
-		LastInsertID int `json:"lastInsertId"`
-		RowData      struct {
+		RowData struct {
 			Row []siteStruct `json:"row"`
 		} `json:"rowData"`
-		QueryExecTime    int `json:"queryExecTime"`
-		QueryResultsTime int `json:"queryResultsTime"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
@@ -396,70 +377,45 @@ type userAccountStruct struct {
 }
 type xmlmcUserRolesListResponse struct {
 	Params struct {
-		RowsAffected int `json:"rowsAffected"`
-		LastInsertID int `json:"lastInsertId"`
-		RowData      struct {
+		RowData struct {
 			Row []roleStruct `json:"row"`
 		} `json:"rowData"`
-		QueryExecTime    int `json:"queryExecTime"`
-		QueryResultsTime int `json:"queryResultsTime"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
 type xmlmcUserGroupListResponse struct {
 	Params struct {
-		RowsAffected int `json:"rowsAffected"`
-		LastInsertID int `json:"lastInsertId"`
-		RowData      struct {
+		RowData struct {
 			Row []struct {
 				HUserID  string `json:"h_user_id"`
 				HGroupID string `json:"h_group_id"`
 			} `json:"row"`
 		} `json:"rowData"`
-		QueryExecTime    int `json:"queryExecTime"`
-		QueryResultsTime int `json:"queryResultsTime"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
 
 type xmlmcGroupListResponse struct {
 	Params struct {
-		RowsAffected int `json:"rowsAffected"`
-		LastInsertID int `json:"lastInsertId"`
-		RowData      struct {
+		RowData struct {
 			Row []groupStruct `json:"row"`
 		} `json:"rowData"`
-		QueryExecTime    int `json:"queryExecTime"`
-		QueryResultsTime int `json:"queryResultsTime"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
 type xmlmcConfigLoadResponse struct {
 	Params struct {
 		PrimaryEntityData struct {
-			Entity string `json:"entity"`
 			Record struct {
-				HPkID         string `json:"h_pk_id"`
-				HName         string `json:"h_name"`
-				HType         string `json:"h_type"`
-				HDescription  string `json:"h_description"`
-				HCreatedOn    string `json:"h_created_on"`
-				HCreatedBy    string `json:"h_created_by"`
-				HUpdatedBy    string `json:"h_updated_by"`
-				HLastupdateOn string `json:"h_lastupdate_on"`
-				HDefinition   string `json:"h_definition"`
+				HDefinition string `json:"h_definition"`
 			} `json:"record"`
 		} `json:"primaryEntityData"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
 type xmlmcKeySafeResponse struct {
-	Status bool `json:"@status"`
 	Params struct {
-		Type   string `json:"type"`
-		Title  string `json:"title"`
-		Schema string `json:"schema"`
-		Data   string `json:"data"`
+		Data string `json:"data"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
@@ -475,23 +431,11 @@ type xmlmcCountResponse struct {
 }
 type xmlmcHistoryItemResponse struct {
 	Params struct {
-		RowsAffected int `json:"rowsAffected"`
-		LastInsertID int `json:"lastInsertId"`
-		RowData      struct {
+		RowData struct {
 			Row []struct {
-				HPkID         string `json:"h_pk_id"`
-				HImportID     string `json:"h_import_id"`
-				HStatus       string `json:"h_status"`
-				HTimeTaken    string `json:"h_time_taken"`
-				HCreatedOn    string `json:"h_created_on"`
-				HCreatedBy    string `json:"h_created_by"`
-				HLastupdateOn string `json:"h_lastupdate_on"`
-				HMessage      string `json:"h_message"`
+				HStatus string `json:"h_status"`
 			} `json:"row"`
 		} `json:"rowData"`
-		FoundRows        string `json:"foundRows"`
-		QueryExecTime    int    `json:"queryExecTime"`
-		QueryResultsTime int    `json:"queryResultsTime"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
@@ -499,11 +443,7 @@ type xmlmcHistoryResponse struct {
 	Params struct {
 		PrimaryEntityData struct {
 			Record struct {
-				HPkID      string `json:"h_pk_id"`
-				HImportID  string `json:"h_import_id"`
-				HStatus    string `json:"h_status"`
-				HCreatedOn string `json:"h_created_on"`
-				HCreatedBy string `json:"h_created_by"`
+				HPkID string `json:"h_pk_id"`
 			} `json:"record"`
 		} `json:"primaryEntityData"`
 	} `json:"params"`
@@ -514,14 +454,6 @@ type stateJSONStruct struct {
 	Service   string `json:"service"`
 	Operation string `json:"operation"`
 	Error     string `json:"error"`
-}
-type xmlmcLogMessageResponse struct {
-	MethodResult string      `xml:"status,attr"`
-	State        stateStruct `xml:"state"`
-}
-type stateStruct struct {
-	Code     string `xml:"code"`
-	ErrorRet string `xml:"error"`
 }
 type xmlmcResponse struct {
 	MethodResult string          `json:"status,attr"`

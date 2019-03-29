@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 	"github.com/hornbill/pb"
 )
 
@@ -89,7 +89,7 @@ func loadGroups() {
 	logger(1, "getGroupsList Count: "+fmt.Sprintf("%d", count), false)
 	getGroupsList(count)
 
-	logger(1, "Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Groups)), false)
+	logger(1, "Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.GroupsID)), false)
 }
 func loadUserGroups() {
 	boolSkip := true
@@ -116,10 +116,7 @@ func loadUserGroups() {
 func userIDExistsInLDAP(userID string) bool {
 	userID = strings.ToLower(userID)
 	_, present := HornbillCache.UsersWorking[userID]
-	if present {
-		return true
-	}
-	return false
+	return present
 }
 
 func getUserAccountsGroupsList(count uint64) {

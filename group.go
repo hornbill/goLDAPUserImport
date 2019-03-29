@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
 )
 
-func getOrgFromLookup(l *userWorkingDataStruct, orgValue string) string {
+func getOrgFromLookup(l *userWorkingDataStruct, orgValue string, orgType int) string {
 
 	//-- Check if Site Attribute is set
 	if orgValue == "" {
@@ -20,15 +20,29 @@ func getOrgFromLookup(l *userWorkingDataStruct, orgValue string) string {
 	}
 	//-- Get Value of Attribute
 	logger(1, "LDAP Attribute for Org Lookup: "+orgValue, false)
-	orgAttributeName := processComplexFeild(l.LDAP, orgValue)
+	orgAttributeName := processComplexField(l.LDAP, orgValue)
 	orgAttributeName = processImportAction(l.Custom, orgAttributeName)
 	logger(1, "Looking Up Org "+orgAttributeName, false)
-	_, found := HornbillCache.Groups[strings.ToLower(orgAttributeName)]
-	if found {
-		logger(1, "Org Lookup found Id "+HornbillCache.Groups[strings.ToLower(orgAttributeName)].Name, false)
-		return HornbillCache.Groups[strings.ToLower(orgAttributeName)].ID
+
+	//-- See if Group is cached
+	//Previous code didn't take duplicate group names in to consideration: _, found := HornbillCache.Groups[strings.ToLower(orgAttributeName)]
+	found := false
+	orgLookupID := ""
+	orgLookupName := ""
+	for _, v := range HornbillCache.GroupsID {
+		if strings.EqualFold(orgAttributeName, v.Name) && orgType == v.Type {
+			found = true
+			orgLookupID = v.ID
+			orgLookupName = v.Name
+			break
+		}
 	}
-	logger(1, "Unable to Find Organsiation "+orgAttributeName, false)
+
+	if found {
+		logger(1, "Organisation Lookup found ID "+orgLookupName, false)
+		return orgLookupID
+	}
+	logger(1, "Unable to Find Organisation "+orgAttributeName, false)
 	return ""
 }
 func isUserAMember(l *ldap.Entry, memberOf string) bool {
@@ -68,7 +82,7 @@ func userGroupsUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 		hIF.SetParam("tasksAction", strconv.FormatBool(group.TasksAction))
 		hIF.CloseElement("options")
 		var XMLSTRING = hIF.GetParam()
-		if Flags.configDryRun == true {
+		if Flags.configDryRun {
 			buffer.WriteString(loggerGen(1, "Group Add User XML "+XMLSTRING))
 			hIF.ClearParam()
 			return true, nil
@@ -104,7 +118,7 @@ func userGroupsRemove(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 		hIF.SetParam("groupId", group)
 
 		var XMLSTRING = hIF.GetParam()
-		if Flags.configDryRun == true {
+		if Flags.configDryRun {
 			buffer.WriteString(loggerGen(1, "Group Remove User XML "+XMLSTRING))
 			hIF.ClearParam()
 			return true, nil

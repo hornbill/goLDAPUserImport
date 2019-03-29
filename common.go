@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 	"github.com/hornbill/ldap"
 )
 
@@ -46,7 +46,7 @@ func getUserFeildValue(u *ldap.Entry, s string, custom map[string]string) string
 	f := reflect.Indirect(r).FieldByName(s)
 	//-- Get Mapped Value
 	var UserMapping = f.String()
-	var stringToReturn = processComplexFeild(u, UserMapping)
+	var stringToReturn = processComplexField(u, UserMapping)
 	stringToReturn = processImportAction(custom, stringToReturn)
 	return stringToReturn
 }
@@ -60,13 +60,13 @@ func getProfileFeildValue(u *ldap.Entry, s string, custom map[string]string) str
 
 	//-- Get Mapped Value
 	var UserProfileMapping = f.String()
-	var stringToReturn = processComplexFeild(u, UserProfileMapping)
+	var stringToReturn = processComplexField(u, UserProfileMapping)
 	stringToReturn = processImportAction(custom, stringToReturn)
 	return stringToReturn
 }
 
 //-- Match any value wrapped in [] and get its LDAP Attribute Value
-func processComplexFeild(u *ldap.Entry, s string) string {
+func processComplexField(u *ldap.Entry, s string) string {
 	//-- Match $variables from String
 	re1, err := regexp.Compile(`\[(.*?)\]`)
 	if err != nil {
@@ -179,7 +179,7 @@ func deletefiles(path string, f os.FileInfo, err error) (e error) {
 	if strings.HasPrefix(f.Name(), Flags.configLogPrefix+"LDAP_User_Import_") {
 
 		if diff := now.Sub(f.ModTime()); diff > cutoff {
-			logger(1, "Removing Old Log File: "+fmt.Sprintf("%s", path), false)
+			logger(1, "Removing Old Log File: "+path, false)
 			os.Remove(path)
 		}
 

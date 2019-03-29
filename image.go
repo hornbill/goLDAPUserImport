@@ -11,17 +11,18 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 )
 
 func loadImageFromValue(imageURI string) []byte {
 
 	//-- AD Looking the image URI is binary file so dont try and write that to the log
 	if ldapImportConf.User.Image.UploadType != "AD" {
-		logger(1, "Image Lookup URI: "+fmt.Sprintf("%s", imageURI), false)
+		logger(1, "Image Lookup URI: "+imageURI, false)
 	}
 	if strings.ToUpper(ldapImportConf.User.Image.UploadType) != "URL" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
@@ -80,7 +81,7 @@ func getImage(importData *userWorkingDataStruct) imageStruct {
 	var imageBytes []byte
 
 	//-- Work out the value of URI which may contain [] for LDAP attribute references or just a string
-	importData.ImageURI = processComplexFeild(importData.LDAP, ldapImportConf.User.Image.URI)
+	importData.ImageURI = processComplexField(importData.LDAP, ldapImportConf.User.Image.URI)
 
 	//-- Try and Load from Cache
 	_, found := HornbillCache.Images[importData.ImageURI]
@@ -115,9 +116,9 @@ func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 		strContentType = "image/png"
 	}
 
-	buffer.WriteString(loggerGen(1, "DAV Upload URL: "+fmt.Sprintf("%s", strDAVurl)))
+	buffer.WriteString(loggerGen(1, "DAV Upload URL: "+strDAVurl))
 
-	if Flags.configDryRun != true {
+	if !Flags.configDryRun {
 
 		if len(image.imageBytes) > 0 {
 			putbody := bytes.NewReader(image.imageBytes)
@@ -147,12 +148,12 @@ func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 		}
 	}
 
-	buffer.WriteString(loggerGen(1, "Profile Set Image URL: "+fmt.Sprintf("%s", value)))
+	buffer.WriteString(loggerGen(1, "Profile Set Image URL: "+value))
 	hIF.SetParam("objectRef", "urn:sys:user:"+user.Account.UserID)
 	hIF.SetParam("sourceImage", value)
 	var XMLSTRING = hIF.GetParam()
 
-	if Flags.configDryRun == true {
+	if Flags.configDryRun {
 		buffer.WriteString(loggerGen(1, "Profile Image Set XML "+XMLSTRING))
 		hIF.ClearParam()
 		return true, nil
@@ -174,5 +175,32 @@ func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 		return false, errors.New(JSONResp.State.Error)
 	}
 	buffer.WriteString(loggerGen(1, "Image added to User: "+user.Account.UserID))
+
+	//Now go delete the file from dav
+
+	if len(image.imageBytes) > 0 {
+		reqDel, DelErr := http.NewRequest("DELETE", strDAVurl, nil)
+		if DelErr != nil {
+			buffer.WriteString(loggerGen(3, "User image updated but could not remove from session. Error: "+fmt.Sprintf("%v", DelErr)))
+			return true, DelErr
+		}
+		reqDel.Header.Add("Authorization", "ESP-APIKEY "+Flags.configAPIKey)
+		reqDel.Header.Set("User-Agent", "Go-http-client/1.1")
+
+		duration := time.Second * time.Duration(Flags.configAPITimeout)
+		client := &http.Client{Timeout: duration}
+
+		responseDel, DelErr := client.Do(reqDel)
+		if DelErr != nil {
+			buffer.WriteString(loggerGen(3, "User image updated but could not remove from session. Error: "+fmt.Sprintf("%v", DelErr)))
+			return true, DelErr
+		}
+		defer responseDel.Body.Close()
+		_, _ = io.Copy(ioutil.Discard, responseDel.Body)
+		if responseDel.StatusCode < 200 || responseDel.StatusCode > 299 {
+			buffer.WriteString(loggerGen(3, "User image updated but could not remove from session. Status Code: "+strconv.Itoa(responseDel.StatusCode)))
+		}
+	}
+
 	return true, nil
 }
