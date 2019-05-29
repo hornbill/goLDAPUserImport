@@ -4,7 +4,7 @@
 
 Changes:
 
-- Updated user password generation code to enforce Hornbill instance user password profile settings
+- Updated user password generation code to enforce Hornbill instance user password policy settings
 
 ## 3.1.5 (Mar 29, 2019)
 
