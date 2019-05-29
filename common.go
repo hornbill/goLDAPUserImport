@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/fatih/color"
 	apiLib "github.com/hornbill/goApiLib"
+	hornbillpasswordgen "github.com/hornbill/goHornbillPasswordGen"
 	"github.com/hornbill/ldap"
 )
 
@@ -133,14 +133,34 @@ func processImportAction(u map[string]string, s string) string {
 }
 
 //-- Generate Password String
-func generatePasswordString(n int) string {
-	var arbytes = make([]byte, n)
-	rand.Read(arbytes)
-	for i, b := range arbytes {
-		arbytes[i] = letterBytes[b%byte(len(letterBytes))]
+func generatePasswordString(importData *userWorkingDataStruct) string {
+	pwdinst := hornbillpasswordgen.NewPasswordInstance()
+	pwdinst.Length = passwordProfile.Length
+	pwdinst.UseLower = true
+	pwdinst.ForceLower = passwordProfile.ForceLower
+	pwdinst.UseNumeric = true
+	pwdinst.ForceNumeric = passwordProfile.ForceNumeric
+	pwdinst.UseUpper = true
+	pwdinst.ForceUpper = passwordProfile.ForceUpper
+	pwdinst.UseSpecial = true
+	pwdinst.ForceSpecial = passwordProfile.ForceSpecial
+	pwdinst.Blacklist = passwordProfile.Blacklist
+	if passwordProfile.CheckMustNotContain {
+		pwdinst.MustNotContain = append(pwdinst.MustNotContain, importData.Account.FirstName)
+		pwdinst.MustNotContain = append(pwdinst.MustNotContain, importData.Account.LastName)
+		pwdinst.MustNotContain = append(pwdinst.MustNotContain, importData.Account.UserID)
 	}
-	return string(arbytes)
+
+	//Generate a new password
+	newPassword, err := pwdinst.GenPassword()
+
+	if err != nil {
+		logger(4, "Failed Password Auto Generation for: "+importData.Account.UserID+"  "+fmt.Sprintf("%v", err), false)
+		return ""
+	}
+	return newPassword
 }
+
 func loggerGen(t int, s string) string {
 	//-- Ignore Logging level unless is 0
 	if t < ldapImportConf.Advanced.LogLevel && t != 0 {

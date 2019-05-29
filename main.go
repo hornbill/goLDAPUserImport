@@ -15,6 +15,7 @@ import (
 
 	//-- Hornbill Clone of "github.com/mavricknz/ldap"
 	//--Hornbil Clone of "github.com/cheggaaa/pb"
+
 	apiLib "github.com/hornbill/goApiLib"
 	"github.com/tcnksm/go-latest" //-- For Version checking
 )
@@ -73,6 +74,9 @@ func main() {
 
 	//-- Clear Old Log Files
 	runLogRetentionCheck()
+
+	//-- Get Password Profile
+	getPasswordProfile()
 
 	//-- Query LDAP
 	queryLdap()

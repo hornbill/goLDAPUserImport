@@ -8,12 +8,40 @@ import (
 )
 
 //----- Constants -----
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const version = "3.1.5"
+const version = "3.2.0"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
 var importHistoryID string
+
+//Password profiles
+var passwordProfile passwordProfileStruct
+var blacklistURLs = [...]string{"https://files.hornbill.com/hornbillStatic/password_blacklists/SplashData.txt", "https://files.hornbill.com/hornbillStatic/password_blacklists/Imperva.txt"}
+var defaultPasswordLength = 10
+
+type passwordProfileStruct struct {
+	Length              int
+	UseLower            bool
+	ForceLower          int
+	UseUpper            bool
+	ForceUpper          int
+	UseNumeric          bool
+	ForceNumeric        int
+	UseSpecial          bool
+	ForceSpecial        int
+	Blacklist           []string
+	CheckMustNotContain bool
+}
+
+type xmlmcSettingResponse struct {
+	Params struct {
+		Option []struct {
+			Key   string `json:"key"`
+			Value string `json:"value"`
+		} `json:"option"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
+}
 
 // Flags List
 var Flags struct {

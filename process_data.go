@@ -112,7 +112,7 @@ func checkUserNeedsStatusUpdate(importData *userWorkingDataStruct, currentData u
 func setUserPasswordValueForCreate(importData *userWorkingDataStruct) {
 	if importData.Account.Password == "" {
 		//-- Generate Password
-		importData.Account.Password = generatePasswordString(10)
+		importData.Account.Password = generatePasswordString(importData)
 		logger(1, "Auto Generated Password for: "+importData.Account.UserID+" - "+importData.Account.Password, false)
 	}
 	//-- Base64 Encode
