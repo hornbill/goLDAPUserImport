@@ -152,7 +152,7 @@ func generatePasswordString(importData *userWorkingDataStruct) string {
 	}
 
 	//Generate a new password
-	newPassword, err := pwdinst.GenPassword()
+	newPassword, _, err := pwdinst.GenPassword()
 
 	if err != nil {
 		logger(4, "Failed Password Auto Generation for: "+importData.Account.UserID+"  "+fmt.Sprintf("%v", err), false)

@@ -1,12 +1,18 @@
 # CHANGELOG
 
-## 3.2.0 (May 29, 2019)
+## 3.2.1 (July 3rd, 2019)
 
 Changes:
 
-- Updated user password generation code to enforce Hornbill instance user password policy settings
+- Updated password generation code to support update to Hornbill Password Generator module
 
-## 3.1.5 (Mar 29, 2019)
+## 3.2.0 (May 29, 2019)
+
+Changes:
+
+- Updated user password generation code to enforce Hornbill instance user password profile settings
+
+## 3.1.5 (Mar 29, 2019)
 
 Bug Fixes:
 
