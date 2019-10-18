@@ -8,7 +8,7 @@ import (
 )
 
 //----- Constants -----
-const version = "3.2.1"
+const version = "3.3.0"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
@@ -92,11 +92,12 @@ var HornbillUserStatusMap = map[string]string{
 type userImportJobs struct {
 	create        bool
 	update        bool
-	updateProfile bool
-	updateType    bool
-	updateSite    bool
+	updateHomeOrg bool
 	updateImage   bool
+	updateSite    bool
 	updateStatus  bool
+	updateType    bool
+	updateProfile bool
 }
 type imageStruct struct {
 	imageBytes    []byte
@@ -121,6 +122,7 @@ type userGroupStruct struct {
 	TasksView              bool
 	TasksAction            bool
 	OnlyOneGroupAssignment bool
+	SetAsHomeOrganisation  bool
 }
 
 // Time Struct
@@ -238,6 +240,7 @@ type ldapImportConfStruct struct {
 				TasksView              bool   `json:"TasksView"`
 				TasksAction            bool   `json:"TasksAction"`
 				OnlyOneGroupAssignment bool   `json:"OnlyOneGroupAssignment"`
+				SetAsHomeOrganisation  bool   `json:"SetAsHomeOrganisation"`
 			} `json:"Options"`
 		} `json:"Org"`
 	} `json:"User"`
@@ -279,6 +282,7 @@ type AccountMappingStruct struct {
 	TimeFormat     string `json:"TimeFormat"`
 	CurrencySymbol string `json:"CurrencySymbol"`
 	CountryCode    string `json:"CountryCode"`
+	HomeOrg        string `json:"HomeOrg"`
 }
 
 // ProfileMappingStruct Used
@@ -402,6 +406,7 @@ type userAccountStruct struct {
 	HAttrib6             string `json:"h_attrib_6"`
 	HAttrib7             string `json:"h_attrib_7"`
 	HAttrib8             string `json:"h_attrib_8"`
+	HHomeOrg             string `json:"h_home_organization"`
 }
 type xmlmcUserRolesListResponse struct {
 	Params struct {

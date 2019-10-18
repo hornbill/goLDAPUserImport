@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 	"github.com/hornbill/pb"
 )
 
@@ -44,6 +44,9 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 		}
 		if currentUser.Jobs.updateStatus {
 			updateUserStatus(hIF, currentUser, &buffer)
+		}
+		if currentUser.Jobs.updateHomeOrg {
+			userGroupSetHomeOrg(hIF, currentUser, &buffer)
 		}
 		bar.Increment()
 

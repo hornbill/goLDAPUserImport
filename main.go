@@ -150,7 +150,7 @@ func outputEnd() {
 		logger(4, "Error Count: "+fmt.Sprintf("%d", counters.errors), true)
 		//logger(4, "Check Log File for Details", true)
 	}
-	logger(2, "Accounts Proccesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
+	logger(2, "Accounts Processed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
 	logger(2, "Created: "+fmt.Sprintf("%d", counters.created), true)
 	logger(2, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
 

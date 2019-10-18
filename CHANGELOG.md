@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.0 (October 18th, 2019)
+
+Changes:
+
+- Added feature to allow the setting of a Home Organisation when creating/updating users
+
 ## 3.2.1 (July 3rd, 2019)
 
 Changes:

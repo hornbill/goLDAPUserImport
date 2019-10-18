@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hornbill/ldap"
@@ -64,6 +65,8 @@ func processData() {
 
 			currentUser.Jobs.updateImage = checkUserNeedsImageUpdate(currentUser, hornbillUserData)
 
+			currentUser.Jobs.updateHomeOrg = checkUserNeedsHomeOrgUpdate(currentUser, hornbillUserData)
+
 			checkUserNeedsOrgUpdate(currentUser, hornbillUserData)
 
 			checkUserNeedsOrgRemoving(currentUser, hornbillUserData)
@@ -83,7 +86,21 @@ func processData() {
 			currentUser.Jobs.create = true
 		}
 
-		logger(1, "User: '"+userID+"'\n\tCreate: "+fmt.Sprintf("%t", currentUser.Jobs.create)+" \n\tUpdate: "+fmt.Sprintf("%t", currentUser.Jobs.update)+" \n\tUpdate Type: "+fmt.Sprintf("%t", currentUser.Jobs.updateType)+" \n\tUpdate Profile: "+fmt.Sprintf("%t", currentUser.Jobs.updateProfile)+" \n\tUpdate Site: "+fmt.Sprintf("%t", currentUser.Jobs.updateSite)+"\n\tUpdate Status: "+fmt.Sprintf("%t", currentUser.Jobs.updateStatus)+" \n\tRoles Count: "+fmt.Sprintf("%d", len(currentUser.Roles))+" \n\tUpdate Image: "+fmt.Sprintf("%t", currentUser.Jobs.updateImage)+" \n\tGroups: "+fmt.Sprintf("%d", len(currentUser.Groups))+"\n", false)
+		loggerOutput := []string{
+			"User: " + userID,
+			"Create: " + strconv.FormatBool(currentUser.Jobs.create),
+			"Update: " + strconv.FormatBool(currentUser.Jobs.update),
+			"Update Type: " + strconv.FormatBool(currentUser.Jobs.updateType),
+			"Update Profile: " + strconv.FormatBool(currentUser.Jobs.updateProfile),
+			"Update Site: " + strconv.FormatBool(currentUser.Jobs.updateSite),
+			"Update Status: " + strconv.FormatBool(currentUser.Jobs.updateStatus),
+			"Update Home Organisation: " + strconv.FormatBool(currentUser.Jobs.updateHomeOrg),
+			"Roles Count: " + fmt.Sprintf("%d", len(currentUser.Roles)),
+			"Update Image: " + strconv.FormatBool(currentUser.Jobs.updateImage),
+			"Groups: " + fmt.Sprintf("%d", len(currentUser.Groups))}
+
+		strings.Join(loggerOutput[:], "\n\t")
+		logger(1, strings.Join(loggerOutput[:], "\n\t")+"\n", false)
 	}
 	logger(1, "User Data Processed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking))+"", true)
 }
@@ -196,6 +213,29 @@ func checkUserNeedsOrgUpdate(importData *userWorkingDataStruct, currentData user
 		}
 	}
 }
+
+func checkUserNeedsHomeOrgUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
+	if len(ldapImportConf.User.Org) > 0 {
+		for orgIndex := range ldapImportConf.User.Org {
+			orgAction := ldapImportConf.User.Org[orgIndex]
+			if !orgAction.Options.SetAsHomeOrganisation {
+				continue
+			}
+			if orgAction.Action == "Create" || orgAction.Action == "Both" || orgAction.Action == "Update" {
+				var GroupID = getOrgFromLookup(importData, orgAction.Value, orgAction.Options.Type)
+
+				if GroupID == "" || strings.EqualFold(currentData.HHomeOrg, GroupID) {
+					return false
+				}
+				importData.Account.HomeOrg = GroupID
+				logger(1, "Home Organisation: "+GroupID+" - "+currentData.HHomeOrg, true)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func checkUserNeedsOrgCreate(importData *userWorkingDataStruct, currentData userAccountStruct) {
 	if len(ldapImportConf.User.Org) > 0 {
 		for orgIndex := range ldapImportConf.User.Org {
