@@ -75,7 +75,7 @@ func searchManager(managerName string) (bool, string) {
 		return false, ""
 	}
 
-	//-- Add support for Search Feild configuration
+	//-- Add support for Search Field configuration
 	strSearchField := "h_name"
 	if ldapImportConf.User.Manager.Options.Search.SearchField != "" {
 		strSearchField = ldapImportConf.User.Manager.Options.Search.SearchField

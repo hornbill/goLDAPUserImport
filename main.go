@@ -63,6 +63,9 @@ func main() {
 	//-- Check import not already running
 	getLastHistory()
 
+	//Get instance server build
+	getServerBuild()
+
 	//-- Start Import
 	logged := startImportHistory()
 

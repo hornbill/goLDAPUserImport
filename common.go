@@ -40,7 +40,7 @@ func processRegexOnString(reg string, input string) string {
 
 	return strReturn
 }
-func getUserFeildValue(u *ldap.Entry, s string, custom map[string]string) string {
+func getUserFieldValue(u *ldap.Entry, s string, custom map[string]string) string {
 	//-- Dyniamicly Grab Mapped Value
 	r := reflect.ValueOf(ldapImportConf.User.AccountMapping)
 	f := reflect.Indirect(r).FieldByName(s)
@@ -51,8 +51,8 @@ func getUserFeildValue(u *ldap.Entry, s string, custom map[string]string) string
 	return stringToReturn
 }
 
-//-- Get XMLMC Feild from mapping via profile Object
-func getProfileFeildValue(u *ldap.Entry, s string, custom map[string]string) string {
+//-- Get XMLMC Field from mapping via profile Object
+func getProfileFieldValue(u *ldap.Entry, s string, custom map[string]string) string {
 	//-- Dyniamicly Grab Mapped Value
 	r := reflect.ValueOf(ldapImportConf.User.ProfileMapping)
 
@@ -424,6 +424,36 @@ func getLastHistory() {
 			logger(4, "Unable to run import, a provious import is still running", true)
 			os.Exit(108)
 		}
+	}
+
+}
+
+func getServerBuild() {
+	loggerAPI = apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	loggerAPI.SetAPIKey(Flags.configAPIKey)
+	loggerAPI.SetTimeout(Flags.configAPITimeout)
+	loggerAPI.SetJSONResponse(true)
+	RespBody, xmlmcErr := loggerAPI.Invoke("session", "getSystemLicenseInfo")
+
+	var JSONResp xmlmcLicenseInfo
+	if xmlmcErr != nil {
+		logger(4, "Unable to Query Server Build: "+fmt.Sprintf("%s", xmlmcErr), true)
+		return
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
+	if err != nil {
+		logger(4, "Unable to Query Server Build: "+fmt.Sprintf("%s", err), true)
+		return
+	}
+	if JSONResp.State.Error != "" {
+		logger(4, "Unable to Query Server Build: "+JSONResp.State.Error, true)
+		return
+	}
+
+	if JSONResp.Params.ServerBuild > 0 {
+		serverBuild = JSONResp.Params.ServerBuild
+	} else {
+		logger(4, "Server build not returned", true)
 	}
 
 }

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.4.0 (November 18th, 2019)
+
+Changes:
+
+- Added support for new Login ID field in user record
+- Corrected minor spelling mistakes
+
 ## 3.3.0 (October 18th, 2019)
 
 Changes:

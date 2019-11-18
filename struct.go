@@ -8,16 +8,20 @@ import (
 )
 
 //----- Constants -----
-const version = "3.3.0"
+const version = "3.4.0"
 
-var mutexCounters = &sync.Mutex{}
-var bufferMutex = &sync.Mutex{}
-var importHistoryID string
+var (
+	mutexCounters         = &sync.Mutex{}
+	bufferMutex           = &sync.Mutex{}
+	importHistoryID       string
+	serverBuild           int
+	loginIDMinServerBuild = 3195
 
-//Password profiles
-var passwordProfile passwordProfileStruct
-var blacklistURLs = [...]string{"https://files.hornbill.com/hornbillStatic/password_blacklists/SplashData.txt", "https://files.hornbill.com/hornbillStatic/password_blacklists/Imperva.txt"}
-var defaultPasswordLength = 10
+	//Password profiles
+	passwordProfile       passwordProfileStruct
+	blacklistURLs         = [...]string{"https://files.hornbill.com/hornbillStatic/password_blacklists/SplashData.txt", "https://files.hornbill.com/hornbillStatic/password_blacklists/Imperva.txt"}
+	defaultPasswordLength = 10
+)
 
 type passwordProfileStruct struct {
 	Length              int
@@ -264,6 +268,7 @@ type ldapImportConfStruct struct {
 // AccountMappingStruct Used
 type AccountMappingStruct struct {
 	UserID         string `json:"UserID"`
+	LoginID        string `json:"loginId"`
 	UserType       string `json:"UserType"`
 	Name           string `json:"Name"`
 	Password       string `json:"Password"`
@@ -351,6 +356,7 @@ type groupStruct struct {
 }
 type userAccountStruct struct {
 	HUserID              string `json:"h_user_id"`
+	HLoginID             string `json:"h_login_id"`
 	HName                string `json:"h_name"`
 	HFirstName           string `json:"h_first_name"`
 	HMiddleName          string `json:"h_middle_name"`
@@ -491,4 +497,11 @@ type stateJSONStruct struct {
 type xmlmcResponse struct {
 	MethodResult string          `json:"status,attr"`
 	State        stateJSONStruct `json:"state"`
+}
+type xmlmcLicenseInfo struct {
+	MethodResult string `json:"status,attr"`
+	Params       struct {
+		ServerBuild int
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }

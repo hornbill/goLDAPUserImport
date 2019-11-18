@@ -376,6 +376,10 @@ func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAcc
 		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
 		return true
 	}
+	if importData.Account.LoginID != "" && importData.Account.LoginID != currentData.HLoginID {
+		logger(1, "LoginID: "+importData.Account.LoginID+" - "+currentData.HLoginID, true)
+		return true
+	}
 	if importData.Account.FirstName != "" && importData.Account.FirstName != currentData.HFirstName {
 		logger(1, "FirstName: "+importData.Account.FirstName+" - "+currentData.HFirstName, true)
 		return true
@@ -586,7 +590,7 @@ func processImportActions(l *ldap.Entry) string {
 	data.LDAP = l
 	//-- init map
 	data.Custom = make(map[string]string)
-	data.Account.UserID = getUserFeildValue(l, "UserID", data.Custom)
+	data.Account.UserID = getUserFieldValue(l, "UserID", data.Custom)
 
 	logger(1, "Post Import Actions for: "+data.Account.UserID, false)
 	//-- Loop Matches
@@ -595,7 +599,7 @@ func processImportActions(l *ldap.Entry) string {
 		case "Regex":
 			//-- Grab value from LDAP
 			Outcome := processComplexField(l, action.Value)
-			//-- Grab Value from Existing Custom Feild
+			//-- Grab Value from Existing Custom Field
 			Outcome = processImportAction(data.Custom, Outcome)
 			//-- Process Regex
 			Outcome = processRegexOnString(action.Options.RegexValue, Outcome)
@@ -606,7 +610,7 @@ func processImportActions(l *ldap.Entry) string {
 		case "Replace":
 			//-- Grab value from LDAP
 			Outcome := processComplexField(l, action.Value)
-			//-- Grab Value from Existing Custom Feild
+			//-- Grab Value from Existing Custom Field
 			Outcome = processImportAction(data.Custom, Outcome)
 			//-- Run Replace
 			Outcome = strings.Replace(Outcome, action.Options.ReplaceFrom, action.Options.ReplaceWith, -1)
@@ -617,7 +621,7 @@ func processImportActions(l *ldap.Entry) string {
 		case "Trim":
 			//-- Grab value from LDAP
 			Outcome := processComplexField(l, action.Value)
-			//-- Grab Value from Existing Custom Feild
+			//-- Grab Value from Existing Custom Field
 			Outcome = processImportAction(data.Custom, Outcome)
 			//-- Run Replace
 			Outcome = strings.TrimSpace(Outcome)
@@ -631,7 +635,7 @@ func processImportActions(l *ldap.Entry) string {
 		case "None":
 			//-- Grab value
 			Outcome := processComplexField(l, action.Value)
-			//-- Grab Value from Existing Custom Feild
+			//-- Grab Value from Existing Custom Field
 			Outcome = processImportAction(data.Custom, Outcome)
 			//-- Store
 			data.Custom["{"+action.Output+"}"] = Outcome
@@ -652,55 +656,55 @@ func processImportActions(l *ldap.Entry) string {
 func processUserParams(l *ldap.Entry, userID string) {
 
 	data := HornbillCache.UsersWorking[userID]
+	data.Account.LoginID = getUserFieldValue(l, "LoginID", data.Custom)
+	data.Account.UserType = getUserFieldValue(l, "UserType", data.Custom)
+	data.Account.Name = getUserFieldValue(l, "Name", data.Custom)
+	data.Account.Password = getUserFieldValue(l, "Password", data.Custom)
+	data.Account.FirstName = getUserFieldValue(l, "FirstName", data.Custom)
+	data.Account.LastName = getUserFieldValue(l, "LastName", data.Custom)
+	data.Account.JobTitle = getUserFieldValue(l, "JobTitle", data.Custom)
+	data.Account.Site = getUserFieldValue(l, "Site", data.Custom)
+	data.Account.Phone = getUserFieldValue(l, "Phone", data.Custom)
+	data.Account.Email = getUserFieldValue(l, "Email", data.Custom)
+	data.Account.Mobile = getUserFieldValue(l, "Mobile", data.Custom)
+	data.Account.AbsenceMessage = getUserFieldValue(l, "AbsenceMessage", data.Custom)
+	data.Account.TimeZone = getUserFieldValue(l, "TimeZone", data.Custom)
+	data.Account.Language = getUserFieldValue(l, "Language", data.Custom)
+	data.Account.DateTimeFormat = getUserFieldValue(l, "DateTimeFormat", data.Custom)
+	data.Account.DateFormat = getUserFieldValue(l, "DateFormat", data.Custom)
+	data.Account.TimeFormat = getUserFieldValue(l, "TimeFormat", data.Custom)
+	data.Account.CurrencySymbol = getUserFieldValue(l, "CurrencySymbol", data.Custom)
+	data.Account.CountryCode = getUserFieldValue(l, "CountryCode", data.Custom)
 
-	data.Account.UserType = getUserFeildValue(l, "UserType", data.Custom)
-	data.Account.Name = getUserFeildValue(l, "Name", data.Custom)
-	data.Account.Password = getUserFeildValue(l, "Password", data.Custom)
-	data.Account.FirstName = getUserFeildValue(l, "FirstName", data.Custom)
-	data.Account.LastName = getUserFeildValue(l, "LastName", data.Custom)
-	data.Account.JobTitle = getUserFeildValue(l, "JobTitle", data.Custom)
-	data.Account.Site = getUserFeildValue(l, "Site", data.Custom)
-	data.Account.Phone = getUserFeildValue(l, "Phone", data.Custom)
-	data.Account.Email = getUserFeildValue(l, "Email", data.Custom)
-	data.Account.Mobile = getUserFeildValue(l, "Mobile", data.Custom)
-	data.Account.AbsenceMessage = getUserFeildValue(l, "AbsenceMessage", data.Custom)
-	data.Account.TimeZone = getUserFeildValue(l, "TimeZone", data.Custom)
-	data.Account.Language = getUserFeildValue(l, "Language", data.Custom)
-	data.Account.DateTimeFormat = getUserFeildValue(l, "DateTimeFormat", data.Custom)
-	data.Account.DateFormat = getUserFeildValue(l, "DateFormat", data.Custom)
-	data.Account.TimeFormat = getUserFeildValue(l, "TimeFormat", data.Custom)
-	data.Account.CurrencySymbol = getUserFeildValue(l, "CurrencySymbol", data.Custom)
-	data.Account.CountryCode = getUserFeildValue(l, "CountryCode", data.Custom)
-
-	data.Profile.MiddleName = getProfileFeildValue(l, "MiddleName", data.Custom)
-	data.Profile.JobDescription = getProfileFeildValue(l, "JobDescription", data.Custom)
-	data.Profile.Manager = getProfileFeildValue(l, "Manager", data.Custom)
-	data.Profile.WorkPhone = getProfileFeildValue(l, "WorkPhone", data.Custom)
-	data.Profile.Qualifications = getProfileFeildValue(l, "Qualifications", data.Custom)
-	data.Profile.Interests = getProfileFeildValue(l, "Interests", data.Custom)
-	data.Profile.Expertise = getProfileFeildValue(l, "Expertise", data.Custom)
-	data.Profile.Gender = getProfileFeildValue(l, "Gender", data.Custom)
-	data.Profile.Dob = getProfileFeildValue(l, "Dob", data.Custom)
-	data.Profile.Nationality = getProfileFeildValue(l, "Nationality", data.Custom)
-	data.Profile.Religion = getProfileFeildValue(l, "Religion", data.Custom)
-	data.Profile.HomeTelephone = getProfileFeildValue(l, "HomeTelephone", data.Custom)
-	data.Profile.SocialNetworkA = getProfileFeildValue(l, "SocialNetworkA", data.Custom)
-	data.Profile.SocialNetworkB = getProfileFeildValue(l, "SocialNetworkB", data.Custom)
-	data.Profile.SocialNetworkC = getProfileFeildValue(l, "SocialNetworkC", data.Custom)
-	data.Profile.SocialNetworkD = getProfileFeildValue(l, "SocialNetworkD", data.Custom)
-	data.Profile.SocialNetworkE = getProfileFeildValue(l, "SocialNetworkE", data.Custom)
-	data.Profile.SocialNetworkF = getProfileFeildValue(l, "SocialNetworkF", data.Custom)
-	data.Profile.SocialNetworkG = getProfileFeildValue(l, "SocialNetworkG", data.Custom)
-	data.Profile.SocialNetworkH = getProfileFeildValue(l, "SocialNetworkH", data.Custom)
-	data.Profile.PersonalInterests = getProfileFeildValue(l, "PersonalInterests", data.Custom)
-	data.Profile.HomeAddress = getProfileFeildValue(l, "HomeAddress", data.Custom)
-	data.Profile.PersonalBlog = getProfileFeildValue(l, "PersonalBlog", data.Custom)
-	data.Profile.Attrib1 = getProfileFeildValue(l, "Attrib1", data.Custom)
-	data.Profile.Attrib2 = getProfileFeildValue(l, "Attrib2", data.Custom)
-	data.Profile.Attrib3 = getProfileFeildValue(l, "Attrib3", data.Custom)
-	data.Profile.Attrib4 = getProfileFeildValue(l, "Attrib4", data.Custom)
-	data.Profile.Attrib5 = getProfileFeildValue(l, "Attrib5", data.Custom)
-	data.Profile.Attrib6 = getProfileFeildValue(l, "Attrib6", data.Custom)
-	data.Profile.Attrib7 = getProfileFeildValue(l, "Attrib7", data.Custom)
-	data.Profile.Attrib8 = getProfileFeildValue(l, "Attrib8", data.Custom)
+	data.Profile.MiddleName = getProfileFieldValue(l, "MiddleName", data.Custom)
+	data.Profile.JobDescription = getProfileFieldValue(l, "JobDescription", data.Custom)
+	data.Profile.Manager = getProfileFieldValue(l, "Manager", data.Custom)
+	data.Profile.WorkPhone = getProfileFieldValue(l, "WorkPhone", data.Custom)
+	data.Profile.Qualifications = getProfileFieldValue(l, "Qualifications", data.Custom)
+	data.Profile.Interests = getProfileFieldValue(l, "Interests", data.Custom)
+	data.Profile.Expertise = getProfileFieldValue(l, "Expertise", data.Custom)
+	data.Profile.Gender = getProfileFieldValue(l, "Gender", data.Custom)
+	data.Profile.Dob = getProfileFieldValue(l, "Dob", data.Custom)
+	data.Profile.Nationality = getProfileFieldValue(l, "Nationality", data.Custom)
+	data.Profile.Religion = getProfileFieldValue(l, "Religion", data.Custom)
+	data.Profile.HomeTelephone = getProfileFieldValue(l, "HomeTelephone", data.Custom)
+	data.Profile.SocialNetworkA = getProfileFieldValue(l, "SocialNetworkA", data.Custom)
+	data.Profile.SocialNetworkB = getProfileFieldValue(l, "SocialNetworkB", data.Custom)
+	data.Profile.SocialNetworkC = getProfileFieldValue(l, "SocialNetworkC", data.Custom)
+	data.Profile.SocialNetworkD = getProfileFieldValue(l, "SocialNetworkD", data.Custom)
+	data.Profile.SocialNetworkE = getProfileFieldValue(l, "SocialNetworkE", data.Custom)
+	data.Profile.SocialNetworkF = getProfileFieldValue(l, "SocialNetworkF", data.Custom)
+	data.Profile.SocialNetworkG = getProfileFieldValue(l, "SocialNetworkG", data.Custom)
+	data.Profile.SocialNetworkH = getProfileFieldValue(l, "SocialNetworkH", data.Custom)
+	data.Profile.PersonalInterests = getProfileFieldValue(l, "PersonalInterests", data.Custom)
+	data.Profile.HomeAddress = getProfileFieldValue(l, "HomeAddress", data.Custom)
+	data.Profile.PersonalBlog = getProfileFieldValue(l, "PersonalBlog", data.Custom)
+	data.Profile.Attrib1 = getProfileFieldValue(l, "Attrib1", data.Custom)
+	data.Profile.Attrib2 = getProfileFieldValue(l, "Attrib2", data.Custom)
+	data.Profile.Attrib3 = getProfileFieldValue(l, "Attrib3", data.Custom)
+	data.Profile.Attrib4 = getProfileFieldValue(l, "Attrib4", data.Custom)
+	data.Profile.Attrib5 = getProfileFieldValue(l, "Attrib5", data.Custom)
+	data.Profile.Attrib6 = getProfileFieldValue(l, "Attrib6", data.Custom)
+	data.Profile.Attrib7 = getProfileFieldValue(l, "Attrib7", data.Custom)
+	data.Profile.Attrib8 = getProfileFieldValue(l, "Attrib8", data.Custom)
 }

@@ -15,6 +15,9 @@ versiond=${versiond// /}
 platforms="windows/386 windows/amd64 linux/386 linux/amd64 linux/arm darwin/386 darwin/amd64"
 printf " ---- Building LDAP User Import $versiond ---- \n"
 
+rm -rf "release/"
+mkdir release
+
 printf "Replace Version Variable\n"
 cp README.SOURCE.md README.md
 #Replace Version in ReadMe
@@ -59,7 +62,7 @@ do
         os="osx"
     fi
     zip -r "${package}_${os}_${arch}_v${version}.zip" $output LICENSE.md README.md conf.json > /dev/null
-    cp "${package}_${os}_${arch}_v${version}.zip" "../../../${package}_${os}_${arch}_v${version}.zip"
+    cp "${package}_${os}_${arch}_v${version}.zip" "../../../release/${package}_${os}_${arch}_v${version}.zip"
     cd "../../../"
     printf "\n"
 done
