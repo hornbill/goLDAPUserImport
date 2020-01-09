@@ -380,6 +380,10 @@ func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAcc
 		logger(1, "LoginID: "+importData.Account.LoginID+" - "+currentData.HLoginID, true)
 		return true
 	}
+	if importData.Account.EmployeeID != "" && importData.Account.EmployeeID != currentData.HEmployeeID {
+		logger(1, "EmployeeID: "+importData.Account.EmployeeID+" - "+currentData.HEmployeeID, true)
+		return true
+	}
 	if importData.Account.FirstName != "" && importData.Account.FirstName != currentData.HFirstName {
 		logger(1, "FirstName: "+importData.Account.FirstName+" - "+currentData.HFirstName, true)
 		return true
@@ -657,6 +661,7 @@ func processUserParams(l *ldap.Entry, userID string) {
 
 	data := HornbillCache.UsersWorking[userID]
 	data.Account.LoginID = getUserFieldValue(l, "LoginID", data.Custom)
+	data.Account.EmployeeID = getUserFieldValue(l, "EmployeeID", data.Custom)
 	data.Account.UserType = getUserFieldValue(l, "UserType", data.Custom)
 	data.Account.Name = getUserFieldValue(l, "Name", data.Custom)
 	data.Account.Password = getUserFieldValue(l, "Password", data.Custom)

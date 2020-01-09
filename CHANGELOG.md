@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.5.0 (January 9th, 2020)
+
+Changes:
+
+- Added support for new Employee ID field in user record
+
 ## 3.4.0 (November 18th, 2019)
 
 Changes:

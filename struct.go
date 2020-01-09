@@ -8,14 +8,14 @@ import (
 )
 
 //----- Constants -----
-const version = "3.4.0"
+const version = "3.5.0"
 
 var (
-	mutexCounters         = &sync.Mutex{}
-	bufferMutex           = &sync.Mutex{}
-	importHistoryID       string
-	serverBuild           int
-	loginIDMinServerBuild = 3195
+	mutexCounters            = &sync.Mutex{}
+	bufferMutex              = &sync.Mutex{}
+	importHistoryID          string
+	serverBuild              int
+	employeeIDMinServerBuild = 3241
 
 	//Password profiles
 	passwordProfile       passwordProfileStruct
@@ -269,6 +269,7 @@ type ldapImportConfStruct struct {
 type AccountMappingStruct struct {
 	UserID         string `json:"UserID"`
 	LoginID        string `json:"loginId"`
+	EmployeeID     string `json:"employeeId"`
 	UserType       string `json:"UserType"`
 	Name           string `json:"Name"`
 	Password       string `json:"Password"`
@@ -357,6 +358,7 @@ type groupStruct struct {
 type userAccountStruct struct {
 	HUserID              string `json:"h_user_id"`
 	HLoginID             string `json:"h_login_id"`
+	HEmployeeID          string `json:"h_employee_id"`
 	HName                string `json:"h_name"`
 	HFirstName           string `json:"h_first_name"`
 	HMiddleName          string `json:"h_middle_name"`
