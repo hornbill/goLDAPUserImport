@@ -8,7 +8,7 @@ import (
 )
 
 //----- Constants -----
-const version = "3.5.0"
+const version = "3.6.0"
 
 var (
 	mutexCounters            = &sync.Mutex{}

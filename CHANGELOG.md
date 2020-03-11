@@ -1,19 +1,25 @@
 # CHANGELOG
 
-## 3.5.0 (January 9th, 2020)
+## 3.6.0 (March 11th, 2020)
+
+Changes:
+
+- Added support for converting LDAP/FILETIME timestamps to human and database readable datetime stamp
+
+## 3.5.0 (January 9th, 2020)
 
 Changes:
 
 - Added support for new Employee ID field in user record
 
-## 3.4.0 (November 18th, 2019)
+## 3.4.0 (November 18th, 2019)
 
 Changes:
 
 - Added support for new Login ID field in user record
 - Corrected minor spelling mistakes
 
-## 3.3.0 (October 18th, 2019)
+## 3.3.0 (October 18th, 2019)
 
 Changes:
 
@@ -25,13 +31,13 @@ Changes:
 
 - Updated password generation code to support update to Hornbill Password Generator module
 
-## 3.2.0 (May 29, 2019)
+## 3.2.0 (May 29, 2019)
 
 Changes:
 
 - Updated user password generation code to enforce Hornbill instance user password profile settings
 
-## 3.1.5 (Mar 29, 2019)
+## 3.1.5 (Mar 29, 2019)
 
 Bug Fixes:
 

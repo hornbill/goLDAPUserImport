@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hornbill/ldap"
 )
@@ -636,6 +637,24 @@ func processImportActions(l *ldap.Entry) string {
 			data.Custom["{"+action.Output+"}"] = Outcome
 
 			logger(1, "Trim Output: "+Outcome, false)
+		case "LDAPDateToDateTime":
+			//-- Grab value from LDAP
+			Outcome := processComplexField(l, action.Value)
+			//-- Grab Value from Existing Custom Field
+			Outcome = processImportAction(data.Custom, Outcome)
+			//-- Run Replace
+			i, err := strconv.ParseInt(Outcome, 10, 64)
+			if err != nil {
+				logger(4, "LDAPDateToDateTime Action ParseInt Failed on : "+Outcome, false)
+			} else {
+				var t int64
+				t = (i / 10000000) - 11644473600
+				Outcome = time.Unix(t, 0).Format("2006-01-02 15:04:05")
+			}
+			//-- Store
+			data.Custom["{"+action.Output+"}"] = Outcome
+
+			logger(1, "LDAPDateToDateTime Output: "+Outcome, false)
 		case "None":
 			//-- Grab value
 			Outcome := processComplexField(l, action.Value)
