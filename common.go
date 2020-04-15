@@ -297,6 +297,7 @@ func startImportHistory() bool {
 	loggerAPI.SetTimeout(Flags.configAPITimeout)
 	loggerAPI.SetJSONResponse(true)
 
+	loggerAPI.SetParam("application", "com.hornbill.core")
 	loggerAPI.SetParam("entity", "ImportsHistory")
 	loggerAPI.SetParam("returnModifiedData", "true")
 	loggerAPI.OpenElement("primaryEntityData")
@@ -347,6 +348,7 @@ func completeImportHistory() bool {
 	strMessage += "'''Groups Removed''': " + fmt.Sprintf("%d", counters.groupsRemoved) + "\n"
 	strMessage += "'''Roles Updated''': " + fmt.Sprintf("%d", counters.rolesUpdated) + "\n"
 
+	loggerAPI.SetParam("application", "com.hornbill.core")
 	loggerAPI.SetParam("entity", "ImportsHistory")
 	loggerAPI.SetParam("returnModifiedData", "true")
 	loggerAPI.OpenElement("primaryEntityData")

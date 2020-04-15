@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.1 (April 15th, 2020)
+
+Change:
+
+- Updated code to support Core application and platform changes
+
 ## 3.6.0 (March 11th, 2020)
 
 Changes:
