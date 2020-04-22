@@ -219,7 +219,7 @@ func loadConfig() ldapImportConfStruct {
 	mc.SetAPIKey(Flags.configAPIKey)
 	mc.SetTimeout(Flags.configAPITimeout)
 	mc.SetJSONResponse(true)
-	loggerAPI.SetParam("application", "com.hornbill.core")
+	mc.SetParam("application", "com.hornbill.core")
 	mc.SetParam("entity", "Imports")
 	mc.SetParam("keyValue", Flags.configID)
 

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.2 (April 22nd, 2020)
+
+Fix:
+
+- Issue when loading configuration
+
 ## 3.6.1 (April 15th, 2020)
 
 Change:
