@@ -190,7 +190,7 @@ func checkVersion() {
 
 	res, err := latest.Check(githubTag, version)
 	if err != nil {
-		logger(4, fmt.Sprintf("%s", err), true)
+		logger(4, "Unable to check utility version against Github repository: "+err.Error(), true)
 		return
 	}
 	if res.Outdated {
@@ -216,6 +216,15 @@ func loadConfig() ldapImportConfStruct {
 	logger(2, "Loading Configuration Data: "+Flags.configID, true)
 
 	mc := apiLib.NewXmlmcInstance(Flags.configInstanceID)
+	if mc.FileError != nil {
+		if mc.FileError.Error() == "invalid character '<' looking for beginning of value" {
+			logger(4, "106: Unable to read your instance information from Hornbill. Check the provided instanceid ["+Flags.configInstanceID+"] is correct (case sensitive).", true)
+			os.Exit(106)
+		} else {
+			logger(4, "107: Unable to read your instance information from Hornbill. Check your connectivity to Hornbill and/or command line proxy access: "+mc.FileError.Error(), true)
+			os.Exit(107)
+		}
+	}
 	mc.SetAPIKey(Flags.configAPIKey)
 	mc.SetTimeout(Flags.configAPITimeout)
 	mc.SetJSONResponse(true)

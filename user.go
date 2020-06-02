@@ -118,7 +118,7 @@ func userUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	buffer.WriteString(loggerGen(1, "User Update: "+user.Account.UserID))
 	//-- Set Params based on already processed params
 	hIF.SetParam("userId", user.Account.UserID)
-	if user.Account.LoginID != "" {
+	if user.Account.LoginID != "" && user.Account.LoginID != "hornbillLoginIDDeDup" {
 		hIF.SetParam("loginId", user.Account.LoginID)
 	}
 	if user.Account.EmployeeID != "" && serverBuild >= employeeIDMinServerBuild {

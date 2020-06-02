@@ -373,12 +373,16 @@ func checkUserNeedsSiteUpdate(importData *userWorkingDataStruct, currentData use
 	return false
 }
 func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
-	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
-		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
-		return true
-	}
 	if importData.Account.LoginID != "" && importData.Account.LoginID != currentData.HLoginID {
 		logger(1, "LoginID: "+importData.Account.LoginID+" - "+currentData.HLoginID, true)
+		return true
+	} else if importData.Account.LoginID == currentData.HLoginID {
+		//Clear value as don't want to update this
+		importData.Account.LoginID = "hornbillLoginIDDeDup"
+		fmt.Println("loginID" + importData.Account.LoginID)
+	}
+	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
+		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
 		return true
 	}
 	if importData.Account.EmployeeID != "" && importData.Account.EmployeeID != currentData.HEmployeeID {

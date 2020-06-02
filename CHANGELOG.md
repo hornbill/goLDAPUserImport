@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 3.7.0 (June 2nd, 2020)
+
+Fixes:
+
+- Improved error output when the tool is unable to talk to Hornbill and/or Github
+- Fixed issue updating users where the loginId value has not changed.
+
 ## 3.6.2 (April 22nd, 2020)
 
 Fix:
