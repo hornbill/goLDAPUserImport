@@ -84,6 +84,7 @@ func processData() {
 			currentUser.Jobs.updateImage = checkUserNeedsImageCreate(currentUser, hornbillUserData)
 			checkUserNeedsOrgCreate(currentUser, hornbillUserData)
 			currentUser.Jobs.updateStatus = checkUserNeedsStatusCreate(currentUser, hornbillUserData)
+			currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
 			currentUser.Jobs.create = true
 		}
 
