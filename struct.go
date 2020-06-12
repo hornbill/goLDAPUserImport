@@ -8,7 +8,10 @@ import (
 )
 
 //----- Constants -----
-const version = "3.7.1"
+const version = "3.7.2"
+const appName = "goLDAPUserImport"
+const applicationName = "LDAP Import Utility"
+const execName = "ldap_user_import"
 
 var (
 	mutexCounters            = &sync.Mutex{}

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.7.2 (June 12th, 2020)
+
+Changes:
+
+- minor changes to be compatible with new crosscompile script
+
 ## 3.7.1 (June 5th, 2020)
 
 Fixes:
