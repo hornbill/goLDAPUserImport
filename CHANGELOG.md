@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.7.3 (June 17th, 2020)
+
+Changes:
+
+- Improved error reporting when blacklist cannot be retrieved
+
 ## 3.7.2 (June 12th, 2020)
 
 Changes:

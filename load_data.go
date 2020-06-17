@@ -478,7 +478,11 @@ func getBlacklist(blacklistURL string) []string {
 	var blacklist []string
 	//-- Get JSON Config
 	response, err := http.Get(blacklistURL)
-	if err != nil || response.StatusCode != 200 {
+	if err != nil {
+		logger(4, "Error Getting ["+blacklistURL+"] : "+err.Error(), false)
+		return blacklist
+	}
+	if response.StatusCode != 200 {
 		logger(4, "Unexpected status "+strconv.Itoa(response.StatusCode)+" returned from "+blacklistURL, false)
 		return blacklist
 	}
