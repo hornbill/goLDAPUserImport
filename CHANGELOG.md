@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.8.0
+
+Changes:
+
+- Added support to define if users should be created, updated or both
+
 ## 3.7.3 (June 17th, 2020)
 
 Changes:

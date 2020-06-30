@@ -132,7 +132,7 @@ func procFlags() {
 
 	//-- Output config
 	if !Flags.configVersion {
-		logger(2, "---- " + applicationName + " v"+fmt.Sprintf("%v", version)+" ----", true)
+		logger(2, "---- "+applicationName+" v"+fmt.Sprintf("%v", version)+" ----", true)
 		logger(2, "Flag - config "+Flags.configID, true)
 		logger(2, "Flag - logprefix "+Flags.configLogPrefix, true)
 		logger(2, "Flag - dryrun "+fmt.Sprintf("%v", Flags.configDryRun), true)
@@ -288,6 +288,9 @@ func loadConfig() ldapImportConfStruct {
 
 	logger(0, "[MESSAGE] Log Level "+fmt.Sprintf("%d", eldapConf.Advanced.LogLevel)+"", true)
 	logger(0, "[MESSAGE] Page Size "+fmt.Sprintf("%d", eldapConf.Advanced.PageSize)+"\n", true)
+	if eldapConf.User.Operation == "" {
+		eldapConf.User.Operation = "Both"
+	}
 	//-- Return New Congfig
 	return eldapConf
 }
