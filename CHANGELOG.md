@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.8.1
+
+Fixed:
+
+- If new user record creation errors for whatever reason, the tool now no longer attempts to update the users profile, which can cause broken user records to be created.
+
 ## 3.8.0
 
 Changes:

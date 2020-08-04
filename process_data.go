@@ -59,7 +59,6 @@ func processData() {
 		if strings.ToLower(hornbillUserData.HUserID) == userID {
 			userExists = true
 			if strings.ToLower(ldapImportConf.User.Operation) == "update" || strings.ToLower(ldapImportConf.User.Operation) == "both" {
-
 				currentUser.Jobs.update = checkUserNeedsUpdate(currentUser, hornbillUserData)
 
 				currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)

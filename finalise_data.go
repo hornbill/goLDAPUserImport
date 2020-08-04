@@ -20,29 +20,30 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 		currentUser := HornbillCache.UsersWorkingIndex[index-1]
 		//-- Buffer for Logging
 		var buffer bytes.Buffer
+		userCreateSuccess := true
 		if currentUser.Jobs.create {
-			createUser(hIF, currentUser, &buffer)
+			userCreateSuccess = createUser(hIF, currentUser, &buffer)
 		}
 
 		if currentUser.Jobs.update || currentUser.Jobs.updateType || currentUser.Jobs.updateSite {
 			updateUser(hIF, currentUser, &buffer)
 		}
-		if currentUser.Jobs.updateProfile {
+		if currentUser.Jobs.updateProfile && userCreateSuccess {
 			updateUserProfile(hIF, currentUser, &buffer)
 		}
-		if currentUser.Jobs.updateImage {
+		if currentUser.Jobs.updateImage && userCreateSuccess {
 			updateUserImage(hIF, currentUser, &buffer)
 		}
 		if len(currentUser.GroupsToRemove) > 0 {
 			removeUserGroups(hIF, currentUser, &buffer)
 		}
-		if len(currentUser.Groups) > 0 {
+		if len(currentUser.Groups) > 0 && userCreateSuccess {
 			updateUserGroups(hIF, currentUser, &buffer)
 		}
-		if len(currentUser.Roles) > 0 {
+		if len(currentUser.Roles) > 0 && userCreateSuccess {
 			updateUserRoles(hIF, currentUser, &buffer)
 		}
-		if currentUser.Jobs.updateStatus {
+		if currentUser.Jobs.updateStatus && userCreateSuccess {
 			updateUserStatus(hIF, currentUser, &buffer)
 		}
 		if currentUser.Jobs.updateHomeOrg {
@@ -97,7 +98,7 @@ func finaliseData() {
 	bar.FinishPrint("Finalising User Data Complete")
 }
 
-func createUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+func createUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) bool {
 	b, err := userCreate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(1)
@@ -105,7 +106,7 @@ func createUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataSt
 		CounterInc(7)
 		buffer.WriteString(loggerGen(4, "Unable to Create User: "+currentUser.Account.UserID+" Error: "+fmt.Sprintf("%s", err)))
 	}
-
+	return b
 }
 
 func updateUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
