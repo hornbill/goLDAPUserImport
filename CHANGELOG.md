@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.8.2
+
+Reverted:
+
+- User Profile was not always being created on user creation (it is likely a timing problem (user profile update run before the user creation has fully completed)). Reverted back to pre-3.7.1 behaviour in which only user updates populate the profiles.
+
 ## 3.8.1
 
 Fixed:

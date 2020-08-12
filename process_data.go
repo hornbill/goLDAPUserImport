@@ -89,7 +89,7 @@ func processData() {
 				currentUser.Jobs.updateImage = checkUserNeedsImageCreate(currentUser, hornbillUserData)
 				checkUserNeedsOrgCreate(currentUser, hornbillUserData)
 				currentUser.Jobs.updateStatus = checkUserNeedsStatusCreate(currentUser, hornbillUserData)
-				currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
+				// reversal to be back to 3.7.1 currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
 				currentUser.Jobs.create = true
 			}
 		}
