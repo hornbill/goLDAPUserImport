@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.9.0
+
+Change:
+
+- Added support for Object SID Conversion as a Pre Import Action
+
 ## 3.8.2
 
 Reverted:

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/go-objectsid"
 	"github.com/hornbill/ldap"
 )
 
@@ -668,6 +669,18 @@ func processImportActions(l *ldap.Entry) string {
 			data.Custom["{"+action.Output+"}"] = Outcome
 
 			logger(1, "LDAPDateToDateTime Output: "+Outcome, false)
+		case "SIDConversion":
+			//-- Grab value from LDAP
+			Outcome := processComplexField(l, action.Value)
+			//-- Grab Value from Existing Custom Field
+			Outcome = processImportAction(data.Custom, Outcome)
+			if Outcome != "" {
+				//-- Run Replace
+				sid := objectsid.Decode([]byte(Outcome))
+				Outcome = sid.String()
+			}
+			data.Custom["{"+action.Output+"}"] = Outcome
+			logger(1, "SIDConversion Output: "+Outcome, false)
 		case "None":
 			//-- Grab value
 			Outcome := processComplexField(l, action.Value)
