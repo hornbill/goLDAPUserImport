@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 3.9.1
+
+Change:
+
+- Improved logging when user account or profile record is being updated
+
+Fixed:
+
+- Issue where manager is not updated when job description or middle name was being set against profile
+
 ## 3.9.0
 
 Change:

@@ -383,9 +383,10 @@ func checkUserNeedsSiteUpdate(importData *userWorkingDataStruct, currentData use
 	return false
 }
 func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
+	userUpdate := false
 	if importData.Account.LoginID != "" && importData.Account.LoginID != currentData.HLoginID {
 		logger(1, "LoginID: "+importData.Account.LoginID+" - "+currentData.HLoginID, true)
-		return true
+		userUpdate = true
 	} else if importData.Account.LoginID == currentData.HLoginID {
 		//Clear value as don't want to update this
 		importData.Account.LoginID = "hornbillLoginIDDeDup"
@@ -393,89 +394,80 @@ func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAcc
 	}
 	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
 		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.EmployeeID != "" && importData.Account.EmployeeID != currentData.HEmployeeID {
 		logger(1, "EmployeeID: "+importData.Account.EmployeeID+" - "+currentData.HEmployeeID, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.FirstName != "" && importData.Account.FirstName != currentData.HFirstName {
 		logger(1, "FirstName: "+importData.Account.FirstName+" - "+currentData.HFirstName, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.LastName != "" && importData.Account.LastName != currentData.HLastName {
 		logger(1, "LastName: "+importData.Account.LastName+" - "+currentData.HLastName, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.JobTitle != "" && importData.Account.JobTitle != currentData.HJobTitle {
 		logger(1, "JobTitle: "+importData.Account.JobTitle+" - "+currentData.HJobTitle, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Phone != "" && importData.Account.Phone != currentData.HPhone {
 		logger(1, "Phone: "+importData.Account.Phone+" - "+currentData.HPhone, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Email != "" && importData.Account.Email != currentData.HEmail {
 		logger(1, "Email: "+importData.Account.Email+" - "+currentData.HEmail, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Mobile != "" && importData.Account.Mobile != currentData.HMobile {
 		logger(1, "Mobile: "+importData.Account.Mobile+" - "+currentData.HMobile, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.AbsenceMessage != "" && importData.Account.AbsenceMessage != currentData.HAvailStatusMsg {
 		logger(1, "AbsenceMessage: "+importData.Account.AbsenceMessage+" - "+currentData.HAvailStatusMsg, true)
-		return true
+		userUpdate = true
 	}
 	//-- If TimeZone mapping is empty then ignore as it defaults to a value
 	if importData.Account.TimeZone != "" && importData.Account.TimeZone != currentData.HTimezone {
 		logger(1, "TimeZone: "+importData.Account.TimeZone+" - "+currentData.HTimezone, true)
-		return true
+		userUpdate = true
 	}
 	//-- If Language mapping is empty then ignore as it defaults to a value
 	if importData.Account.Language != "" && importData.Account.Language != currentData.HLanguage {
 		logger(1, "Language: "+importData.Account.Language+" - "+currentData.HLanguage, true)
-		return true
+		userUpdate = true
 	}
 	//-- If DateTimeFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.DateTimeFormat != "" && importData.Account.DateTimeFormat != currentData.HDateTimeFormat {
 		logger(1, "DateTimeFormat: "+importData.Account.DateTimeFormat+" - "+currentData.HDateTimeFormat, true)
-		return true
+		userUpdate = true
 	}
 	//-- If DateFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.DateFormat != "" && importData.Account.DateFormat != currentData.HDateFormat {
 		logger(1, "DateFormat: "+importData.Account.DateFormat+" - "+currentData.HDateFormat, true)
-		return true
+		userUpdate = true
 	}
 	//-- If TimeFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.TimeFormat != "" && importData.Account.TimeFormat != currentData.HTimeFormat {
 		logger(1, "TimeFormat: "+importData.Account.TimeFormat+" - "+currentData.HTimeFormat, true)
-		return true
+		userUpdate = true
 	}
 	//-- If CurrencySymbol mapping is empty then ignore as it defaults to a value
 	if importData.Account.CurrencySymbol != "" && importData.Account.CurrencySymbol != currentData.HCurrencySymbol {
 		logger(1, "CurrencySymbol: "+importData.Account.CurrencySymbol+" - "+currentData.HCurrencySymbol, true)
-		return true
+		userUpdate = true
 	}
 	//-- If CountryCode mapping is empty then ignore as it defaults to a value
 	if importData.Account.CountryCode != "" && importData.Account.CountryCode != currentData.HCountry {
 		logger(1, "CountryCode: "+importData.Account.CountryCode+" - "+currentData.HCountry, true)
-		return true
+		userUpdate = true
 	}
 
-	return false
+	return userUpdate
 }
 func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
-
-	if importData.Profile.MiddleName != "" && importData.Profile.MiddleName != currentData.HMiddleName {
-		logger(1, "MiddleName: "+importData.Profile.MiddleName+" - "+currentData.HMiddleName, true)
-		return true
-	}
-
-	if importData.Profile.JobDescription != "" && importData.Profile.JobDescription != currentData.HSummary {
-		logger(1, "JobDescription: "+importData.Profile.JobDescription+" - "+currentData.HSummary, true)
-		return true
-	}
+	userProfileUpdate := false
 	if ldapImportConf.User.Manager.Action == "Both" || ldapImportConf.User.Manager.Action == "Update" {
 		importData.Profile.Manager = getManager(importData, currentData)
 	} else {
@@ -484,121 +476,131 @@ func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData 
 	}
 	if importData.Profile.Manager != "" && importData.Profile.Manager != currentData.HManager {
 		logger(1, "Manager: "+importData.Profile.Manager+" - "+currentData.HManager, true)
-		return true
+		userProfileUpdate = true
+	}
+
+	if importData.Profile.MiddleName != "" && importData.Profile.MiddleName != currentData.HMiddleName {
+		logger(1, "MiddleName: "+importData.Profile.MiddleName+" - "+currentData.HMiddleName, true)
+		userProfileUpdate = true
+	}
+
+	if importData.Profile.JobDescription != "" && importData.Profile.JobDescription != currentData.HSummary {
+		logger(1, "JobDescription: "+importData.Profile.JobDescription+" - "+currentData.HSummary, true)
+		userProfileUpdate = true
 	}
 	if importData.Profile.WorkPhone != "" && importData.Profile.WorkPhone != currentData.HPhone {
 		logger(1, "WorkPhone: "+importData.Profile.WorkPhone+" - "+currentData.HPhone, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Qualifications != "" && importData.Profile.Qualifications != currentData.HQualifications {
 		logger(1, "Qualifications: "+importData.Profile.Qualifications+" - "+currentData.HQualifications, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Interests != "" && importData.Profile.Interests != currentData.HInterests {
 		logger(1, "Interests: "+importData.Profile.Interests+" - "+currentData.HInterests, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Expertise != "" && importData.Profile.Expertise != currentData.HSkills {
 		logger(1, "Expertise: "+importData.Profile.Expertise+" - "+currentData.HSkills, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Gender != "" && importData.Profile.Gender != currentData.HGender {
 		logger(1, "Gender: "+importData.Profile.Gender+" - "+currentData.HGender, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Dob != "" && importData.Profile.Dob != currentData.HDob {
 		logger(1, "Dob: "+importData.Profile.Dob+" - "+currentData.HDob, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Nationality != "" && importData.Profile.Nationality != currentData.HNationality {
 		logger(1, "Nationality: "+importData.Profile.Nationality+" - "+currentData.HNationality, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Religion != "" && importData.Profile.Religion != currentData.HReligion {
 		logger(1, "Religion: "+importData.Profile.Religion+" - "+currentData.HReligion, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.HomeTelephone != "" && importData.Profile.HomeTelephone != currentData.HHomeTelephoneNumber {
 		logger(1, "HomeTelephone: "+importData.Profile.HomeTelephone+" - "+currentData.HHomeTelephoneNumber, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkA != "" && importData.Profile.SocialNetworkA != currentData.HSnA {
 		logger(1, "SocialNetworkA: "+importData.Profile.SocialNetworkA+" - "+currentData.HSnA, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkB != "" && importData.Profile.SocialNetworkB != currentData.HSnB {
 		logger(1, "SocialNetworkB: "+importData.Profile.SocialNetworkB+" - "+currentData.HSnB, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkC != "" && importData.Profile.SocialNetworkC != currentData.HSnC {
 		logger(1, "SocialNetworkC: "+importData.Profile.SocialNetworkC+" - "+currentData.HSnC, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkD != "" && importData.Profile.SocialNetworkD != currentData.HSnD {
 		logger(1, "SocialNetworkD: "+importData.Profile.SocialNetworkD+" - "+currentData.HSnD, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkG != "" && importData.Profile.SocialNetworkG != currentData.HSnE {
 		logger(1, "SocialNetworkE: "+importData.Profile.SocialNetworkE+" - "+currentData.HSnE, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkG != "" && importData.Profile.SocialNetworkG != currentData.HSnF {
 		logger(1, "SocialNetworkF: "+importData.Profile.SocialNetworkF+" - "+currentData.HSnF, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkG != "" && importData.Profile.SocialNetworkG != currentData.HSnG {
 		logger(1, "SocialNetworkG: "+importData.Profile.SocialNetworkG+" - "+currentData.HSnG, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.SocialNetworkH != "" && importData.Profile.SocialNetworkH != currentData.HSnH {
 		logger(1, "SocialNetworkH: "+importData.Profile.SocialNetworkH+" - "+currentData.HSnH, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.PersonalInterests != "" && importData.Profile.PersonalInterests != currentData.HPersonalInterests {
 		logger(1, "PersonalInterests: "+importData.Profile.PersonalInterests+" - "+currentData.HPersonalInterests, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.HomeAddress != "" && importData.Profile.HomeAddress != currentData.HHomeAddress {
 		logger(1, "HomeAddress: "+importData.Profile.HomeAddress+" - "+currentData.HHomeAddress, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.PersonalBlog != "" && importData.Profile.PersonalBlog != currentData.HBlog {
 		logger(1, "PersonalBlog: "+importData.Profile.PersonalBlog+" - "+currentData.HBlog, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib1 != "" && importData.Profile.Attrib1 != currentData.HAttrib1 {
 		logger(1, "Attrib1: "+importData.Profile.Attrib1+" - "+currentData.HAttrib1, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib2 != "" && importData.Profile.Attrib2 != currentData.HAttrib2 {
 		logger(1, "Attrib2: "+importData.Profile.Attrib2+" - "+currentData.HAttrib2, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib3 != "" && importData.Profile.Attrib3 != currentData.HAttrib3 {
 		logger(1, "Attrib3: "+importData.Profile.Attrib3+" - "+currentData.HAttrib3, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib4 != "" && importData.Profile.Attrib4 != currentData.HAttrib4 {
 		logger(1, "Attrib4: "+importData.Profile.Attrib4+" - "+currentData.HAttrib4, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib5 != "" && importData.Profile.Attrib5 != currentData.HAttrib5 {
 		logger(1, "Attrib5: "+importData.Profile.Attrib5+" - "+currentData.HAttrib5, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib6 != "" && importData.Profile.Attrib6 != currentData.HAttrib6 {
 		logger(1, "Attrib6: "+importData.Profile.Attrib6+" - "+currentData.HAttrib6, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib7 != "" && importData.Profile.Attrib7 != currentData.HAttrib7 {
 		logger(1, "Attrib7: "+importData.Profile.Attrib7+" - "+currentData.HAttrib7, true)
-		return true
+		userProfileUpdate = true
 	}
 	if importData.Profile.Attrib8 != "" && importData.Profile.Attrib8 != currentData.HAttrib8 {
 		logger(1, "Attrib8: "+importData.Profile.Attrib8+" - "+currentData.HAttrib8, true)
-		return true
+		userProfileUpdate = true
 	}
-	return false
+	return userProfileUpdate
 }
 
 //-- For Each Import Actions process the data
