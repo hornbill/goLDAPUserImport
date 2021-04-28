@@ -378,33 +378,24 @@ func getCount(query string) uint64 {
 	hornbillImport.OpenElement("queryParams")
 	hornbillImport.SetParam("getCount", "true")
 	hornbillImport.CloseElement("queryParams")
-	if ldapImportConf.LDAP.Server.Debug {
-		logger(1, hornbillImport.GetParam(), false)
-	}
-
+	logger(1, hornbillImport.GetParam(), false)
 	RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 	var JSONResp xmlmcCountResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to run Query ["+query+"] "+xmlmcErr.Error(), false)
-		if ldapImportConf.LDAP.Server.Debug {
-			logger(1, RespBody, false)
-		}
+		logger(1, RespBody, false)
 		return 0
 	}
 	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
 		logger(4, "Unable to run Query ["+query+"] "+err.Error(), false)
-		if ldapImportConf.LDAP.Server.Debug {
-			logger(1, RespBody, false)
-		}
+		logger(1, RespBody, false)
 		return 0
 	}
 	if JSONResp.State.Error != "" {
 		logger(4, "Unable to run Query ["+query+"] "+JSONResp.State.Error, false)
-		if ldapImportConf.LDAP.Server.Debug {
-			logger(1, RespBody, false)
-		}
+		logger(1, RespBody, false)
 		return 0
 	}
 
@@ -413,9 +404,7 @@ func getCount(query string) uint64 {
 	//-- Check for Error
 	if errC != nil {
 		logger(4, "Unable to get Count for Query ["+query+"] "+errC.Error(), false)
-		if ldapImportConf.LDAP.Server.Debug {
-			logger(1, RespBody, false)
-		}
+		logger(1, RespBody, false)
 		return 0
 	}
 	return count
