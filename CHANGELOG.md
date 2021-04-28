@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.9.2
+
+Change:
+
+- Improved logging when getting counts of data lists to cache
+
 ## 3.9.1
 
 Change:

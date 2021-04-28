@@ -378,29 +378,44 @@ func getCount(query string) uint64 {
 	hornbillImport.OpenElement("queryParams")
 	hornbillImport.SetParam("getCount", "true")
 	hornbillImport.CloseElement("queryParams")
+	if ldapImportConf.LDAP.Server.Debug {
+		logger(1, hornbillImport.GetParam(), false)
+	}
 
 	RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
 
 	var JSONResp xmlmcCountResponse
 	if xmlmcErr != nil {
-		logger(4, "Unable to run Query ["+query+"] "+fmt.Sprintf("%s", xmlmcErr), false)
+		logger(4, "Unable to run Query ["+query+"] "+xmlmcErr.Error(), false)
+		if ldapImportConf.LDAP.Server.Debug {
+			logger(1, RespBody, false)
+		}
 		return 0
 	}
 	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
-		logger(4, "Unable to run Query ["+query+"] "+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to run Query ["+query+"] "+err.Error(), false)
+		if ldapImportConf.LDAP.Server.Debug {
+			logger(1, RespBody, false)
+		}
 		return 0
 	}
 	if JSONResp.State.Error != "" {
 		logger(4, "Unable to run Query ["+query+"] "+JSONResp.State.Error, false)
+		if ldapImportConf.LDAP.Server.Debug {
+			logger(1, RespBody, false)
+		}
 		return 0
 	}
 
 	//-- return Count
-	count, errC := strconv.ParseUint(JSONResp.Params.RowData.Row[0].Count, 10, 16)
+	count, errC := strconv.ParseUint(JSONResp.Params.RowData.Row.Count, 10, 16)
 	//-- Check for Error
 	if errC != nil {
-		logger(4, "Unable to get Count for Query ["+query+"] "+fmt.Sprintf("%s", err), false)
+		logger(4, "Unable to get Count for Query ["+query+"] "+errC.Error(), false)
+		if ldapImportConf.LDAP.Server.Debug {
+			logger(1, RespBody, false)
+		}
 		return 0
 	}
 	return count

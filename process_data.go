@@ -390,7 +390,7 @@ func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAcc
 	} else if importData.Account.LoginID == currentData.HLoginID {
 		//Clear value as don't want to update this
 		importData.Account.LoginID = "hornbillLoginIDDeDup"
-		fmt.Println("loginID" + importData.Account.LoginID)
+		//fmt.Println("loginID" + importData.Account.LoginID)
 	}
 	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
 		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
@@ -663,8 +663,7 @@ func processImportActions(l *ldap.Entry) string {
 			if err != nil {
 				logger(4, "LDAPDateToDateTime Action ParseInt Failed on : "+Outcome, false)
 			} else {
-				var t int64
-				t = (i / 10000000) - 11644473600
+				var t int64 = (i / 10000000) - 11644473600
 				Outcome = time.Unix(t, 0).Format("2006-01-02 15:04:05")
 			}
 			//-- Store
