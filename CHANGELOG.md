@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.9.3
+
+Fixed:
+
+- Issue with count struct
+
 ## 3.9.2
 
 Change:

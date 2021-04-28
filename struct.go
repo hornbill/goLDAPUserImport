@@ -8,7 +8,7 @@ import (
 )
 
 //----- Constants -----
-const version = "3.9.2"
+const version = "3.9.3"
 const appName = "goLDAPUserImport"
 const applicationName = "LDAP Import Utility"
 const execName = "ldap_user_import"
@@ -467,7 +467,7 @@ type xmlmcKeySafeResponse struct {
 type xmlmcCountResponse struct {
 	Params struct {
 		RowData struct {
-			Row struct {
+			Row []struct {
 				Count string `json:"count"`
 			} `json:"row"`
 		} `json:"rowData"`
