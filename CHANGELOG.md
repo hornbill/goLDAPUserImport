@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.9.4
+
+Fixed:
+
+- Issue returning counts of roles and groups associated with users, values were too large to be parsed into 16 bit integer, upped the parser definition to 64 bit.
+
 ## 3.9.3
 
 Fixed:
