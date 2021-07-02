@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.9.5
+
+Change:
+
+- Rebuilt using latest version of goApiLib, to fix possible issue witt connections via a proxy
+
 ## 3.9.4
 
 Fixed:
